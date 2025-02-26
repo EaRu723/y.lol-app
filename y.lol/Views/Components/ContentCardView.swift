@@ -3,19 +3,35 @@ import LinkPresentation
 
 struct ContentCardView: View {
     let item: ContentItem
+    @State private var previewHeight: CGFloat = 120
+    @State private var isLoading = true
     
     var body: some View {
-        VStack(alignment: .leading) {
-            // Link preview instead of placeholder
+        VStack(alignment: .leading, spacing: 8) {
+            // Link preview with better sizing and loading state
             if let url = URL(string: item.url) {
-                LinkPreviewView(url: url)
-                    .frame(height: 180)
+                ZStack {
+                    LinkPreviewView(url: url, onMetadataLoaded: { _ in
+                        isLoading = false
+                    })
+                    .frame(height: previewHeight)
                     .cornerRadius(8)
+                    .clipped()
+                    
+                    if isLoading {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.1))
+                            .overlay(
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                            )
+                    }
+                }
             } else {
                 // Fallback if URL is invalid
                 Rectangle()
                     .fill(Color.blue.opacity(0.3))
-                    .aspectRatio(16/9, contentMode: .fit)
+                    .frame(height: 120)
                     .cornerRadius(8)
             }
             
@@ -44,19 +60,26 @@ struct ContentCardView: View {
     }
 }
 
-// UIViewRepresentable wrapper for LPLinkView
+// Improved UIViewRepresentable wrapper for LPLinkView
 struct LinkPreviewView: UIViewRepresentable {
     let url: URL
+    var onMetadataLoaded: ((LPLinkMetadata) -> Void)?
     
     func makeUIView(context: Context) -> LPLinkView {
         let linkView = LPLinkView(url: url)
+        
+        // Configure the link view for compact display
+        // Note: sizeToFit() is called in updateUIView which is guaranteed to run on the main thread
         
         // Start fetching metadata
         let provider = LPMetadataProvider()
         provider.startFetchingMetadata(for: url) { metadata, error in
             if let metadata = metadata {
-                DispatchQueue.main.async {
+                Task { @MainActor in
+                    // Apply custom styling to metadata if needed
                     linkView.metadata = metadata
+                    linkView.sizeToFit()
+                    onMetadataLoaded?(metadata)
                 }
             }
         }
@@ -65,6 +88,45 @@ struct LinkPreviewView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: LPLinkView, context: Context) {
-        // Nothing to update
+        // Apply custom styling
+        uiView.backgroundColor = .clear
+        
+        // Force compact display mode
+        if let effectView = findVisualEffectView(in: uiView) {
+            effectView.effect = UIBlurEffect(style: .regular)
+        }
+        
+        // Ensure proper sizing on the main thread
+        uiView.sizeToFit()
+    }
+    
+    // Helper method to find and customize the visual effect view
+    private func findVisualEffectView(in view: UIView) -> UIVisualEffectView? {
+        if let visualEffectView = view as? UIVisualEffectView {
+            return visualEffectView
+        }
+        
+        for subview in view.subviews {
+            if let found = findVisualEffectView(in: subview) {
+                return found
+            }
+        }
+        
+        return nil
+    }
+}
+
+// Custom LPLinkView that forces compact mode
+class CompactLPLinkView: LPLinkView {
+    @MainActor
+    override var intrinsicContentSize: CGSize {
+        return CGSize(width: UIView.layoutFittingExpandedSize.width, height: 120)
+    }
+    
+    @MainActor
+    override func sizeToFit() {
+        super.sizeToFit()
+        // Additional customization after sizing if needed
+        frame.size.height = min(frame.size.height, 120)
     }
 } 

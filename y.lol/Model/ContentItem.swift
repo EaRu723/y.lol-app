@@ -5,4 +5,5 @@ struct ContentItem: Identifiable {
     let title: String
     let tags: [String]
     let url: String
-} 
+    let position: CGPoint?
+}
