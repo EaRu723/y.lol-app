@@ -6,12 +6,12 @@ struct HomeView: View {
     
     // Sample data for the grid
     let items = [
-        ContentItem(id: 1, title: "Swift Programming", tags: ["coding", "iOS"]),
-        ContentItem(id: 2, title: "Machine Learning Basics", tags: ["AI", "tech"]),
-        ContentItem(id: 3, title: "UI Design Principles", tags: ["design", "UX"]),
-        ContentItem(id: 4, title: "SwiftUI Animations", tags: ["coding", "animation"]),
-        ContentItem(id: 5, title: "Productivity Hacks", tags: ["lifestyle", "work"]),
-        ContentItem(id: 6, title: "Future of Tech", tags: ["tech", "future"])
+        ContentItem(id: 1, title: "Swift Programming", tags: ["coding", "iOS"], url: "https://developer.apple.com/swift/"),
+        ContentItem(id: 2, title: "Machine Learning Basics", tags: ["AI", "tech"], url: "https://www.tensorflow.org/"),
+        ContentItem(id: 3, title: "UI Design Principles", tags: ["design", "UX"], url: "https://developer.apple.com/design/"),
+        ContentItem(id: 4, title: "SwiftUI Animations", tags: ["coding", "animation"], url: "https://developer.apple.com/xcode/swiftui/"),
+        ContentItem(id: 5, title: "Productivity Hacks", tags: ["lifestyle", "work"], url: "https://todoist.com/productivity-methods"),
+        ContentItem(id: 6, title: "Future of Tech", tags: ["tech", "future"], url: "https://www.wired.com/")
     ]
     
     var body: some View {

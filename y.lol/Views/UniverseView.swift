@@ -5,12 +5,12 @@ struct UniverseView: View {
     
     // Sample data for the discovery grid
     let discoveryItems = [
-        ContentItem(id: 7, title: "Trending Tech News", tags: ["trending", "tech"]),
-        ContentItem(id: 8, title: "Popular Science", tags: ["science", "popular"]),
-        ContentItem(id: 9, title: "Digital Art Gallery", tags: ["art", "digital"]),
-        ContentItem(id: 10, title: "Indie Game Showcase", tags: ["games", "indie"]),
-        ContentItem(id: 11, title: "Sustainable Living", tags: ["eco", "lifestyle"]),
-        ContentItem(id: 12, title: "Space Exploration", tags: ["space", "science"])
+        ContentItem(id: 7, title: "Trending Tech News", tags: ["trending", "tech"], url: "https://techcrunch.com/"),
+        ContentItem(id: 8, title: "Popular Science", tags: ["science", "popular"], url: "https://www.popsci.com/"),
+        ContentItem(id: 9, title: "Digital Art Gallery", tags: ["art", "digital"], url: "https://www.behance.net/"),
+        ContentItem(id: 10, title: "Indie Game Showcase", tags: ["games", "indie"], url: "https://itch.io/"),
+        ContentItem(id: 11, title: "Sustainable Living", tags: ["eco", "lifestyle"], url: "https://www.treehugger.com/"),
+        ContentItem(id: 12, title: "Space Exploration", tags: ["space", "science"], url: "https://www.nasa.gov/")
     ]
     
     var body: some View {

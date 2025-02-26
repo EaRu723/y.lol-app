@@ -1,15 +1,23 @@
 import SwiftUI
+import LinkPresentation
 
 struct ContentCardView: View {
     let item: ContentItem
     
     var body: some View {
         VStack(alignment: .leading) {
-            // Placeholder image
-            Rectangle()
-                .fill(Color.blue.opacity(0.3))
-                .aspectRatio(16/9, contentMode: .fit)
-                .cornerRadius(8)
+            // Link preview instead of placeholder
+            if let url = URL(string: item.url) {
+                LinkPreviewView(url: url)
+                    .frame(height: 180)
+                    .cornerRadius(8)
+            } else {
+                // Fallback if URL is invalid
+                Rectangle()
+                    .fill(Color.blue.opacity(0.3))
+                    .aspectRatio(16/9, contentMode: .fit)
+                    .cornerRadius(8)
+            }
             
             Text(item.title)
                 .font(.headline)
@@ -33,5 +41,30 @@ struct ContentCardView: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(radius: 2)
+    }
+}
+
+// UIViewRepresentable wrapper for LPLinkView
+struct LinkPreviewView: UIViewRepresentable {
+    let url: URL
+    
+    func makeUIView(context: Context) -> LPLinkView {
+        let linkView = LPLinkView(url: url)
+        
+        // Start fetching metadata
+        let provider = LPMetadataProvider()
+        provider.startFetchingMetadata(for: url) { metadata, error in
+            if let metadata = metadata {
+                DispatchQueue.main.async {
+                    linkView.metadata = metadata
+                }
+            }
+        }
+        
+        return linkView
+    }
+    
+    func updateUIView(_ uiView: LPLinkView, context: Context) {
+        // Nothing to update
     }
 } 
