@@ -87,8 +87,11 @@ struct ContentView: View {
                                         MessageView(message: message, index: 0, totalCount: messages.count)
                                             .id(message.id)
                                             .transition(.asymmetric(
-                                                insertion: .scale(scale: 0.9).combined(with: .opacity),
-                                                removal: .opacity
+                                                insertion: .modifier(
+                                                    active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
+                                                    identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
+                                                ),
+                                                removal: .opacity.combined(with: .scale(scale: 0.9))
                                             ))
                                     }
                                 }
@@ -325,6 +328,21 @@ extension Array {
         stride(from: 0, to: count, by: size).map {
             Array(self[$0..<Swift.min($0 + size, count)])
         }
+    }
+}
+
+// Add this struct after the Color extension and before ContentView
+struct CustomTransitionModifier: ViewModifier {
+    let offset: CGFloat
+    let opacity: Double
+    let scale: CGFloat
+    
+    func body(content: Content) -> some View {
+        content
+            .offset(y: offset)
+            .opacity(opacity)
+            .scaleEffect(scale)
+            .blur(radius: opacity == 0 ? 5 : 0)
     }
 }
 
