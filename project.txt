@@ -24,6 +24,12 @@ COMPLETED:
    - Timestamps and metadata
    - Smooth animations for new messages
 
+5. Enhanced Animations
+   - Magical message transitions with blur and scaling
+   - Ambient particle system background
+   - Dynamic particle behavior during AI thinking
+   - Smooth page transitions
+
 TO DO:
 1. Interaction & Controls
    - Gesture controls
@@ -54,5 +60,10 @@ DESIGN NOTES:
   * AI messages: Light weight, 75% opacity
   * Metadata: Light weight, 30% opacity
 - Focus on minimal, magical interactions
+- Animation Philosophy:
+  * Subtle and purposeful
+  * Natural and fluid movements
+  * Responsive to app state
+  * Enhanced feedback during AI interactions
 
 Would you like to tackle any specific item from the TO DO list next?

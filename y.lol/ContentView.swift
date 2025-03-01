@@ -66,7 +66,82 @@ struct ContentView: View {
                             .opacity(0.03)
                             .blendMode(.multiply)
                     )
+                    .overlay(
+                        ParticleSystem(isThinking: $isThinking, geometry: geometry)
+                            .allowsHitTesting(false)
+                    )
                     .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    HeaderView(isThinking: $isThinking)
+                    
+                    // Spiral message layout
+                    TabView(selection: $currentPage) {
+                        ForEach(Array(paginatedMessages.enumerated()), id: \.offset) { pageIndex, pageMessages in
+                            ScrollViewReader { proxy in
+                                ScrollView {
+                                    LazyVStack(spacing: 12) {
+                                        ForEach(pageMessages) { message in
+                                            MessageView(message: message, index: 0, totalCount: messages.count)
+                                                .id(message.id)
+                                                .transition(.asymmetric(
+                                                    insertion: .modifier(
+                                                        active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
+                                                        identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
+                                                    ),
+                                                    removal: .opacity.combined(with: .scale(scale: 0.9))
+                                                ))
+                                        }
+                                    }
+                                    .padding(.vertical)
+                                }
+                                .onAppear {
+                                    scrollProxy = proxy
+                                }
+                            }
+                            .tag(pageIndex)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .onChange(of: messages.count) { oldCount, newCount in
+                        if newCount > oldCount && newCount % messagesPerPage == 1 {
+                            turnToNextPage()
+                        }
+                    }
+                    
+                    // Message input view
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 16) {
+                            TextField("Write your message...", text: $messageText)
+                                .padding(12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(Color(hex: "E4D5B7").opacity(0.7))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(Color(hex: "2C2C2C").opacity(0.2), lineWidth: 0.5)
+                                        )
+                                )
+                                .textFieldStyle(PlainTextFieldStyle())
+                                .font(.system(size: 16, weight: .regular, design: .serif))
+                                .foregroundColor(textColor)
+                            
+                            Button(action: sendMessage) {
+                                Image(systemName: "arrow.up.circle.fill")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
+                                    .background(
+                                        Circle()
+                                            .fill(Color(hex: "E4D5B7"))
+                                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                                    )
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 30)
+                    }
+                }
                 
                 // Haptic breathing effect
                 .onChange(of: isThinking) { oldValue, newValue in
@@ -75,73 +150,6 @@ struct ContentView: View {
                     } else {
                         stopBreathingHaptics()
                     }
-                }
-                
-                // Spiral message layout
-                TabView(selection: $currentPage) {
-                    ForEach(Array(paginatedMessages.enumerated()), id: \.offset) { pageIndex, pageMessages in
-                        ScrollViewReader { proxy in
-                            ScrollView {
-                                LazyVStack(spacing: 12) {
-                                    ForEach(pageMessages) { message in
-                                        MessageView(message: message, index: 0, totalCount: messages.count)
-                                            .id(message.id)
-                                            .transition(.asymmetric(
-                                                insertion: .modifier(
-                                                    active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
-                                                    identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
-                                                ),
-                                                removal: .opacity.combined(with: .scale(scale: 0.9))
-                                            ))
-                                    }
-                                }
-                                .padding(.vertical)
-                            }
-                            .onAppear {
-                                scrollProxy = proxy
-                            }
-                        }
-                        .tag(pageIndex)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .onChange(of: messages.count) { oldCount, newCount in
-                    if newCount > oldCount && newCount % messagesPerPage == 1 {
-                        turnToNextPage()
-                    }
-                }
-                
-                // Message input view
-                VStack {
-                    Spacer()
-                    HStack(spacing: 16) {
-                        TextField("Write your message...", text: $messageText)
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .fill(Color(hex: "E4D5B7").opacity(0.7))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .stroke(Color(hex: "2C2C2C").opacity(0.2), lineWidth: 0.5)
-                                    )
-                            )
-                            .textFieldStyle(PlainTextFieldStyle())
-                            .font(.system(size: 16, weight: .regular, design: .serif))
-                            .foregroundColor(textColor)
-                        
-                        Button(action: sendMessage) {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 32))
-                                .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
-                                .background(
-                                    Circle()
-                                        .fill(Color(hex: "E4D5B7"))
-                                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                                )
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 30)
                 }
                 
                 // Add this to the body of ContentView, right after ZStack {
@@ -343,6 +351,167 @@ struct CustomTransitionModifier: ViewModifier {
             .opacity(opacity)
             .scaleEffect(scale)
             .blur(radius: opacity == 0 ? 5 : 0)
+    }
+}
+
+// Add these new structures after CustomTransitionModifier and before ContentView
+struct Particle: Identifiable {
+    let id = UUID()
+    var position: CGPoint
+    var scale: CGFloat
+    var opacity: Double
+    var speed: CGFloat
+}
+
+struct ParticleSystem: View {
+    @Binding var isThinking: Bool
+    let geometry: GeometryProxy
+    @State private var particles: [Particle] = []
+    @State private var timer: Timer?
+    
+    var body: some View {
+        Canvas { context, size in
+            for particle in particles {
+                context.opacity = particle.opacity
+                context.scaleBy(x: particle.scale, y: particle.scale)
+                
+                let rect = CGRect(x: particle.position.x, y: particle.position.y, width: 4, height: 4)
+                context.fill(Path(ellipseIn: rect), with: .color(.black.opacity(0.1)))
+            }
+        }
+        .onAppear {
+            createInitialParticles()
+            startTimer()
+        }
+        .onDisappear {
+            timer?.invalidate()
+        }
+    }
+    
+    private func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 1/30, repeats: true) { _ in
+            updateParticles()
+        }
+    }
+    
+    private func createInitialParticles() {
+        for _ in 0..<20 {
+            particles.append(
+                Particle(
+                    position: CGPoint(
+                        x: CGFloat.random(in: 0...geometry.size.width),
+                        y: CGFloat.random(in: 0...geometry.size.height)
+                    ),
+                    scale: CGFloat.random(in: 0.5...1.5),
+                    opacity: Double.random(in: 0.1...0.3),
+                    speed: CGFloat.random(in: 0.2...0.8)
+                )
+            )
+        }
+    }
+    
+    private func updateParticles() {
+        for index in particles.indices {
+            var particle = particles[index]
+            let baseSpeed = particle.speed
+            let currentSpeed = isThinking ? baseSpeed * 2 : baseSpeed
+            
+            particle.position.y -= currentSpeed
+            
+            if particle.position.y < -10 {
+                particle.position.y = geometry.size.height + 10
+                particle.position.x = CGFloat.random(in: 0...geometry.size.width)
+            }
+            
+            particles[index] = particle
+        }
+    }
+}
+
+// Add this struct before ContentView
+struct HeaderView: View {
+    @State private var showButtons = false
+    @Binding var isThinking: Bool
+    @State private var gradientPhase: CGFloat = 0
+    
+    var body: some View {
+        HStack {
+            Button(action: {
+                // Menu action
+            }) {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
+            }
+            .opacity(showButtons ? 1 : 0)
+            .animation(.easeInOut(duration: 0.2), value: showButtons)
+            
+            Spacer()
+            
+            Button(action: {
+                withAnimation {
+                    showButtons.toggle()
+                }
+            }) {
+                ZStack {
+                    // Circle background with rotating gradient border
+                    Circle()
+                        .stroke(
+                            isThinking ?
+                            AnyShapeStyle(
+                                AngularGradient(
+                                    gradient: Gradient(
+                                        stops: [
+                                            .init(color: Color(hex: "E4D5B7"), location: 0.0),
+                                            .init(color: Color(hex: "2C2C2C"), location: 0.2),
+                                            .init(color: Color(hex: "E4D5B7"), location: 0.4),
+                                            .init(color: Color(hex: "2C2C2C"), location: 0.6),
+                                            .init(color: Color(hex: "E4D5B7"), location: 0.8),
+                                            .init(color: Color(hex: "2C2C2C"), location: 1.0)
+                                        ]
+                                    ),
+                                    center: .center,
+                                    startAngle: .degrees(0),
+                                    endAngle: .degrees(360)
+                                )
+                            ) :
+                            AnyShapeStyle(Color(hex: "2C2C2C").opacity(0.8)),
+                            lineWidth: 1.5
+                        )
+                        .frame(width: 40, height: 40)
+                        .rotationEffect(.degrees(isThinking ? 360 : 0))
+                    
+                    Text("Y")
+                        .font(.system(size: 24, weight: .light, design: .serif))
+                        .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
+                }
+            }
+            .onChange(of: isThinking) { oldValue, newValue in
+                if newValue {
+                    withAnimation(
+                        .linear(duration: 2.0)
+                        .repeatForever(autoreverses: false)
+                    ) {
+                        // Animation will be handled by the rotation effect
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            Button(action: {
+                // Settings action
+            }) {
+                Image(systemName: "gear")
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
+            }
+            .opacity(showButtons ? 1 : 0)
+            .animation(.easeInOut(duration: 0.2), value: showButtons)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
     }
 }
 
