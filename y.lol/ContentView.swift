@@ -8,10 +8,40 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.colorScheme) private var colorScheme
+    
     // State for messages
     @State private var messages: [ChatMessage] = []
     
     // Constants for styling
+    private var colors: (
+        background: Color,
+        text: Color,
+        accent: Color
+    ) {
+        switch colorScheme {
+        case .light:
+            return (
+                background: Color(hex: "F5F2E9"),    // light parchment
+                text: Color(hex: "2C2C2C"),          // dark gray
+                accent: Color(hex: "E4D5B7")         // warm beige
+            )
+        case .dark:
+            return (
+                background: Color(hex: "1C1C1E"),    // dark background
+                text: Color(hex: "F5F2E9"),          // light text
+                accent: Color(hex: "B8A179")         // darker warm accent
+            )
+        @unknown default:
+            return (
+                background: Color(hex: "F5F2E9"),
+                text: Color(hex: "2C2C2C"),
+                accent: Color(hex: "E4D5B7")
+            )
+        }
+    }
+    
+    // Update backgroundColor to use the palette
     private let backgroundColor = Color(hex: "F5F2E9")
     private let textColor = Color(hex: "2C2C2C").opacity(0.85)
     
@@ -65,9 +95,9 @@ struct ContentView: View {
         GeometryReader { geometry in
             ZStack {
                 // Background with texture
-                backgroundColor
+                colors.background
                     .overlay(
-                        Color.black
+                        Color.primary
                             .opacity(0.03)
                             .blendMode(.multiply)
                     )
@@ -254,6 +284,7 @@ struct ChatMessage: Identifiable {
 
 // Individual message view
 struct MessageView: View {
+    @Environment(\.colorScheme) private var colorScheme
     let message: ChatMessage
     let index: Int
     let totalCount: Int
@@ -269,7 +300,9 @@ struct MessageView: View {
             
             Text(message.content)
                 .font(.system(size: message.isUser ? 16 : 14, weight: message.isUser ? .regular : .light, design: .serif))
-                .foregroundColor(Color(hex: "2C2C2C").opacity(message.isUser ? 0.9 : 0.75))
+                .foregroundColor(colorScheme == .light ? 
+                    Color(hex: "2C2C2C").opacity(message.isUser ? 0.9 : 0.75) :
+                    Color(hex: "F5F2E9").opacity(message.isUser ? 0.9 : 0.75))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
             
@@ -416,6 +449,7 @@ struct ParticleSystem: View {
 
 // Add this struct before ContentView
 struct HeaderView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showButtons = false
     @Binding var isThinking: Bool
     @State private var gradientPhase: CGFloat = 0
@@ -427,7 +461,9 @@ struct HeaderView: View {
             }) {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 20))
-                    .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
+                    .foregroundColor(colorScheme == .light ? 
+                        Color(hex: "2C2C2C").opacity(0.8) :
+                        Color(hex: "F5F2E9").opacity(0.8))
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)
@@ -503,6 +539,7 @@ struct HeaderView: View {
 
 // Add this new view for the inline editor
 struct InlineEditorView: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var text: String
     @Binding var isEditing: Bool
     @FocusState var isFocused: Bool
@@ -514,7 +551,9 @@ struct InlineEditorView: View {
                 .focused($isFocused)
                 .frame(minHeight: 36, maxHeight: 120)
                 .font(.system(size: 16, weight: .regular, design: .serif))
-                .foregroundColor(Color(hex: "2C2C2C").opacity(0.9))
+                .foregroundColor(colorScheme == .light ? 
+                    Color(hex: "2C2C2C").opacity(0.9) :
+                    Color(hex: "F5F2E9").opacity(0.9))
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
                 .padding(.vertical, 8)
