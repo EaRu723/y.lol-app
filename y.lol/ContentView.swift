@@ -98,8 +98,8 @@ struct ContentView: View {
                                                 ))
                                         }
                                         
-                                        // Add inline editor if not editing
-                                        if !isEditing {
+                                        // Only show the editor on the last page and when not editing
+                                        if !isEditing && pageIndex == paginatedMessages.count - 1 {
                                             InlineEditorView(
                                                 text: $messageText,
                                                 isEditing: $isEditing,
