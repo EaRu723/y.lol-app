@@ -518,19 +518,17 @@ struct InlineEditorView: View {
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
                 .padding(.vertical, 8)
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button(action: onSend) {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 28))
-                                .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
-                        }
-                        .padding(.trailing, 8)
-                    }
+            
+            HStack {
+                Spacer()
+                Button(action: onSend) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
                 }
+            }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .padding(.horizontal, 20)
         .padding(.vertical, 8)
         .onAppear {
