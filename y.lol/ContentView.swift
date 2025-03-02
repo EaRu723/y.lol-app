@@ -498,12 +498,6 @@ struct InlineEditorView: View {
     var onSend: () -> Void
     let hapticService: HapticService
     
-    private let quickEmojis = ["🤔", "🥵", "🤬"]
-    
-    private var isMessageEmpty: Bool {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-    
     var body: some View {
         TextEditor(text: $text)
             .focused($isFocused)
@@ -523,38 +517,7 @@ struct InlineEditorView: View {
             }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
-                    Button(action: {
-                        // Photo picker action
-                    }) {
-                        Image(systemName: "photo")
-                            .font(.system(size: 20))
-                            .foregroundColor(colors.text.opacity(0.8))
-                    }
-                    
-                    Spacer()
-                    
-                    ForEach(quickEmojis, id: \.self) { emoji in
-                        Button(action: {
-                            text += emoji
-                        }) {
-                            Text(emoji)
-                                .font(.system(size: 20))
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        guard !isMessageEmpty else { return }
-                        onSend()
-                    }) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(isMessageEmpty ?
-                                colors.text.opacity(0.4) :
-                                colors.text.opacity(0.8))
-                    }
-                    .disabled(isMessageEmpty)
+                    KeyboardToolbarView(text: $text, onSend: onSend, hapticService: hapticService)
                 }
             }
             .onAppear {
@@ -565,7 +528,6 @@ struct InlineEditorView: View {
             }
     }
     
-    // Add this computed property to access the color scheme
     private var colors: (background: Color, text: Color, accent: Color) {
         switch colorScheme {
         case .light:
