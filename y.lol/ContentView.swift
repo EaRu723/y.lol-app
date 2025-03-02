@@ -91,6 +91,9 @@ struct ContentView: View {
     // Add this state variable to ContentView
     @State private var hasInitialized = false
     
+    // Add this property to ContentView
+    private let hapticService = HapticService()
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -134,7 +137,8 @@ struct ContentView: View {
                                                 text: $messageText,
                                                 isEditing: $isEditing,
                                                 isFocused: _isFocused,
-                                                onSend: sendMessage
+                                                onSend: sendMessage,
+                                                hapticService: hapticService
                                             )
                                             .transition(.opacity.combined(with: .move(edge: .bottom)))
                                         }
@@ -183,34 +187,13 @@ struct ContentView: View {
         }
     }
     
-    // Add these methods to ContentView
+    // Replace existing haptic methods with these:
     private func startBreathingHaptics() {
-        // Create a repeating timer for the breathing effect
-        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { timer in
-            guard isThinking else {
-                timer.invalidate()
-                return
-            }
-            
-            let generator = UIImpactFeedbackGenerator(style: .soft)
-            
-            // Fade in
-            for intensity in stride(from: 0.0, to: 1.0, by: 0.2) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + intensity) {
-                    generator.impactOccurred(intensity: intensity)
-                }
-            }
-            
-            // Fade out
-            for intensity in stride(from: 1.0, to: 0.0, by: -0.2) {
-                DispatchQueue.main.asyncAfter(deadline: .now() + (2.0 - intensity)) {
-                    generator.impactOccurred(intensity: intensity)
-                }
-            }
-        }
+        hapticService.startBreathing()
     }
     
     private func stopBreathingHaptics() {
+        hapticService.stopBreathing()
         isThinking = false
     }
     
@@ -223,8 +206,11 @@ struct ContentView: View {
         isEditing = false
         isFocused = false
         
+        // Play send haptic feedback
+        hapticService.playSendFeedback()
+        
         let newMessage = ChatMessage(
-            content: trimmedMessage, // Use trimmed message
+            content: trimmedMessage,
             isUser: true,
             timestamp: Date()
         )
@@ -244,6 +230,10 @@ struct ContentView: View {
                 isUser: false,
                 timestamp: Date()
             )
+            
+            // Play receive haptic feedback
+            hapticService.playReceiveFeedback()
+            
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 messages.append(response)
                 currentPage = paginatedMessages.count - 1
@@ -454,7 +444,6 @@ struct HeaderView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var showButtons = false
     @Binding var isThinking: Bool
-    @State private var gradientPhase: CGFloat = 0
     
     var body: some View {
         HStack {
@@ -477,48 +466,7 @@ struct HeaderView: View {
                     showButtons.toggle()
                 }
             }) {
-                ZStack {
-                    // Circle background with rotating gradient border
-                    Circle()
-                        .stroke(
-                            isThinking ?
-                            AnyShapeStyle(
-                                AngularGradient(
-                                    gradient: Gradient(
-                                        stops: [
-                                            .init(color: Color(hex: "E4D5B7"), location: 0.0),
-                                            .init(color: Color(hex: "2C2C2C"), location: 0.2),
-                                            .init(color: Color(hex: "E4D5B7"), location: 0.4),
-                                            .init(color: Color(hex: "2C2C2C"), location: 0.6),
-                                            .init(color: Color(hex: "E4D5B7"), location: 0.8),
-                                            .init(color: Color(hex: "2C2C2C"), location: 1.0)
-                                        ]
-                                    ),
-                                    center: .center,
-                                    startAngle: .degrees(0),
-                                    endAngle: .degrees(360)
-                                )
-                            ) :
-                            AnyShapeStyle(Color(hex: "2C2C2C").opacity(0.8)),
-                            lineWidth: 1.5
-                        )
-                        .frame(width: 40, height: 40)
-                        .rotationEffect(.degrees(isThinking ? 360 : 0))
-                    
-                    Text("Y")
-                        .font(.system(size: 24, weight: .light, design: .serif))
-                        .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
-                }
-            }
-            .onChange(of: isThinking) { oldValue, newValue in
-                if newValue {
-                    withAnimation(
-                        .linear(duration: 2.0)
-                        .repeatForever(autoreverses: false)
-                    ) {
-                        // Animation will be handled by the rotation effect
-                    }
-                }
+                YLogoView(size: 40, isLoading: isThinking)
             }
             
             Spacer()
@@ -548,6 +496,7 @@ struct InlineEditorView: View {
     @Binding var isEditing: Bool
     @FocusState var isFocused: Bool
     var onSend: () -> Void
+    let hapticService: HapticService
     
     private let quickEmojis = ["🤔", "🥵", "🤬"]
     
@@ -567,6 +516,11 @@ struct InlineEditorView: View {
             .background(Color.clear)
             .padding(.vertical, 8)
             .padding(.horizontal, 20)
+            .onChange(of: text) { oldValue, newValue in
+                if newValue.count > oldValue.count {
+                    hapticService.playTypingFeedback()
+                }
+            }
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Button(action: {

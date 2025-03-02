@@ -1,4 +1,12 @@
 //
+//  YLogoView.swift
+//  y.lol
+//
+//  Created by Andrea Russo on 3/1/25.
+//
+
+
+//
 //  y_lolApp.swift
 //  y.lol
 //
@@ -41,12 +49,13 @@ struct YLogoView: View {
         AngularGradient(
             gradient: Gradient(
                 stops: [
-                    .init(color: Color(hex: "E4D5B7"), location: 0.0),
-                    .init(color: Color(hex: "2C2C2C"), location: 0.2),
-                    .init(color: Color(hex: "E4D5B7"), location: 0.4),
-                    .init(color: Color(hex: "2C2C2C"), location: 0.6),
-                    .init(color: Color(hex: "E4D5B7"), location: 0.8),
-                    .init(color: Color(hex: "2C2C2C"), location: 1.0)
+                .init(color: Color(hex: "FF5733"), location: 0.0),  // Bright orange-red
+                .init(color: Color(hex: "FFBD33"), location: 0.17), // Amber/gold
+                .init(color: Color(hex: "33FF57"), location: 0.33), // Bright green
+                .init(color: Color(hex: "33FFBD"), location: 0.5),  // Turquoise
+                .init(color: Color(hex: "3357FF"), location: 0.67), // Bright blue
+                .init(color: Color(hex: "BD33FF"), location: 0.83), // Purple
+                .init(color: Color(hex: "FF3390"), location: 1.0)   // Pink
                 ]
             ),
             center: .center,
