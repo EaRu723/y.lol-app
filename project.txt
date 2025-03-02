@@ -13,15 +13,16 @@ COMPLETED:
    - Intensity fade in/out
 
 3. Message Input System
-   - Floating input field
-   - Parchment-style design
-   - Basic send functionality
+   - Inline document-style editor
+   - Seamless integration with conversation flow
+   - Keyboard-attached send button
+   - Multi-line text support
    - Temporary AI response simulation
 
 4. Visual Design
    - Minimal color palette
    - Typography-based message distinction
-   - Timestamps and metadata
+   - Timestamps on sent messages only
    - Smooth animations for new messages
 
 5. Enhanced Animations
@@ -34,20 +35,23 @@ TO DO:
 1. Interaction & Controls
    - Gesture controls
    - Message selection/interaction
-   - Keyboard handling
+   - Keyboard dismissal handling
    - Scroll behavior refinement
+   - Return key send support
 
 2. Enhanced Features
    - Real AI integration
    - Message history management
    - Media support (images, files)
    - Share functionality
+   - Message editing/deletion
 
 3. Polish & Refinement
    - Performance optimization
    - Accessibility features
    - Error handling
    - Loading states
+   - Keyboard height adjustments
 
 DESIGN NOTES:
 - Color Palette:
@@ -65,5 +69,10 @@ DESIGN NOTES:
   * Natural and fluid movements
   * Responsive to app state
   * Enhanced feedback during AI interactions
+- Input Philosophy:
+  * Document-like editing experience
+  * Contextual input placement
+  * Minimal UI elements
+  * Seamless transitions
 
 Would you like to tackle any specific item from the TO DO list next?

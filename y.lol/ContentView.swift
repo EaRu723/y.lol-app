@@ -28,6 +28,11 @@ struct ContentView: View {
     @State private var currentPage = 0
     private let messagesPerPage = 5
     
+    // Add these state variables
+    @State private var editingMessageIndex: Int?
+    @State private var isEditing: Bool = false
+    @FocusState private var isFocused: Bool
+    
     // Add this computed property to ContentView
     private var paginatedMessages: [[ChatMessage]] {
         var pages: [[ChatMessage]] = []
@@ -75,7 +80,7 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     HeaderView(isThinking: $isThinking)
                     
-                    // Spiral message layout
+                    // Modify the TabView section
                     TabView(selection: $currentPage) {
                         ForEach(Array(paginatedMessages.enumerated()), id: \.offset) { pageIndex, pageMessages in
                             ScrollViewReader { proxy in
@@ -92,6 +97,17 @@ struct ContentView: View {
                                                     removal: .opacity.combined(with: .scale(scale: 0.9))
                                                 ))
                                         }
+                                        
+                                        // Add inline editor if not editing
+                                        if !isEditing {
+                                            InlineEditorView(
+                                                text: $messageText,
+                                                isEditing: $isEditing,
+                                                isFocused: _isFocused,
+                                                onSend: sendMessage
+                                            )
+                                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                                        }
                                     }
                                     .padding(.vertical)
                                 }
@@ -107,39 +123,6 @@ struct ContentView: View {
                         if newCount > oldCount && newCount % messagesPerPage == 1 {
                             turnToNextPage()
                         }
-                    }
-                    
-                    // Message input view
-                    VStack {
-                        Spacer()
-                        HStack(spacing: 16) {
-                            TextField("Write your message...", text: $messageText)
-                                .padding(12)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .fill(Color(hex: "E4D5B7").opacity(0.7))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 20)
-                                                .stroke(Color(hex: "2C2C2C").opacity(0.2), lineWidth: 0.5)
-                                        )
-                                )
-                                .textFieldStyle(PlainTextFieldStyle())
-                                .font(.system(size: 16, weight: .regular, design: .serif))
-                                .foregroundColor(textColor)
-                            
-                            Button(action: sendMessage) {
-                                Image(systemName: "arrow.up.circle.fill")
-                                    .font(.system(size: 32))
-                                    .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
-                                    .background(
-                                        Circle()
-                                            .fill(Color(hex: "E4D5B7"))
-                                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                                    )
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 30)
                     }
                 }
                 
@@ -201,9 +184,12 @@ struct ContentView: View {
         isThinking = false
     }
     
-    // Add this method to ContentView
+    // Update sendMessage to handle the inline editor
     private func sendMessage() {
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        
+        isEditing = false
+        isFocused = false
         
         let newMessage = ChatMessage(
             content: messageText,
@@ -512,6 +498,47 @@ struct HeaderView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 8)
+    }
+}
+
+// Add this new view for the inline editor
+struct InlineEditorView: View {
+    @Binding var text: String
+    @Binding var isEditing: Bool
+    @FocusState var isFocused: Bool
+    var onSend: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextEditor(text: $text)
+                .focused($isFocused)
+                .frame(minHeight: 36, maxHeight: 120)
+                .font(.system(size: 16, weight: .regular, design: .serif))
+                .foregroundColor(Color(hex: "2C2C2C").opacity(0.9))
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .padding(.vertical, 8)
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button(action: onSend) {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
+                        }
+                        .padding(.trailing, 8)
+                    }
+                }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        .onAppear {
+            isFocused = true
+        }
+        .onTapGesture {
+            isEditing = true
+        }
     }
 }
 
