@@ -216,13 +216,15 @@ struct ContentView: View {
     
     // Update sendMessage to handle the inline editor
     private func sendMessage() {
-        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        // Trim whitespace and check if message is empty
+        let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedMessage.isEmpty else { return }
         
         isEditing = false
         isFocused = false
         
         let newMessage = ChatMessage(
-            content: messageText,
+            content: trimmedMessage, // Use trimmed message
             isUser: true,
             timestamp: Date()
         )
@@ -522,11 +524,13 @@ struct HeaderView: View {
             Spacer()
             
             Button(action: {
-                // Settings action
+                // Profile action
             }) {
-                Image(systemName: "gear")
+                Image(systemName: "person.circle")
                     .font(.system(size: 20))
-                    .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
+                    .foregroundColor(colorScheme == .light ? 
+                        Color(hex: "2C2C2C").opacity(0.8) :
+                        Color(hex: "F5F2E9").opacity(0.8))
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)
@@ -545,36 +549,89 @@ struct InlineEditorView: View {
     @FocusState var isFocused: Bool
     var onSend: () -> Void
     
+    private let quickEmojis = ["🤔", "🥵", "🤬"]
+    
+    private var isMessageEmpty: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            TextEditor(text: $text)
-                .focused($isFocused)
-                .frame(minHeight: 36, maxHeight: 120)
-                .font(.system(size: 16, weight: .regular, design: .serif))
-                .foregroundColor(colorScheme == .light ? 
-                    Color(hex: "2C2C2C").opacity(0.9) :
-                    Color(hex: "F5F2E9").opacity(0.9))
-                .scrollContentBackground(.hidden)
-                .background(Color.clear)
-                .padding(.vertical, 8)
-            
-            HStack {
-                Spacer()
-                Button(action: onSend) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundColor(Color(hex: "2C2C2C").opacity(0.8))
+        TextEditor(text: $text)
+            .focused($isFocused)
+            .frame(minHeight: 36, maxHeight: 120)
+            .font(.system(size: 16, weight: .regular, design: .serif))
+            .foregroundColor(colorScheme == .light ? 
+                Color(hex: "2C2C2C").opacity(0.9) :
+                Color(hex: "F5F2E9").opacity(0.9))
+            .scrollContentBackground(.hidden)
+            .background(Color.clear)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 20)
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Button(action: {
+                        // Photo picker action
+                    }) {
+                        Image(systemName: "photo")
+                            .font(.system(size: 20))
+                            .foregroundColor(colors.text.opacity(0.8))
+                    }
+                    
+                    Spacer()
+                    
+                    ForEach(quickEmojis, id: \.self) { emoji in
+                        Button(action: {
+                            text += emoji
+                        }) {
+                            Text(emoji)
+                                .font(.system(size: 20))
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        guard !isMessageEmpty else { return }
+                        onSend()
+                    }) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(isMessageEmpty ?
+                                colors.text.opacity(0.4) :
+                                colors.text.opacity(0.8))
+                    }
+                    .disabled(isMessageEmpty)
                 }
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
-        .onAppear {
-            isFocused = true
-        }
-        .onTapGesture {
-            isEditing = true
+            .onAppear {
+                isFocused = true
+            }
+            .onTapGesture {
+                isEditing = true
+            }
+    }
+    
+    // Add this computed property to access the color scheme
+    private var colors: (background: Color, text: Color, accent: Color) {
+        switch colorScheme {
+        case .light:
+            return (
+                background: Color(hex: "F5F2E9"),
+                text: Color(hex: "2C2C2C"),
+                accent: Color(hex: "E4D5B7")
+            )
+        case .dark:
+            return (
+                background: Color(hex: "1C1C1E"),
+                text: Color(hex: "F5F2E9"),
+                accent: Color(hex: "B8A179")
+            )
+        @unknown default:
+            return (
+                background: Color(hex: "F5F2E9"),
+                text: Color(hex: "2C2C2C"),
+                accent: Color(hex: "E4D5B7")
+            )
         }
     }
 }

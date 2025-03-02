@@ -24,6 +24,8 @@ COMPLETED:
    - Typography-based message distinction
    - Timestamps on sent messages only
    - Smooth animations for new messages
+   - Dark mode support with adaptive colors
+   - Dynamic color scheme switching
 
 5. Enhanced Animations
    - Magical message transitions with blur and scaling
@@ -55,20 +57,29 @@ TO DO:
 
 DESIGN NOTES:
 - Color Palette:
+  Light Mode:
   * Background: #F5F2E9 (parchment)
   * Text: #2C2C2C (varying opacities)
-  * Input elements: #E4D5B7
+  * Accent: #E4D5B7 (warm beige)
+  
+  Dark Mode:
+  * Background: #1C1C1E (dark background)
+  * Text: #F5F2E9 (light parchment)
+  * Accent: #B8A179 (darker warm accent)
+
 - Typography:
   * Serif font family
   * User messages: Regular weight, 90% opacity
   * AI messages: Light weight, 75% opacity
   * Metadata: Light weight, 30% opacity
+
 - Focus on minimal, magical interactions
 - Animation Philosophy:
   * Subtle and purposeful
   * Natural and fluid movements
   * Responsive to app state
   * Enhanced feedback during AI interactions
+
 - Input Philosophy:
   * Document-like editing experience
   * Contextual input placement
