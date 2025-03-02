@@ -94,6 +94,18 @@ struct ContentView: View {
     // Add this property to ContentView
     private let hapticService = HapticService()
     
+    // Add this array at the top of ContentView, before the body
+    private let rickResponses = [
+        "what's on your mind today?",
+        "tell me more about that feeling",
+        "sometimes silence speaks louder than words",
+        "let's sit with that thought for a moment",
+        "what does your intuition tell you?",
+        "there's wisdom in that observation",
+        "interesting... what led you there?",
+        "take a breath and explore that further"
+    ]
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -169,11 +181,11 @@ struct ContentView: View {
                     }
                 }
                 
-                // Add this to the body of ContentView, right after ZStack {
+                // Update the onAppear block in the body
                 .onAppear {
                     if !hasInitialized {
                         let initialMessage = ChatMessage(
-                            content: "how r u",
+                            content: "what's weighing on your mind today?",
                             isUser: false,
                             timestamp: Date()
                         )
@@ -226,7 +238,7 @@ struct ContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             isThinking = false
             let response = ChatMessage(
-                content: "This is a simulated response",
+                content: rickResponses.randomElement() ?? "interesting... tell me more",
                 isUser: false,
                 timestamp: Date()
             )
