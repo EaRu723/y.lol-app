@@ -10,8 +10,8 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     
-    // State for messages
-    @State private var messages: [ChatMessage] = []
+    // Replace your current message state with the ViewModel
+    @StateObject private var viewModel = ChatViewModel()
     
     // Constants for styling
     private var colors: (
@@ -50,6 +50,7 @@ struct ContentView: View {
     
     // Add after existing state variables
     @State private var messageText: String = ""
+
     
     // Add this state variable at the top of ContentView
     @State private var scrollProxy: ScrollViewProxy? = nil
@@ -68,7 +69,7 @@ struct ContentView: View {
         var pages: [[ChatMessage]] = []
         var currentPage: [ChatMessage] = []
         
-        for message in messages {
+        for message in viewModel.messages {
             if currentPage.isEmpty {
                 currentPage.append(message)
             } else if (message.isUser && currentPage.last?.isUser == false) ||
@@ -123,7 +124,7 @@ struct ContentView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    HeaderView(isThinking: $isThinking)
+                    HeaderView(isThinking: $viewModel.isThinking)
                     
                     // Modify the TabView section
                     TabView(selection: $currentPage) {
@@ -132,7 +133,7 @@ struct ContentView: View {
                                 ScrollView {
                                     LazyVStack(spacing: 12) {
                                         ForEach(pageMessages) { message in
-                                            MessageView(message: message, index: 0, totalCount: messages.count)
+                                            MessageView(message: message, index: 0, totalCount: viewModel.messages.count)
                                                 .id(message.id)
                                                 .transition(.asymmetric(
                                                     insertion: .modifier(
@@ -165,7 +166,7 @@ struct ContentView: View {
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
-                    .onChange(of: messages.count) { oldCount, newCount in
+                    .onChange(of: viewModel.messages.count) { oldCount, newCount in
                         if newCount > oldCount && newCount % messagesPerPage == 1 {
                             turnToNextPage()
                         }
@@ -190,7 +191,7 @@ struct ContentView: View {
                             timestamp: Date()
                         )
                         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                            messages.append(initialMessage)
+                            viewModel.messages.append(initialMessage)
                         }
                         hasInitialized = true
                     }
@@ -211,45 +212,15 @@ struct ContentView: View {
     
     // Update sendMessage to handle the inline editor
     private func sendMessage() {
-        // Trim whitespace and check if message is empty
-        let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedMessage.isEmpty else { return }
+        // Set the message in the ViewModel before sending
+        viewModel.messageText = messageText
         
-        isEditing = false
-        isFocused = false
-        
-        // Play send haptic feedback
-        hapticService.playSendFeedback()
-        
-        let newMessage = ChatMessage(
-            content: trimmedMessage,
-            isUser: true,
-            timestamp: Date()
-        )
-        
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-            messages.append(newMessage)
-            currentPage = paginatedMessages.count - 1
-        }
-        
+        // Clear local message text
         messageText = ""
-        isThinking = true
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            isThinking = false
-            let response = ChatMessage(
-                content: rickResponses.randomElement() ?? "interesting... tell me more",
-                isUser: false,
-                timestamp: Date()
-            )
-            
-            // Play receive haptic feedback
-            hapticService.playReceiveFeedback()
-            
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                messages.append(response)
-                currentPage = paginatedMessages.count - 1
-            }
+        // Delegate to the ViewModel's sendMessage
+        Task {
+            await viewModel.sendMessage()
         }
     }
     
@@ -262,8 +233,8 @@ struct ContentView: View {
     
     // Add this helper function to ContentView
     private func scrollToLatest() {
-        guard let lastMessage = messages.last else { return }
-        if messages.count % messagesPerPage == 1 {
+        guard let lastMessage = viewModel.messages.last else { return }
+        if viewModel.messages.count % messagesPerPage == 1 {
             // Let the page turn animation complete before scrolling
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation {
