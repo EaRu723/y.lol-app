@@ -271,6 +271,7 @@
 				CODE_SIGN_ENTITLEMENTS = y.lol/y_lol.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_VERSION = "compiler-default";
 				DEVELOPMENT_ASSET_PATHS = "\"y.lol/Preview Content\"";
 				DEVELOPMENT_TEAM = 4VHRNQXBBK;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -310,6 +311,7 @@
 				CODE_SIGN_ENTITLEMENTS = y.lol/y_lol.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_VERSION = "compiler-default";
 				DEVELOPMENT_ASSET_PATHS = "\"y.lol/Preview Content\"";
 				DEVELOPMENT_TEAM = 4VHRNQXBBK;
 				ENABLE_HARDENED_RUNTIME = YES;
