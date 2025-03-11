@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
     
     // Replace your current message state with the ViewModel
     @StateObject private var viewModel = ChatViewModel()
+    @State private var showProfile = false
+    @StateObject private var authManager = AuthenticationManager.shared
+
     
     // Constants for styling
     private var colors: (
@@ -124,7 +128,7 @@ struct ContentView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    HeaderView(isThinking: $viewModel.isThinking)
+                    HeaderView(isThinking: $viewModel.isThinking, showProfile: $showProfile)
                     
                     // Modify the TabView section
                     TabView(selection: $currentPage) {
@@ -195,6 +199,10 @@ struct ContentView: View {
                         }
                         hasInitialized = true
                     }
+                }
+                .sheet(isPresented: $showProfile) {
+                    ProfileView()
+                        .environmentObject(authManager)
                 }
             }
         }
@@ -425,8 +433,9 @@ struct ParticleSystem: View {
 // Add this struct before ContentView
 struct HeaderView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @State private var showButtons = false
     @Binding var isThinking: Bool
+    @Binding var showProfile: Bool  // New binding for profile sheet
+    @State private var showButtons = false // Added missing state variable
     
     // Colors based on color scheme
     private var colors: (background: Color, text: Color, accent: Color) {
@@ -490,7 +499,8 @@ struct HeaderView: View {
             Spacer()
             
             Button(action: {
-                // Profile action
+                // Profile action - show profile sheet
+                showProfile = true
             }) {
                 Image(systemName: "person.circle")
                     .font(.system(size: 20))
