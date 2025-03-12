@@ -87,18 +87,18 @@ struct OnboardingView: View {
                     .padding()
                 }
                 #endif
-                
+                Spacer()
                 // Yin Yang symbol
                 SimplifiedYinYangView(
-                    size: 200,
+                    size: 100,
                     lightColor: colorScheme == .light ? .white : Color(hex: "1C1C1E"),
                     darkColor: colorScheme == .light ? Color(hex: "2C2C2C") : Color(hex: "F5F2E9")
                 )
                 .rotationEffect(.degrees(90))
-                
+                Spacer()
                 // Animated text
                 Text(displayedText)
-                    .font(.system(size: 24, weight: .light, design: .serif))
+                    .font(.system(size: 18, weight: .light, design: .serif))
                     .foregroundColor(colors.text)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
@@ -129,7 +129,7 @@ struct OnboardingView: View {
                     .padding(.horizontal, 40)
                 } else {
                     Button(action: nextPage) {
-                        Text("Next")
+                        Text("Continue")
                             .font(.system(size: 18, weight: .medium))
                             .foregroundColor(colors.text)
                             .frame(maxWidth: .infinity)
