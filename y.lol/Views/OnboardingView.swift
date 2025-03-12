@@ -38,6 +38,9 @@ struct OnboardingView: View {
     @State private var showingDebugMenu = false
     #endif
     
+    @StateObject private var authManager = AuthenticationManager.shared
+    private let signInAppleHelper = SignInAppleHelper()
+    
     private let pages = [
         OnboardingPage(text: "hi", hapticStyle: .light),
         OnboardingPage(text: "you could be anywhere right now \n\n but you're here", hapticStyle: .medium),
@@ -110,8 +113,19 @@ struct OnboardingView: View {
                 if currentPage == pages.count - 1 {
                     // Sign in with Apple button on last page
                     Button(action: {
-                        withAnimation {
-                            hasCompletedOnboarding = true
+                        Task {
+                            do {
+                                // First get the Apple sign in tokens
+                                let tokens = try await signInAppleHelper.startSignInWithAppleFlow()
+                                // Then use the tokens to sign in with Firebase
+                                try await authManager.signInWithApple(tokens: tokens)
+                                withAnimation {
+                                    hasCompletedOnboarding = true
+                                }
+                            } catch {
+                                print("Failed to sign in with Apple: \(error)")
+                                // You might want to show an alert here
+                            }
                         }
                     }) {
                         HStack {
