@@ -11,10 +11,13 @@ import FirebaseAuth
 struct RootView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @State private var isAuthenticated = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     var body: some View {
         Group {
-            if isAuthenticated {
+            if !hasCompletedOnboarding {
+                OnboardingView()
+            } else if isAuthenticated {
                 ContentView()
             } else {
                 LoginView()
