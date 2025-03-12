@@ -8,6 +8,19 @@
 import Foundation
 import SwiftUI
 
+#if DEBUG
+// Development helper to manage onboarding state
+class OnboardingStateManager: ObservableObject {
+    static let shared = OnboardingStateManager()
+    
+    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    
+    func resetOnboarding() {
+        hasCompletedOnboarding = false
+    }
+}
+#endif
+
 struct OnboardingPage {
     let text: String
     let hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle
@@ -20,10 +33,15 @@ struct OnboardingView: View {
     @State private var displayedText = ""
     @State private var isTyping = false
     
+    #if DEBUG
+    @StateObject private var stateManager = OnboardingStateManager.shared
+    @State private var showingDebugMenu = false
+    #endif
+    
     private let pages = [
-        OnboardingPage(text: "Welcome to y.lol, where simplicity meets wisdom", hapticStyle: .light),
-        OnboardingPage(text: "Your AI companion for meaningful conversations", hapticStyle: .medium),
-        OnboardingPage(text: "Let's begin your journey", hapticStyle: .heavy)
+        OnboardingPage(text: "hi", hapticStyle: .light),
+        OnboardingPage(text: "you could be anywhere right now \n\n but you're here", hapticStyle: .medium),
+        OnboardingPage(text: "Y", hapticStyle: .heavy)
     ]
     
     private var colors: (background: Color, text: Color) {
@@ -57,7 +75,18 @@ struct OnboardingView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 40) {
-                Spacer()
+                #if DEBUG
+                // Debug controls - only visible in development
+                HStack {
+                    Spacer()
+                    Button(action: { showingDebugMenu = true }) {
+                        Image(systemName: "gear")
+                            .font(.system(size: 20))
+                            .foregroundColor(colors.text.opacity(0.5))
+                    }
+                    .padding()
+                }
+                #endif
                 
                 // Yin Yang symbol
                 SimplifiedYinYangView(
@@ -65,6 +94,7 @@ struct OnboardingView: View {
                     lightColor: colorScheme == .light ? .white : Color(hex: "1C1C1E"),
                     darkColor: colorScheme == .light ? Color(hex: "2C2C2C") : Color(hex: "F5F2E9")
                 )
+                .rotationEffect(.degrees(90))
                 
                 // Animated text
                 Text(displayedText)
@@ -112,6 +142,42 @@ struct OnboardingView: View {
                 
                 Spacer().frame(height: 40)
             }
+            #if DEBUG
+            .sheet(isPresented: $showingDebugMenu) {
+                NavigationView {
+                    List {
+                        Section(header: Text("Onboarding Debug Controls")) {
+                            Button("Reset Onboarding") {
+                                stateManager.resetOnboarding()
+                                showingDebugMenu = false
+                            }
+                            
+                            Button("Skip to Page 1") {
+                                currentPage = 0
+                                startTypingAnimation()
+                                showingDebugMenu = false
+                            }
+                            
+                            Button("Skip to Page 2") {
+                                currentPage = 1
+                                startTypingAnimation()
+                                showingDebugMenu = false
+                            }
+                            
+                            Button("Skip to Final Page") {
+                                currentPage = pages.count - 1
+                                startTypingAnimation()
+                                showingDebugMenu = false
+                            }
+                        }
+                    }
+                    .navigationTitle("Debug Menu")
+                    .navigationBarItems(trailing: Button("Done") {
+                        showingDebugMenu = false
+                    })
+                }
+            }
+            #endif
         }
         .onAppear {
             startTypingAnimation()
@@ -145,4 +211,8 @@ struct OnboardingView: View {
             }
         }
     }
+}
+
+#Preview {
+    OnboardingView()
 }
