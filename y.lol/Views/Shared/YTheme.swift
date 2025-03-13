@@ -58,7 +58,7 @@ enum YTheme {
     /// Typography definitions
     enum Typography {
         static func serif(size: CGFloat, weight: Font.Weight = .regular) -> Font {
-            .system(size: size, weight: weight, design: .serif)
+            .custom("Baskerville", size: size)
         }
         
         static func regular(size: CGFloat, weight: Font.Weight = .regular) -> Font {
