@@ -9,14 +9,11 @@ import SwiftUI
 
 struct HeaderView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     @Binding var isThinking: Bool
     @Binding var showProfile: Bool  // New binding for profile sheet
     @State private var showButtons = false // Added missing state variable
     
-    // Replace custom colors with theme
-    private var colors: YTheme.Colors.Dynamic {
-        YTheme.Colors.dynamic
-    }
     
     var body: some View {
         HStack {

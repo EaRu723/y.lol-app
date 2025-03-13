@@ -9,21 +9,19 @@ import SwiftUI
 
 struct MessageView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     
     let message: ChatMessage
     let index: Int
     let totalCount: Int
     
-    private var colors: YTheme.Colors.Dynamic {
-        YTheme.Colors.dynamic
-    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Show 'Y' label only for non-user messages
             if !message.isUser {
                 Text("Y")
-                    .font(YTheme.Typography.serif(size: 10, weight: .medium))
+                    .font(YTheme.Typography.small)
                     .foregroundColor(colors.text(opacity: 0.4))
                     .padding(.bottom, 4)
             }
@@ -40,7 +38,7 @@ struct MessageView: View {
             
             // Timestamp
             Text(formatTimestamp(message.timestamp))
-                .font(YTheme.Typography.regular(size: 8, weight: .light))
+                .font(YTheme.Typography.caption)
                 .foregroundColor(colors.text(opacity: 0.3))
         }
         .frame(maxWidth: .infinity)

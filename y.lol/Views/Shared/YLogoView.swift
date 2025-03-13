@@ -15,18 +15,15 @@
 
 import SwiftUI
 
+
 struct YLogoView: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     let size: CGFloat
     let isLoading: Bool
     
     init(size: CGFloat = 40, isLoading: Bool = false) {
         self.size = size
         self.isLoading = isLoading
-    }
-    
-    private var colors: YTheme.Colors.Dynamic {
-        YTheme.Colors.dynamic
     }
     
     private var loadingGradient: AngularGradient {
@@ -83,5 +80,5 @@ struct YLogoView: View {
             .preferredColorScheme(.dark)
     }
     .padding()
-    .background(YTheme.Colors.dynamic.backgroundWithNoise)
+    .withYTheme()
 }

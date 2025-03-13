@@ -28,6 +28,7 @@ struct OnboardingPage {
 
 struct OnboardingView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var currentPage = 0
     @State private var displayedText = ""
@@ -47,9 +48,6 @@ struct OnboardingView: View {
         OnboardingPage(text: "Y", hapticStyle: .heavy)
     ]
     
-    private var colors: YTheme.Colors.Dynamic {
-        YTheme.Colors.dynamic
-    }
     
     var body: some View {
         ZStack {

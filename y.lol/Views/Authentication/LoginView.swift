@@ -9,16 +9,14 @@ import SwiftUI
 import AuthenticationServices
 
 struct LoginView: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
+    @Environment(\.colorScheme) private var colorScheme // Add this line
     @StateObject private var authHelper = SignInAppleHelper()
     @EnvironmentObject private var authManager: AuthenticationManager
     @State private var isLoading = false
     @State private var errorMessage = ""
     
-    // Replace custom colors with theme
-    private var colors: YTheme.Colors.Dynamic {
-        YTheme.Colors.dynamic
-    }
+
     
     var body: some View {
         ZStack {
@@ -36,7 +34,7 @@ struct LoginView: View {
                 )
                 
                 Text("Y")
-                    .font(YTheme.Typography.serif(size: 24, weight: .light))
+                    .font(YTheme.Typography.title)
                     .foregroundColor(colors.text)
                 
                 Spacer().frame(height: 40)
@@ -47,7 +45,7 @@ struct LoginView: View {
                         Image(systemName: "apple.logo")
                             .font(.system(size: 20))
                         Text("Sign in with Apple")
-                            .font(.system(size: 18, weight: .medium))
+                            .font(YTheme.Typography.subtitle)
                     }
                     .foregroundColor(colorScheme == .dark ? .black : .white)
                     .frame(maxWidth: .infinity)
@@ -60,7 +58,7 @@ struct LoginView: View {
                 
                 if !errorMessage.isEmpty {
                     Text(errorMessage)
-                        .font(YTheme.Typography.regular(size: 12))
+                        .font(YTheme.Typography.caption)
                         .foregroundColor(.red)
                         .padding()
                 }

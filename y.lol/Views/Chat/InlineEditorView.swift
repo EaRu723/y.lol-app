@@ -19,7 +19,7 @@ struct InlineEditorView: View {
         TextEditor(text: $text)
             .focused($isFocused)
             .frame(minHeight: 36, maxHeight: 120)
-            .font(.system(size: 16, weight: .regular, design: .serif))
+            .font(YTheme.Typography.body)
             .foregroundColor(colorScheme == .light ?
                 Color(hex: "2C2C2C").opacity(0.9) :
                 Color(hex: "F5F2E9").opacity(0.9))

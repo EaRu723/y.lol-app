@@ -15,6 +15,7 @@ struct y_lolApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .withYTheme()
         }
     }
 }

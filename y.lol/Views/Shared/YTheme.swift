@@ -21,7 +21,11 @@ enum YTheme {
         
         /// Dynamic colors that automatically adapt to color scheme
         struct Dynamic {
-            @Environment(\.colorScheme) private var colorScheme
+            let colorScheme: ColorScheme
+            
+            init(colorScheme: ColorScheme) {
+                self.colorScheme = colorScheme
+            }
             
             var background: Color {
                 colorScheme == .light ? parchmentLight : parchmentDark
@@ -49,11 +53,6 @@ enum YTheme {
                 )
             }
         }
-        
-        /// Access dynamic colors
-        static var dynamic: Dynamic {
-            Dynamic()
-        }
     }
     
     /// Typography definitions
@@ -65,6 +64,59 @@ enum YTheme {
         static func regular(size: CGFloat, weight: Font.Weight = .regular) -> Font {
             .system(size: size, weight: weight)
         }
+        
+        // Add these new convenience methods
+        static var title: Font {
+            serif(size: 24, weight: .bold)
+        }
+        
+        static var subtitle: Font {
+            serif(size: 18, weight: .medium)
+        }
+        
+        static var body: Font {
+            serif(size: 16, weight: .regular)
+        }
+        
+        static var caption: Font {
+            regular(size: 12, weight: .light)
+        }
+        
+        static var small: Font {
+            regular(size: 10, weight: .medium)
+        }
+    }
+}
+
+// MARK: - Environment Integration
+
+/// Define a custom environment key for YTheme colors
+private struct ThemeColorsKey: EnvironmentKey {
+    static let defaultValue: YTheme.Colors.Dynamic = YTheme.Colors.Dynamic(colorScheme: .light)
+}
+
+/// Extend environment values to include theme colors
+extension EnvironmentValues {
+    var themeColors: YTheme.Colors.Dynamic {
+        get { self[ThemeColorsKey.self] }
+        set { self[ThemeColorsKey.self] = newValue }
+    }
+}
+
+/// View modifier to automatically update theme colors based on colorScheme
+struct ThemeModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    
+    func body(content: Content) -> some View {
+        content
+            .environment(\.themeColors, YTheme.Colors.Dynamic(colorScheme: colorScheme))
+    }
+}
+
+/// View extension to easily apply the theme
+extension View {
+    func withYTheme() -> some View {
+        modifier(ThemeModifier())
     }
 }
 
@@ -96,20 +148,28 @@ extension Color {
 }
 
 #Preview {
-    Group {
+    ThemePreview()
+        .withYTheme() // Apply the theme modifier
+}
+
+// Updated preview component
+private struct ThemePreview: View {
+    @Environment(\.themeColors) private var colors
+    
+    var body: some View {
         VStack(spacing: 20) {
             // Header to show which theme we're looking at
             Text("Theme Preview")
-                .font(YTheme.Typography.serif(size: 24, weight: .bold))
+                .font(YTheme.Typography.title)
             
             // Color samples
             VStack(alignment: .leading, spacing: 16) {
-                ColorSampleRow(label: "Background", color: YTheme.Colors.dynamic.background)
-                ColorSampleRow(label: "Text", color: YTheme.Colors.dynamic.text)
-                ColorSampleRow(label: "Accent", color: YTheme.Colors.dynamic.accent)
+                ColorSampleRow(label: "Background", color: colors.background)
+                ColorSampleRow(label: "Text", color: colors.text)
+                ColorSampleRow(label: "Accent", color: colors.accent)
             }
             .padding()
-            .background(YTheme.Colors.dynamic.backgroundWithNoise)
+            .background(colors.backgroundWithNoise)
             .cornerRadius(12)
             
             // Mock message bubbles to simulate ContentView
@@ -120,19 +180,20 @@ extension Color {
             .padding()
         }
         .padding()
-        .background(YTheme.Colors.dynamic.background)
+        .background(colors.background)
     }
 }
 
 // Helper views for the preview
 private struct ColorSampleRow: View {
+    @Environment(\.themeColors) private var colors
     let label: String
     let color: Color
     
     var body: some View {
         HStack {
             Text(label)
-                .foregroundColor(YTheme.Colors.dynamic.text)
+                .foregroundColor(colors.text)
             Spacer()
             RoundedRectangle(cornerRadius: 6)
                 .fill(color)
@@ -142,6 +203,7 @@ private struct ColorSampleRow: View {
 }
 
 private struct MessageBubble: View {
+    @Environment(\.themeColors) private var colors
     let text: String
     let isUser: Bool
     
@@ -150,8 +212,8 @@ private struct MessageBubble: View {
             if isUser { Spacer() }
             Text(text)
                 .padding(12)
-                .background(isUser ? YTheme.Colors.dynamic.accent : YTheme.Colors.dynamic.text.opacity(0.1))
-                .foregroundColor(isUser ? YTheme.Colors.dynamic.text : YTheme.Colors.dynamic.text)
+                .background(isUser ? colors.accent : colors.text.opacity(0.1))
+                .foregroundColor(isUser ? colors.text : colors.text)
                 .cornerRadius(16)
             if !isUser { Spacer() }
         }

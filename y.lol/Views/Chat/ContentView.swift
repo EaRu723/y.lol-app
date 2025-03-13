@@ -10,6 +10,7 @@ import FirebaseAuth
 
 struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     
     // Replace your current message state with the ViewModel
     @StateObject private var viewModel = ChatViewModel()
@@ -17,10 +18,6 @@ struct ContentView: View {
     @StateObject private var authManager = AuthenticationManager.shared
 
     
-    // Replace custom colors with theme
-    private var colors: YTheme.Colors.Dynamic {
-        YTheme.Colors.dynamic
-    }
     
     // Update backgroundColor to use the palette
     // private let backgroundColor = Color(hex: "F5F2E9")
