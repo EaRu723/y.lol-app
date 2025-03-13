@@ -17,37 +17,14 @@ struct ContentView: View {
     @StateObject private var authManager = AuthenticationManager.shared
 
     
-    // Constants for styling
-    private var colors: (
-        background: Color,
-        text: Color,
-        accent: Color
-    ) {
-        switch colorScheme {
-        case .light:
-            return (
-                background: Color(hex: "F5F2E9"),    // light parchment
-                text: Color(hex: "2C2C2C"),          // dark gray
-                accent: Color(hex: "E4D5B7")         // warm beige
-            )
-        case .dark:
-            return (
-                background: Color(hex: "1C1C1E"),    // dark background
-                text: Color(hex: "F5F2E9"),          // light text
-                accent: Color(hex: "B8A179")         // darker warm accent
-            )
-        @unknown default:
-            return (
-                background: Color(hex: "F5F2E9"),
-                text: Color(hex: "2C2C2C"),
-                accent: Color(hex: "E4D5B7")
-            )
-        }
+    // Replace custom colors with theme
+    private var colors: YTheme.Colors.Dynamic {
+        YTheme.Colors.dynamic
     }
     
     // Update backgroundColor to use the palette
-    private let backgroundColor = Color(hex: "F5F2E9")
-    private let textColor = Color(hex: "2C2C2C").opacity(0.85)
+    // private let backgroundColor = Color(hex: "F5F2E9")
+    // private let textColor = Color(hex: "2C2C2C").opacity(0.85)
     
     // Add after backgroundColor declaration
     @State private var isThinking: Bool = false
@@ -115,22 +92,12 @@ struct ContentView: View {
         GeometryReader { geometry in
             ZStack {
                 // Background with texture
-                colors.background
-                    .overlay(
-                        Color.primary
-                            .opacity(0.03)
-                            .blendMode(.multiply)
-                    )
-                    .overlay(
-                        ParticleSystem(isThinking: $isThinking, geometry: geometry)
-                            .allowsHitTesting(false)
-                    )
+                colors.backgroundWithNoise
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     HeaderView(isThinking: $viewModel.isThinking, showProfile: $showProfile)
                     
-                    // Modify the TabView section
                     TabView(selection: $currentPage) {
                         ForEach(Array(paginatedMessages.enumerated()), id: \.offset) { pageIndex, pageMessages in
                             ScrollViewReader { proxy in
@@ -148,7 +115,6 @@ struct ContentView: View {
                                                 ))
                                         }
                                         
-                                        // Only show the editor on the last page and when not editing
                                         if !isEditing && pageIndex == paginatedMessages.count - 1 {
                                             InlineEditorView(
                                                 text: $messageText,
@@ -177,7 +143,6 @@ struct ContentView: View {
                     }
                 }
                 
-                // Haptic breathing effect
                 .onChange(of: isThinking) { oldValue, newValue in
                     if newValue {
                         startBreathingHaptics()
@@ -186,7 +151,6 @@ struct ContentView: View {
                     }
                 }
                 
-                // Update the onAppear block in the body
                 .onAppear {
                     if !hasInitialized {
                         let initialMessage = ChatMessage(
@@ -257,36 +221,7 @@ struct ContentView: View {
     }
 }
 
-
-
-// Color hex extension
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3:
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6:
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8:
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
-        }
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
-    }
-}
-
-// Add this extension for array chunking
+// Keep these extensions and structs
 extension Array {
     func chunked(into size: Int) -> [[Element]] {
         stride(from: 0, to: count, by: size).map {
@@ -295,7 +230,6 @@ extension Array {
     }
 }
 
-// Add this struct after the Color extension and before ContentView
 struct CustomTransitionModifier: ViewModifier {
     let offset: CGFloat
     let opacity: Double
@@ -309,78 +243,3 @@ struct CustomTransitionModifier: ViewModifier {
             .blur(radius: opacity == 0 ? 5 : 0)
     }
 }
-
-// Add these new structures after CustomTransitionModifier and before ContentView
-struct Particle: Identifiable {
-    let id = UUID()
-    var position: CGPoint
-    var scale: CGFloat
-    var opacity: Double
-    var speed: CGFloat
-}
-
-struct ParticleSystem: View {
-    @Binding var isThinking: Bool
-    let geometry: GeometryProxy
-    @State private var particles: [Particle] = []
-    @State private var timer: Timer?
-    
-    var body: some View {
-        Canvas { context, size in
-            for particle in particles {
-                context.opacity = particle.opacity
-                context.scaleBy(x: particle.scale, y: particle.scale)
-                
-                let rect = CGRect(x: particle.position.x, y: particle.position.y, width: 4, height: 4)
-                context.fill(Path(ellipseIn: rect), with: .color(.black.opacity(0.1)))
-            }
-        }
-        .onAppear {
-            createInitialParticles()
-            startTimer()
-        }
-        .onDisappear {
-            timer?.invalidate()
-        }
-    }
-    
-    private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1/30, repeats: true) { _ in
-            updateParticles()
-        }
-    }
-    
-    private func createInitialParticles() {
-        for _ in 0..<20 {
-            particles.append(
-                Particle(
-                    position: CGPoint(
-                        x: CGFloat.random(in: 0...geometry.size.width),
-                        y: CGFloat.random(in: 0...geometry.size.height)
-                    ),
-                    scale: CGFloat.random(in: 0.5...1.5),
-                    opacity: Double.random(in: 0.1...0.3),
-                    speed: CGFloat.random(in: 0.2...0.8)
-                )
-            )
-        }
-    }
-    
-    private func updateParticles() {
-        for index in particles.indices {
-            var particle = particles[index]
-            let baseSpeed = particle.speed
-            let currentSpeed = isThinking ? baseSpeed * 2 : baseSpeed
-            
-            particle.position.y -= currentSpeed
-            
-            if particle.position.y < -10 {
-                particle.position.y = geometry.size.height + 10
-                particle.position.x = CGFloat.random(in: 0...geometry.size.width)
-            }
-            
-            particles[index] = particle
-        }
-    }
-}
-

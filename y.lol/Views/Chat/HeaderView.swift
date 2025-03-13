@@ -13,28 +13,9 @@ struct HeaderView: View {
     @Binding var showProfile: Bool  // New binding for profile sheet
     @State private var showButtons = false // Added missing state variable
     
-    // Colors based on color scheme
-    private var colors: (background: Color, text: Color, accent: Color) {
-        switch colorScheme {
-        case .light:
-            return (
-                background: Color(hex: "F5F2E9"),    // light parchment
-                text: Color(hex: "2C2C2C"),          // dark gray
-                accent: Color(hex: "E4D5B7")         // warm beige
-            )
-        case .dark:
-            return (
-                background: Color(hex: "1C1C1E"),    // dark background
-                text: Color(hex: "F5F2E9"),          // light text
-                accent: Color(hex: "B8A179")         // darker warm accent
-            )
-        @unknown default:
-            return (
-                background: Color(hex: "F5F2E9"),
-                text: Color(hex: "2C2C2C"),
-                accent: Color(hex: "E4D5B7")
-            )
-        }
+    // Replace custom colors with theme
+    private var colors: YTheme.Colors.Dynamic {
+        YTheme.Colors.dynamic
     }
     
     var body: some View {
@@ -44,9 +25,7 @@ struct HeaderView: View {
             }) {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 20))
-                    .foregroundColor(colorScheme == .light ?
-                        Color(hex: "2C2C2C").opacity(0.8) :
-                        Color(hex: "F5F2E9").opacity(0.8))
+                    .foregroundColor(colors.text(opacity: 0.8))
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)
@@ -58,12 +37,11 @@ struct HeaderView: View {
                     showButtons.toggle()
                 }
             }) {
-                // YinYang logo with colors matching the theme
                 YinYangLogoView(
                     size: 40,
                     isLoading: isThinking,
-                    lightColor: colorScheme == .light ? .white : Color(hex: "1C1C1E"),
-                    darkColor: colorScheme == .light ? Color(hex: "2C2C2C") : Color(hex: "F5F2E9")
+                    lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
+                    darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
                 )
                 .background(
                     Circle()
@@ -81,9 +59,7 @@ struct HeaderView: View {
             }) {
                 Image(systemName: "person.circle")
                     .font(.system(size: 20))
-                    .foregroundColor(colorScheme == .light ?
-                        Color(hex: "2C2C2C").opacity(0.8) :
-                        Color(hex: "F5F2E9").opacity(0.8))
+                    .foregroundColor(colors.text(opacity: 0.8))
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)

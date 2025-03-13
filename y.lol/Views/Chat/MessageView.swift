@@ -14,10 +14,8 @@ struct MessageView: View {
     let index: Int
     let totalCount: Int
     
-    private var textColor: Color {
-        colorScheme == .light ?
-            Color(hex: "2C2C2C").opacity(message.isUser ? 0.9 : 0.75) :
-            Color(hex: "F5F2E9").opacity(message.isUser ? 0.9 : 0.75)
+    private var colors: YTheme.Colors.Dynamic {
+        YTheme.Colors.dynamic
     }
     
     var body: some View {
@@ -25,26 +23,25 @@ struct MessageView: View {
             // Show 'Y' label only for non-user messages
             if !message.isUser {
                 Text("Y")
-                    .font(.system(size: 10, weight: .medium, design: .serif))
-                    .foregroundColor(Color(hex: "2C2C2C").opacity(0.4))
+                    .font(YTheme.Typography.serif(size: 10, weight: .medium))
+                    .foregroundColor(colors.text(opacity: 0.4))
                     .padding(.bottom, 4)
             }
             
             // Message content with appropriate styling
             Text(message.content)
-                .font(.system(
+                .font(YTheme.Typography.serif(
                     size: message.isUser ? 16 : 14,
-                    weight: message.isUser ? .regular : .light,
-                    design: .serif
+                    weight: message.isUser ? .regular : .light
                 ))
-                .foregroundColor(textColor)
+                .foregroundColor(colors.text(opacity: message.isUser ? 0.9 : 0.75))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 8)
             
             // Timestamp
             Text(formatTimestamp(message.timestamp))
-                .font(.system(size: 8, weight: .light))
-                .foregroundColor(Color(hex: "2C2C2C").opacity(0.3))
+                .font(YTheme.Typography.regular(size: 8, weight: .light))
+                .foregroundColor(colors.text(opacity: 0.3))
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 20)

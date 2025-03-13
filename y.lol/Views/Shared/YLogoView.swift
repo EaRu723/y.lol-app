@@ -25,37 +25,21 @@ struct YLogoView: View {
         self.isLoading = isLoading
     }
     
-    private var colors: (text: Color, border: Color) {
-        switch colorScheme {
-        case .light:
-            return (
-                text: Color(hex: "2C2C2C").opacity(0.8),
-                border: Color(hex: "2C2C2C").opacity(0.8)
-            )
-        case .dark:
-            return (
-                text: Color(hex: "F5F2E9").opacity(0.8),
-                border: Color(hex: "F5F2E9").opacity(0.8)
-            )
-        @unknown default:
-            return (
-                text: Color(hex: "2C2C2C").opacity(0.8),
-                border: Color(hex: "2C2C2C").opacity(0.8)
-            )
-        }
+    private var colors: YTheme.Colors.Dynamic {
+        YTheme.Colors.dynamic
     }
     
     private var loadingGradient: AngularGradient {
         AngularGradient(
             gradient: Gradient(
                 stops: [
-                .init(color: Color(hex: "FF5733"), location: 0.0),  // Bright orange-red
-                .init(color: Color(hex: "FFBD33"), location: 0.17), // Amber/gold
-                .init(color: Color(hex: "33FF57"), location: 0.33), // Bright green
-                .init(color: Color(hex: "33FFBD"), location: 0.5),  // Turquoise
-                .init(color: Color(hex: "3357FF"), location: 0.67), // Bright blue
-                .init(color: Color(hex: "BD33FF"), location: 0.83), // Purple
-                .init(color: Color(hex: "FF3390"), location: 1.0)   // Pink
+                    .init(color: Color(hex: "FF5733"), location: 0.0),  // Bright orange-red
+                    .init(color: Color(hex: "FFBD33"), location: 0.17), // Amber/gold
+                    .init(color: Color(hex: "33FF57"), location: 0.33), // Bright green
+                    .init(color: Color(hex: "33FFBD"), location: 0.5),  // Turquoise
+                    .init(color: Color(hex: "3357FF"), location: 0.67), // Bright blue
+                    .init(color: Color(hex: "BD33FF"), location: 0.83), // Purple
+                    .init(color: Color(hex: "FF3390"), location: 1.0)   // Pink
                 ]
             ),
             center: .center,
@@ -70,23 +54,23 @@ struct YLogoView: View {
             Circle()
                 .stroke(
                     isLoading ?
-                    AnyShapeStyle(loadingGradient) :
-                    AnyShapeStyle(colors.border),
+                        AnyShapeStyle(loadingGradient) :
+                        AnyShapeStyle(colors.text(opacity: 0.8)),
                     lineWidth: 1.5
                 )
                 .frame(width: size, height: size)
                 .rotationEffect(.degrees(isLoading ? 360 : 0))
                 .animation(
                     isLoading ?
-                    .linear(duration: 2.0).repeatForever(autoreverses: false) :
-                    .default,
+                        .linear(duration: 2.0).repeatForever(autoreverses: false) :
+                        .default,
                     value: isLoading
                 )
             
             // Y text
             Text("Y")
-                .font(.system(size: size * 0.6, weight: .light, design: .serif))
-                .foregroundColor(colors.text)
+                .font(YTheme.Typography.serif(size: size * 0.6, weight: .light))
+                .foregroundColor(colors.text(opacity: 0.8))
         }
     }
 }
@@ -99,5 +83,5 @@ struct YLogoView: View {
             .preferredColorScheme(.dark)
     }
     .padding()
-    .background(Color(hex: "F5F2E9"))
+    .background(YTheme.Colors.dynamic.backgroundWithNoise)
 }
