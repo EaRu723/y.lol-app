@@ -47,39 +47,17 @@ struct OnboardingView: View {
         OnboardingPage(text: "Y", hapticStyle: .heavy)
     ]
     
-    private var colors: (background: Color, text: Color) {
-        switch colorScheme {
-        case .light:
-            return (
-                background: Color(hex: "F5F2E9"),
-                text: Color(hex: "2C2C2C")
-            )
-        case .dark:
-            return (
-                background: Color(hex: "1C1C1E"),
-                text: Color(hex: "F5F2E9")
-            )
-        @unknown default:
-            return (
-                background: Color(hex: "F5F2E9"),
-                text: Color(hex: "2C2C2C")
-            )
-        }
+    private var colors: YTheme.Colors.Dynamic {
+        YTheme.Colors.dynamic
     }
     
     var body: some View {
         ZStack {
-            colors.background
-                .overlay(
-                    Color.primary
-                        .opacity(0.03)
-                        .blendMode(.multiply)
-                )
+            colors.backgroundWithNoise
                 .ignoresSafeArea()
             
             VStack(spacing: 40) {
                 #if DEBUG
-                // Debug controls - only visible in development
                 HStack {
                     Spacer()
                     Button(action: { showingDebugMenu = true }) {
@@ -90,18 +68,18 @@ struct OnboardingView: View {
                     .padding()
                 }
                 #endif
+                
                 Spacer()
-                // Yin Yang symbol
                 SimplifiedYinYangView(
                     size: 100,
-                    lightColor: colorScheme == .light ? .white : Color(hex: "1C1C1E"),
-                    darkColor: colorScheme == .light ? Color(hex: "2C2C2C") : Color(hex: "F5F2E9")
+                    lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
+                    darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
                 )
                 .rotationEffect(.degrees(90))
                 Spacer()
-                // Animated text
+                
                 Text(displayedText)
-                    .font(.system(size: 18, weight: .light, design: .serif))
+                    .font(YTheme.Typography.serif(size: 18, weight: .light))
                     .foregroundColor(colors.text)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
@@ -109,22 +87,17 @@ struct OnboardingView: View {
                 
                 Spacer()
                 
-                // Navigation buttons
                 if currentPage == pages.count - 1 {
-                    // Sign in with Apple button on last page
                     Button(action: {
                         Task {
                             do {
-                                // First get the Apple sign in tokens
                                 let tokens = try await signInAppleHelper.startSignInWithAppleFlow()
-                                // Then use the tokens to sign in with Firebase
                                 try await authManager.signInWithApple(tokens: tokens)
                                 withAnimation {
                                     hasCompletedOnboarding = true
                                 }
                             } catch {
                                 print("Failed to sign in with Apple: \(error)")
-                                // You might want to show an alert here
                             }
                         }
                     }) {
@@ -132,7 +105,7 @@ struct OnboardingView: View {
                             Image(systemName: "apple.logo")
                                 .font(.system(size: 20))
                             Text("Sign in with Apple")
-                                .font(.system(size: 18, weight: .medium))
+                                .font(YTheme.Typography.regular(size: 18, weight: .medium))
                         }
                         .foregroundColor(colorScheme == .dark ? .black : .white)
                         .frame(maxWidth: .infinity)
@@ -144,7 +117,7 @@ struct OnboardingView: View {
                 } else {
                     Button(action: nextPage) {
                         Text("Continue")
-                            .font(.system(size: 18, weight: .medium))
+                            .font(YTheme.Typography.regular(size: 18, weight: .medium))
                             .foregroundColor(colors.text)
                             .frame(maxWidth: .infinity)
                             .padding()

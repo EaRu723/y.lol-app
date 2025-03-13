@@ -94,3 +94,66 @@ extension Color {
         )
     }
 }
+
+#Preview {
+    Group {
+        VStack(spacing: 20) {
+            // Header to show which theme we're looking at
+            Text("Theme Preview")
+                .font(YTheme.Typography.serif(size: 24, weight: .bold))
+            
+            // Color samples
+            VStack(alignment: .leading, spacing: 16) {
+                ColorSampleRow(label: "Background", color: YTheme.Colors.dynamic.background)
+                ColorSampleRow(label: "Text", color: YTheme.Colors.dynamic.text)
+                ColorSampleRow(label: "Accent", color: YTheme.Colors.dynamic.accent)
+            }
+            .padding()
+            .background(YTheme.Colors.dynamic.backgroundWithNoise)
+            .cornerRadius(12)
+            
+            // Mock message bubbles to simulate ContentView
+            VStack(spacing: 12) {
+                MessageBubble(text: "Hello there!", isUser: false)
+                MessageBubble(text: "Hi! How are you?", isUser: true)
+            }
+            .padding()
+        }
+        .padding()
+        .background(YTheme.Colors.dynamic.background)
+    }
+}
+
+// Helper views for the preview
+private struct ColorSampleRow: View {
+    let label: String
+    let color: Color
+    
+    var body: some View {
+        HStack {
+            Text(label)
+                .foregroundColor(YTheme.Colors.dynamic.text)
+            Spacer()
+            RoundedRectangle(cornerRadius: 6)
+                .fill(color)
+                .frame(width: 60, height: 30)
+        }
+    }
+}
+
+private struct MessageBubble: View {
+    let text: String
+    let isUser: Bool
+    
+    var body: some View {
+        HStack {
+            if isUser { Spacer() }
+            Text(text)
+                .padding(12)
+                .background(isUser ? YTheme.Colors.dynamic.accent : YTheme.Colors.dynamic.text.opacity(0.1))
+                .foregroundColor(isUser ? YTheme.Colors.dynamic.text : YTheme.Colors.dynamic.text)
+                .cornerRadius(16)
+            if !isUser { Spacer() }
+        }
+    }
+}
