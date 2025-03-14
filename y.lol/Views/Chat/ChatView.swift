@@ -80,9 +80,9 @@ struct ChatView: View {
                         .padding()
                         .background(colors.background)
                         
-                        KeyboardToolbarView(text: $messageText, onSend: sendMessage, hapticService: hapticService)
-                            .padding(.horizontal)
-                            .padding(.bottom, 8)
+//                        KeyboardToolbarView(text: $messageText, onSend: sendMessage, hapticService: hapticService)
+//                            .padding(.horizontal)
+//                            .padding(.bottom, 8)
                     }
                 }
                 .onChange(of: viewModel.isThinking) { oldValue, newValue in

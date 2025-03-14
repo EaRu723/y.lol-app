@@ -41,10 +41,10 @@ struct InlineEditorView: View {
                 }
             Spacer()
             // Custom toolbar view
-            KeyboardToolbarView(text: $text, onSend: onSend, hapticService: hapticService)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-                .background(colors.background)
+//            KeyboardToolbarView(text: $text, onSend: onSend, hapticService: hapticService)
+//                .padding(.horizontal)
+//                .padding(.bottom, 8)
+//                .background(colors.background)
         }
         .background(colors.background)
     }
