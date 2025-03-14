@@ -16,33 +16,37 @@ struct InlineEditorView: View {
     let hapticService: HapticService
     
     var body: some View {
-        TextEditor(text: $text)
-            .focused($isFocused)
-            .frame(minHeight: 36, maxHeight: 120)
-            .font(YTheme.Typography.body)
-            .foregroundColor(colorScheme == .light ?
-                Color(hex: "2C2C2C").opacity(0.9) :
-                Color(hex: "F5F2E9").opacity(0.9))
-            .scrollContentBackground(.hidden)
-            .background(Color.clear)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 20)
-            .onChange(of: text) { oldValue, newValue in
-                if newValue.count > oldValue.count {
-                    hapticService.playTypingFeedback()
+        VStack(spacing: 0) {
+            TextEditor(text: $text)
+                .focused($isFocused)
+                .frame(minHeight: 36, maxHeight: 120)
+                .font(YTheme.Typography.body)
+                .foregroundColor(colorScheme == .light ?
+                    Color(hex: "2C2C2C").opacity(0.9) :
+                    Color(hex: "F5F2E9").opacity(0.9))
+                .scrollContentBackground(.hidden)
+                .background(Color.clear)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 20)
+                .onChange(of: text) { oldValue, newValue in
+                    if newValue.count > oldValue.count {
+                        hapticService.playTypingFeedback()
+                    }
                 }
-            }
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    KeyboardToolbarView(text: $text, onSend: onSend, hapticService: hapticService)
+                .onAppear {
+                    isFocused = true
                 }
-            }
-            .onAppear {
-                isFocused = true
-            }
-            .onTapGesture {
-                isEditing = true
-            }
+                .onTapGesture {
+                    isEditing = true
+                }
+            Spacer()
+            // Custom toolbar view
+            KeyboardToolbarView(text: $text, onSend: onSend, hapticService: hapticService)
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+                .background(colors.background)
+        }
+        .background(colors.background)
     }
     
     private var colors: (background: Color, text: Color, accent: Color) {
