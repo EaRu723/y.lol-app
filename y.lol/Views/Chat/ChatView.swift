@@ -74,7 +74,6 @@ struct ChatView: View {
                                     onSend: sendMessage
                                 )
                                 .padding()
-                                .background(colors.background)
                             }
                         }
                         .onChange(of: viewModel.isThinking) { oldValue, newValue in
