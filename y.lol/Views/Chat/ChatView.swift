@@ -26,6 +26,9 @@ struct ChatView: View {
     @State private var isEditing: Bool = false
     private let hapticService = HapticService()
     
+    // Add this state variable at the top with other @State properties
+    @State private var isActionsExpanded: Bool = false
+    
     var body: some View {
         Group {
             if !hasCompletedOnboarding {
@@ -67,20 +70,23 @@ struct ChatView: View {
                                 }
                             }
                             
-                            // Add ActionPillsView here
-                            ActionPillsView { index in
-                                // Handle pill button taps
-                                handlePillTap(index)
-                            }
-                            
-                            // Input area
+                            // Action Pills and Input area
                             VStack {
+                                if !isActionsExpanded {
+                                    ActionPillsView { index in
+                                        handlePillTap(index)
+                                    }
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                                }
+                                
                                 MessageInputView(
                                     messageText: $messageText,
+                                    isActionsExpanded: $isActionsExpanded,
                                     onSend: sendMessage
                                 )
                                 .padding()
                             }
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActionsExpanded)
                         }
                         .onChange(of: viewModel.isThinking) { oldValue, newValue in
                             if newValue {

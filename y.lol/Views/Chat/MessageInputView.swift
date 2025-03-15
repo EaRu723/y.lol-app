@@ -4,7 +4,7 @@ struct MessageInputView: View {
     @Environment(\.themeColors) private var colors
     @Binding var messageText: String
     @FocusState private var isFocused: Bool
-    @State private var isActionsExpanded = false
+    @Binding var isActionsExpanded: Bool
     let onSend: () -> Void
     
     var body: some View {
