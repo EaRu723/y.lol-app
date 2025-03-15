@@ -8,40 +8,7 @@ struct MessageInputView: View {
     let onSend: () -> Void
     
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            // Action buttons popup
-            if isActionsExpanded {
-                VStack(spacing: 16) {
-                    Button(action: { /* TODO: Handle @ mentions */ }) {
-                        Image(systemName: "at")
-                            .foregroundColor(colors.text(opacity: 0.5))
-                            .frame(width: 40, height: 40)
-                            .background(colors.background)
-                            .clipShape(Circle())
-                    }
-                    
-                    Button(action: { /* TODO: Handle attachments */ }) {
-                        Image(systemName: "paperclip")
-                            .foregroundColor(colors.text(opacity: 0.5))
-                            .frame(width: 40, height: 40)
-                            .background(colors.background)
-                            .clipShape(Circle())
-                    }
-                    
-                    Button(action: { /* TODO: Handle voice */ }) {
-                        Image(systemName: "mic")
-                            .foregroundColor(colors.text(opacity: 0.5))
-                            .frame(width: 40, height: 40)
-                            .background(colors.background)
-                            .clipShape(Circle())
-                    }
-                }
-                .padding(.bottom, 8)
-                .padding(.trailing, 8)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-                .zIndex(1)
-            }
-            
+        ZStack(alignment: .top) {
             // Main input field
             HStack(spacing: 12) {
                 TextField("Ask anything...", text: $messageText, axis: .vertical)
@@ -75,6 +42,37 @@ struct MessageInputView: View {
             .padding(.vertical, 8)
             .background(colors.background)
             .cornerRadius(20)
+            
+            // Action buttons popup
+            if isActionsExpanded {
+                HStack(spacing: 16) {
+                    Button(action: { /* TODO: Handle @ mentions */ }) {
+                        Image(systemName: "at")
+                            .foregroundColor(colors.text(opacity: 0.5))
+                            .frame(width: 40, height: 40)
+                            .background(colors.background)
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { /* TODO: Handle attachments */ }) {
+                        Image(systemName: "paperclip")
+                            .foregroundColor(colors.text(opacity: 0.5))
+                            .frame(width: 40, height: 40)
+                            .background(colors.background)
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { /* TODO: Handle voice */ }) {
+                        Image(systemName: "mic")
+                            .foregroundColor(colors.text(opacity: 0.5))
+                            .frame(width: 40, height: 40)
+                            .background(colors.background)
+                            .clipShape(Circle())
+                    }
+                }
+                .offset(y: -50) // Adjust this value to position the buttons above the text field
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
         // Close actions when text field gains focus
         .onChange(of: isFocused) { _, newValue in
