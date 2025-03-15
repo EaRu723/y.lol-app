@@ -20,7 +20,6 @@ struct SimplifiedYinYangView: View {
         // This implementation uses GeometryReader to ensure proper sizing
         GeometryReader { geometry in
             let diameter = min(geometry.size.width, geometry.size.height)
-            let radius = diameter / 2
             
             ZStack {
                 // Base circle

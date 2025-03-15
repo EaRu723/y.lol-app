@@ -33,6 +33,7 @@ struct ChatView: View {
         Group {
             if !hasCompletedOnboarding {
                 OnboardingView()
+                    .environmentObject(authManager)
             } else if !isAuthenticated {
                 LoginView()
                     .environmentObject(authManager)
@@ -105,14 +106,21 @@ struct ChatView: View {
         }
         .onAppear {
             checkAuthStatus()
+            print("Debug - ChatView appeared, auth status: \(isAuthenticated)")
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             checkAuthStatus()
+            print("Debug - App became active, auth status: \(isAuthenticated)")
         }
     }
     
     private func checkAuthStatus() {
+        let wasAuthenticated = isAuthenticated
         isAuthenticated = Auth.auth().currentUser != nil
+        
+        if !wasAuthenticated && isAuthenticated {
+            print("Debug - User just became authenticated")
+        }
     }
     
     private func sendMessage() {
