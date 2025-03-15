@@ -58,7 +58,7 @@ struct MessageInputView: View {
                         isActionsExpanded.toggle()
                     }
                 }) {
-                    Image(systemName: isActionsExpanded ? "chevron.down.circle.fill" : "plus.circle.fill")
+                    Image(systemName: isActionsExpanded ? "chevron.up.circle.fill" : "plus.circle.fill")
                         .foregroundColor(colors.text(opacity: 0.5))
                         .rotationEffect(.degrees(isActionsExpanded ? 180 : 0))
                 }
