@@ -16,6 +16,8 @@ struct ChatView: View {
     @StateObject private var viewModel = ChatViewModel()
     @State private var showProfile = false
     @StateObject private var authManager = AuthenticationManager.shared
+    @State private var isAuthenticated = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
     @State private var messageText: String = ""
     @FocusState private var isFocused: Bool
@@ -25,79 +27,81 @@ struct ChatView: View {
     private let hapticService = HapticService()
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Background with texture
-                colors.backgroundWithNoise
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    HeaderView(isThinking: $viewModel.isThinking, showProfile: $showProfile)
-                    
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
-                                ForEach(viewModel.messages) { message in
-                                    MessageView(message: message, index: 0, totalCount: viewModel.messages.count)
-                                        .id(message.id)
-                                        .transition(.asymmetric(
-                                            insertion: .modifier(
-                                                active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
-                                                identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
-                                            ),
-                                            removal: .opacity.combined(with: .scale(scale: 0.9))
-                                        ))
+        Group {
+            if !hasCompletedOnboarding {
+                OnboardingView()
+            } else if !isAuthenticated {
+                LoginView()
+                    .environmentObject(authManager)
+            } else {
+                GeometryReader { geometry in
+                    ZStack {
+                        // Background with texture
+                        colors.backgroundWithNoise
+                            .ignoresSafeArea()
+                        
+                        VStack(spacing: 0) {
+                            HeaderView(isThinking: $viewModel.isThinking, showProfile: $showProfile)
+                            
+                            ScrollViewReader { proxy in
+                                ScrollView {
+                                    LazyVStack(spacing: 12) {
+                                        ForEach(viewModel.messages) { message in
+                                            MessageView(message: message, index: 0, totalCount: viewModel.messages.count)
+                                                .id(message.id)
+                                                .transition(.asymmetric(
+                                                    insertion: .modifier(
+                                                        active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
+                                                        identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
+                                                    ),
+                                                    removal: .opacity.combined(with: .scale(scale: 0.9))
+                                                ))
+                                        }
+                                    }
+                                    .padding(.vertical)
+                                }
+                                .onChange(of: viewModel.messages.count) { oldCount, newCount in
+                                    if newCount > oldCount {
+                                        scrollToLatest(proxy: proxy)
+                                    }
                                 }
                             }
-                            .padding(.vertical)
-                        }
-                        .onChange(of: viewModel.messages.count) { oldCount, newCount in
-                            if newCount > oldCount {
-                                scrollToLatest(proxy: proxy)
-                            }
-                        }
-                    }
-                    
-                    // Input area
-                    VStack {
-                        HStack {
-                            TextField("Message", text: $messageText, axis: .vertical)
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(20)
-                                .focused($isFocused)
-                                .frame(minHeight: 40)
-                                .animation(.easeInOut(duration: 0.2), value: messageText)
                             
-                            Button(action: sendMessage) {
-                                Image(systemName: "arrow.up.circle.fill")
-                                    .resizable()
-                                    .frame(width: 30, height: 30)
-                                    .foregroundColor(!messageText.isEmpty ? colors.text(opacity: 1) : colors.text(opacity: 0.3))
+                            // Input area
+                            VStack {
+                                MessageInputView(
+                                    messageText: $messageText,
+                                    onSend: sendMessage
+                                )
+                                .padding()
+                                .background(colors.background)
                             }
-                            .disabled(messageText.isEmpty)
                         }
-                        .padding()
-                        .background(colors.background)
-                        
-//                        KeyboardToolbarView(text: $messageText, onSend: sendMessage, hapticService: hapticService)
-//                            .padding(.horizontal)
-//                            .padding(.bottom, 8)
+                        .onChange(of: viewModel.isThinking) { oldValue, newValue in
+                            if newValue {
+                                hapticService.startBreathing()
+                            } else {
+                                hapticService.stopBreathing()
+                            }
+                        }
+                        .sheet(isPresented: $showProfile) {
+                            ProfileView()
+                                .environmentObject(authManager)
+                        }
                     }
-                }
-                .onChange(of: viewModel.isThinking) { oldValue, newValue in
-                    if newValue {
-                        hapticService.startBreathing()
-                    } else {
-                        hapticService.stopBreathing()
-                    }
-                }
-                .sheet(isPresented: $showProfile) {
-                    ProfileView()
-                        .environmentObject(authManager)
                 }
             }
         }
+        .onAppear {
+            checkAuthStatus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            checkAuthStatus()
+        }
+    }
+    
+    private func checkAuthStatus() {
+        isAuthenticated = Auth.auth().currentUser != nil
     }
     
     private func sendMessage() {
