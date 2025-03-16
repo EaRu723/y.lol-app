@@ -17,6 +17,7 @@ class ChatViewModel: ObservableObject {
     private let firebaseManager = FirebaseManager.shared
     private let hapticService = HapticService()
     private var cancellables = Set<AnyCancellable>()
+    private let conversationId = UUID().uuidString
     
     init() {
         // Subscribe to Firebase manager's state changes
@@ -70,11 +71,13 @@ class ChatViewModel: ObservableObject {
         }
 
         // Generate AI response using Firebase Function
-        if let response = await firebaseManager.generateResponseFunction(
+        if let response = await FirebaseManager.shared.generateResponse(
+            conversationId: conversationId, // Use a unique ID for each conversation
             messages: messages,
             images: [],
-            mode: currentMode
-        ) {
+            mode: .vibeCheck
+        )
+        {
             let aiMessage = ChatMessage(
                 content: response,
                 isUser: false,
