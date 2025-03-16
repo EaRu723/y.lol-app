@@ -30,11 +30,6 @@ class FirebaseManager: ObservableObject {
     private var conversationCache: [String: [ChatMessage]] = [:]
     private let maxContextMessages = 10
     
-    // System prompt that will be used across all interactions
-    private let systemPrompt = """
-    This AI acts as a chill close friend, designed to understand the user's mind and subconscious feelings through an ongoing, evolving interaction. It learns and adapts to the user's thoughts, emotions, and needs, offering advice, guidance, and subtle therapeutic support based on the user's questions. It aims to provide introspective insights, uncover hidden emotions, and create an atmosphere of trust and reflection. It steers away from heavy psychological jargon and instead uses intuitive, emotionally resonant language that matches the user's energy. please make responses succinct. please respond in multiple messages like a real unraveling of thoughts. make all outputs in all lower case. your tone should be casual. like talking to a close friend who knows you well. don't be cheesy. be real. be excited and curious.
-    """
-    
     // Main function to generate responses (with or without images)
     func generateResponse(conversationId: String, messages: [ChatMessage], images: [Data] = [], mode: ChatMode = .reg) async -> String? {
         guard !isRequestInProgress else {
@@ -110,7 +105,7 @@ class FirebaseManager: ObservableObject {
     
     // Format conversation into a prompt
     private func formatConversationForPrompt(messages: [ChatMessage]) -> String {
-        var prompt = systemPrompt + "\n\nConversation history:\n"
+        var prompt = "Conversation history:\n"
         
         for message in messages {
             let role = message.isUser ? "User" : "Y"
@@ -133,7 +128,7 @@ class FirebaseManager: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         
-        // Always use multipart form data, even without images
+        // Use multipart form data for function HTTP requests
         let boundary = "Boundary\(UUID().uuidString)"
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = createMultipartFormData(images: images, prompt: prompt, boundary: boundary)
@@ -199,11 +194,11 @@ class FirebaseManager: ObservableObject {
         case .roastMe:
             return "\(baseUrl)/roastMe" // This would need to be implemented on Firebase
         case .reg:
-            return "\(baseUrl)/chatResponse" // This would need to be implemented on Firebase
+            return "\(baseUrl)/baseConversation"
         }
     }
     
-    // Multipart form data creation (same as before)
+    // Multipart form data creation
     private func createMultipartFormData(images: [Data], prompt: String, boundary: String) -> Data {
         var data = Data()
 
