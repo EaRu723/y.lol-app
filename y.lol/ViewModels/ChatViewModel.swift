@@ -71,15 +71,15 @@ class ChatViewModel: ObservableObject {
         }
 
         // Generate AI response using Firebase Function
-        if let response = await FirebaseManager.shared.generateResponse(
+        if let llmResponse = await FirebaseManager.shared.generateResponse(
             conversationId: conversationId, // Use a unique ID for each conversation
             messages: messages,
-            images: [],
-            mode: .vibeCheck
+            images: [], // TODO: implement file upload, and include them here
+            mode: .reg
         )
         {
             let aiMessage = ChatMessage(
-                content: response,
+                content: llmResponse,
                 isUser: false,
                 timestamp: Date()
             )
@@ -97,7 +97,7 @@ class ChatViewModel: ObservableObject {
             // Handle error with fallback message
             await MainActor.run {
                 let fallbackMessage = ChatMessage(
-                    content: "I seem to be having trouble connecting. Could we pause and reflect for a moment?",
+                    content: "I seem to be having trouble connecting. Can we pause and reflect for a moment?",
                     isUser: false,
                     timestamp: Date()
                 )
