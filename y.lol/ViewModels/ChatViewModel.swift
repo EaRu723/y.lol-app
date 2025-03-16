@@ -13,7 +13,7 @@ class ChatViewModel: ObservableObject {
     @Published var messageText: String = ""
     @Published var isThinking: Bool = false
     @Published var errorMessage: String?
-    
+    @Published var currentMode: FirebaseManager.ChatMode = .vibeCheck
     private let firebaseManager = FirebaseManager.shared
     private let hapticService = HapticService()
     private var cancellables = Set<AnyCancellable>()
@@ -68,25 +68,30 @@ class ChatViewModel: ObservableObject {
                 isThinking = true
             }
         }
-        
-        // Generate AI response using Vertex AI
-        if let response = await firebaseManager.generateResponse(messages: messages) {
+
+        // Generate AI response using Firebase Function
+        if let response = await firebaseManager.generateResponseFunction(
+            messages: messages,
+            images: [],
+            mode: currentMode
+        ) {
             let aiMessage = ChatMessage(
                 content: response,
                 isUser: false,
                 timestamp: Date()
             )
             
-            // Play receive haptic feedback
+            // Play receive haptic feedback and update UI
             await MainActor.run {
                 hapticService.playReceiveFeedback()
                 
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                     messages.append(aiMessage)
+                    isThinking = false
                 }
             }
         } else {
-            // If there's an error, use a fallback response
+            // Handle error with fallback message
             await MainActor.run {
                 let fallbackMessage = ChatMessage(
                     content: "I seem to be having trouble connecting. Could we pause and reflect for a moment?",
@@ -98,6 +103,7 @@ class ChatViewModel: ObservableObject {
                 
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                     messages.append(fallbackMessage)
+                    isThinking = false
                 }
             }
         }

@@ -43,7 +43,7 @@ final class AuthenticationManager: ObservableObject {
         
         await MainActor.run {
             self.idToken = token
-            print("Debug - Successfully got new token: \(String(describing: token.prefix(20)))...")
+            print("Debug - Successfully got new token: \(String(describing: token))")
         }
     }
     

@@ -29,6 +29,9 @@ struct ChatView: View {
     // Add this state variable at the top with other @State properties
     @State private var isActionsExpanded: Bool = false
     
+    // Add an auth state listener
+    @State private var authStateListener: AuthStateDidChangeListenerHandle?
+    
     var body: some View {
         Group {
             if !hasCompletedOnboarding {
@@ -105,18 +108,36 @@ struct ChatView: View {
             }
         }
         .onAppear {
+            setupAuthListener()
             checkAuthStatus()
             print("Debug - ChatView appeared, auth status: \(isAuthenticated)")
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            checkAuthStatus()
-            print("Debug - App became active, auth status: \(isAuthenticated)")
+        .onDisappear {
+            // Remove listener when view disappears
+            if let listener = authStateListener {
+                Auth.auth().removeStateDidChangeListener(listener)
+            }
+        }
+    }
+    
+    private func setupAuthListener() {
+        // Remove existing listener if any
+        if let listener = authStateListener {
+            Auth.auth().removeStateDidChangeListener(listener)
+        }
+        
+        // Set up a new listener
+        authStateListener = Auth.auth().addStateDidChangeListener { auth, user in
+            print("Debug - Auth state changed, user: \(user?.uid ?? "nil")")
+            isAuthenticated = user != nil
         }
     }
     
     private func checkAuthStatus() {
         let wasAuthenticated = isAuthenticated
         isAuthenticated = Auth.auth().currentUser != nil
+        
+        print("Debug - Manual auth check: \(isAuthenticated)")
         
         if !wasAuthenticated && isAuthenticated {
             print("Debug - User just became authenticated")
