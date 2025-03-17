@@ -40,6 +40,10 @@ struct ChatView: View {
     @State private var selectedImage: UIImage?
     @State private var sourceType: UIImagePickerController.SourceType = .camera
     
+    // Add these for PhotosPicker
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var isPhotosPickerPresented = false
+    
     // Add this to your view
     @StateObject private var permissionManager = PermissionManager()
     @State private var showPermissionAlert = false
@@ -114,7 +118,7 @@ struct ChatView: View {
                                     onPhotoLibraryButtonTapped: {
                                         permissionManager.checkPhotoLibraryPermission()
                                         if permissionManager.photoLibraryPermissionGranted {
-                                            isShowingPhotoLibrary = true
+                                            isPhotosPickerPresented = true
                                         } else {
                                             permissionAlertType = "Photo Library"
                                             showPermissionAlert = true
@@ -144,13 +148,15 @@ struct ChatView: View {
                                     }
                                 }
                         }
-                        .sheet(isPresented: $isShowingPhotoLibrary) {
-                            PHPickerView(image: $selectedImage)
-                                .onDisappear {
-                                    if let image = selectedImage {
-                                        handleSelectedImage(image)
-                                    }
+                        .sheet(isPresented: $isPhotosPickerPresented) {
+                            PhotosPickerView(
+                                selectedImage: $selectedImage,
+                                isPresented: $isPhotosPickerPresented,
+                                onImageSelected: { image in
+                                    handleSelectedImage(image)
                                 }
+                            )
+                            .presentationDetents([.medium, .large])
                         }
                         .alert(isPresented: $showPermissionAlert) {
                             Alert(
