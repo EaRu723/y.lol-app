@@ -17,42 +17,52 @@ struct MessageView: View {
     
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Show 'Y' label only for non-user messages
-            if !message.isUser {
-                Text("Y")
-                    .font(YTheme.Typography.small)
-                    .foregroundColor(colors.text(opacity: 0.4))
-                    .padding(.bottom, 4)
+        HStack {
+            if message.isUser {
+                Spacer()
             }
             
-            // Message content with appropriate styling
-            Text(message.content)
-                .font(YTheme.Typography.serif(
-                    size: message.isUser ? 16 : 14,
-                    weight: message.isUser ? .regular : .light
-                ))
-                .foregroundColor(colors.text(opacity: message.isUser ? 0.9 : 0.75))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 8)
+            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+                // Display image if present
+                if let image = message.image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 250, maxHeight: 250)
+                        .cornerRadius(12)
+                        .padding(.vertical, 4)
+                }
+                
+                // Display text if not empty
+                if !message.content.isEmpty {
+                    Text(message.content)
+                        .padding()
+                        .background(message.isUser ? colors.userMessageBubble : colors.aiMessageBubble)
+                        .foregroundColor(message.isUser ? colors.userMessageText : colors.aiMessageText)
+                        .cornerRadius(12)
+                }
+                
+                // Timestamp
+                Text(formatTimestamp(message.timestamp))
+                    .font(.caption2)
+                    .foregroundColor(colors.text(opacity: 0.5))
+                    .padding(.horizontal, 4)
+            }
             
-            // Timestamp
-            Text(formatTimestamp(message.timestamp))
-                .font(YTheme.Typography.caption)
-                .foregroundColor(colors.text(opacity: 0.3))
+            if !message.isUser {
+                Spacer()
+            }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
+        .padding(.horizontal)
     }
     
-    /// Formats the timestamp to display only the time
     private func formatTimestamp(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
 }
+           
 
 // To preview this view, you can add this preview provider
 struct MessageView_Previews: PreviewProvider {
