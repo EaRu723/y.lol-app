@@ -99,6 +99,7 @@ struct ChatView: View {
                                 MessageInputView(
                                     messageText: $messageText,
                                     isActionsExpanded: $isActionsExpanded,
+                                    selectedImage: $selectedImage,
                                     onSend: sendMessage,
                                     onCameraButtonTapped: {
                                         permissionManager.checkCameraPermission()
@@ -203,18 +204,23 @@ struct ChatView: View {
     }
     
     private func sendMessage() {
-        guard !messageText.isEmpty else { return }
+        guard !messageText.isEmpty || selectedImage != nil else { return }
         
-
         viewModel.messageText = messageText
-
-        DispatchQueue.main.async {
-            self.messageText = ""
+        
+        // If there's an image, send it along with the message
+        if let image = selectedImage {
+            viewModel.sendImageMessage(image, withText: messageText)
+            selectedImage = nil
+        } else {
+            // Just send a text message
+            Task {
+                await viewModel.sendMessage()
+            }
         }
         
-        // Delegate to the ViewModel's sendMessage
-        Task {
-            await viewModel.sendMessage()
+        DispatchQueue.main.async {
+            self.messageText = ""
         }
     }
     
@@ -234,13 +240,10 @@ struct ChatView: View {
         print("Switched to mode: \(mode)")
     }
     
-    // Add this function to handle the selected image
+    // Modify this function to just set the selectedImage without sending it
     private func handleSelectedImage(_ image: UIImage) {
-        // Send the image message
-        viewModel.sendImageMessage(image)
-        
-        // Reset the selected image
-        selectedImage = nil
+        // Just set the selected image without sending it
+        selectedImage = image
     }
 }
 
