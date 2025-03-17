@@ -1,0 +1,8 @@
+.env
+.DS_Store
+
+.vscode/
+
+# User-specific Xcode files
+*.xcuserdatad
+*.xcuserstate

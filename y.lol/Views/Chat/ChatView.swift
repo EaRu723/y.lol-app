@@ -13,7 +13,7 @@ struct ChatView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
     
-    @StateObject private var viewModel = ChatViewModel()
+    @StateObject var viewModel = ChatViewModel()
     @State private var showProfile = false
     @StateObject private var authManager = AuthenticationManager.shared
     @State private var isAuthenticated = false
@@ -29,10 +29,14 @@ struct ChatView: View {
     // Add this state variable at the top with other @State properties
     @State private var isActionsExpanded: Bool = false
     
+    // Add an auth state listener
+    @State private var authStateListener: AuthStateDidChangeListenerHandle?
+    
     var body: some View {
         Group {
             if !hasCompletedOnboarding {
                 OnboardingView()
+                    .environmentObject(authManager)
             } else if !isAuthenticated {
                 LoginView()
                     .environmentObject(authManager)
@@ -73,8 +77,8 @@ struct ChatView: View {
                             // Action Pills and Input area
                             VStack {
                                 if !isActionsExpanded {
-                                    ActionPillsView { index in
-                                        handlePillTap(index)
+                                    ActionPillsView(currentMode: viewModel.currentMode) { mode in
+                                        handlePillTap(mode)
                                     }
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
                                 }
@@ -104,25 +108,51 @@ struct ChatView: View {
             }
         }
         .onAppear {
+            setupAuthListener()
             checkAuthStatus()
+            print("Debug - ChatView appeared, auth status: \(isAuthenticated)")
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            checkAuthStatus()
+        .onDisappear {
+            // Remove listener when view disappears
+            if let listener = authStateListener {
+                Auth.auth().removeStateDidChangeListener(listener)
+            }
+        }
+    }
+    
+    private func setupAuthListener() {
+        // Remove existing listener if any
+        if let listener = authStateListener {
+            Auth.auth().removeStateDidChangeListener(listener)
+        }
+        
+        // Set up a new listener
+        authStateListener = Auth.auth().addStateDidChangeListener { auth, user in
+            print("Debug - Auth state changed, user: \(user?.uid ?? "nil")")
+            isAuthenticated = user != nil
         }
     }
     
     private func checkAuthStatus() {
+        let wasAuthenticated = isAuthenticated
         isAuthenticated = Auth.auth().currentUser != nil
+        
+        print("Debug - Manual auth check: \(isAuthenticated)")
+        
+        if !wasAuthenticated && isAuthenticated {
+            print("Debug - User just became authenticated")
+        }
     }
     
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
         
-        // Set the message in the ViewModel before sending
+
         viewModel.messageText = messageText
-        
-        // Clear local message text
-        messageText = ""
+
+        DispatchQueue.main.async {
+            self.messageText = ""
+        }
         
         // Delegate to the ViewModel's sendMessage
         Task {
@@ -141,24 +171,9 @@ struct ChatView: View {
     }
     
     // Add this function to handle pill taps
-    private func handlePillTap(_ index: Int) {
-        // Handle the pill button taps here
-        switch index {
-        case 0:
-            // Handle first pill tap
-            print("Pill 1 tapped")
-        case 1:
-            // Handle second pill tap
-            print("Pill 2 tapped")
-        case 2:
-            // Handle third pill tap
-            print("Pill 3 tapped")
-        case 3:
-            // Handle 4th pill
-            print("Pill 4 tapped")
-        default:
-            break
-        }
+    private func handlePillTap(_ mode: FirebaseManager.ChatMode) {
+        viewModel.currentMode = mode
+        print("Switched to mode: \(mode)")
     }
 }
 
