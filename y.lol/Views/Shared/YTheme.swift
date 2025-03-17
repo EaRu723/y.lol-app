@@ -19,6 +19,12 @@ enum YTheme {
         static let accentLight = Color(hex: "E4D5B7")
         static let accentDark = Color(hex: "B8A179")
         
+        // Message bubble colors
+        static let userBubbleLight = Color(hex: "E4D5B7")  // Same as accentLight
+        static let userBubbleDark = Color(hex: "B8A179")   // Same as accentDark
+        static let aiBubbleLight = Color(hex: "EDEADE")    // Slightly lighter than background
+        static let aiBubbleDark = Color(hex: "2C2C2E")     // Slightly lighter than dark background
+        
         /// Dynamic colors that automatically adapt to color scheme
         struct Dynamic {
             let colorScheme: ColorScheme
@@ -37,6 +43,23 @@ enum YTheme {
             
             var accent: Color {
                 colorScheme == .light ? accentLight : accentDark
+            }
+            
+            // New properties for message bubbles
+            var userMessageBubble: Color {
+                colorScheme == .light ? userBubbleLight : userBubbleDark
+            }
+            
+            var aiMessageBubble: Color {
+                colorScheme == .light ? aiBubbleLight : aiBubbleDark
+            }
+            
+            var userMessageText: Color {
+                colorScheme == .light ? textLight : textDark
+            }
+            
+            var aiMessageText: Color {
+                colorScheme == .light ? textLight : textDark
             }
             
             /// Returns text color with custom opacity
@@ -167,6 +190,8 @@ private struct ThemePreview: View {
                 ColorSampleRow(label: "Background", color: colors.background)
                 ColorSampleRow(label: "Text", color: colors.text)
                 ColorSampleRow(label: "Accent", color: colors.accent)
+                ColorSampleRow(label: "User Message Bubble", color: colors.userMessageBubble)
+                ColorSampleRow(label: "AI Message Bubble", color: colors.aiMessageBubble)
             }
             .padding()
             .background(colors.backgroundWithNoise)
@@ -212,8 +237,8 @@ private struct MessageBubble: View {
             if isUser { Spacer() }
             Text(text)
                 .padding(12)
-                .background(isUser ? colors.accent : colors.text.opacity(0.1))
-                .foregroundColor(isUser ? colors.text : colors.text)
+                .background(isUser ? colors.userMessageBubble : colors.aiMessageBubble)
+                .foregroundColor(isUser ? colors.userMessageText : colors.aiMessageText)
                 .cornerRadius(16)
             if !isUser { Spacer() }
         }
