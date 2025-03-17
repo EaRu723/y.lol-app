@@ -64,18 +64,12 @@ class AuthenticationViewModel: ObservableObject {
                 guard let self = self else { return }
                 
                 if let firebaseUser = firebaseUser {
-                    // Firebase user is signed in
-                    // Here, you map Firebase's user to your custom user model.
-                    // This example assumes you have a custom User model with id, name, email, and joined properties.
-                    // You might need to fetch additional user details from Firestore or another data source if needed.
-                    
-                    
-                    // Assuming you have a property to store the current user in your custom User type
-                    // self.currentUser = user
-                    // Update UI or state as needed
-                    
+                    // User is signed in
                     self.authenticationState = .authenticated
                     self.displayName = firebaseUser.displayName ?? "No Name"
+                    
+                    // Start token refresh cycle
+                    AuthenticationManager.shared.refreshTokenPeriodically()
                 } else {
                     // No user is signed in
                     self.authenticationState = .unauthenticated

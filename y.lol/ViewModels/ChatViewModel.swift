@@ -13,10 +13,21 @@ class ChatViewModel: ObservableObject {
     @Published var messageText: String = ""
     @Published var isThinking: Bool = false
     @Published var errorMessage: String?
+    @Published var currentMode: FirebaseManager.ChatMode = .reg {
+        didSet {
+            if oldValue != currentMode {
+                conversationId = UUID().uuidString
+                messages = [
+                    ChatMessage(content: getInitialMessage(for: currentMode), isUser: false, timestamp: Date())
+                ]
+            }
+        }
+    }
     
     private let firebaseManager = FirebaseManager.shared
     private let hapticService = HapticService()
     private var cancellables = Set<AnyCancellable>()
+    private var conversationId = UUID().uuidString
     
     init() {
         // Subscribe to Firebase manager's state changes
@@ -37,7 +48,7 @@ class ChatViewModel: ObservableObject {
         // Add initial message
         if messages.isEmpty {
             let initialMessage = ChatMessage(
-                content: "what's weighing on your mind today?",
+                content: getInitialMessage(for: currentMode),
                 isUser: false,
                 timestamp: Date()
             )
@@ -64,32 +75,38 @@ class ChatViewModel: ObservableObject {
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 messages.append(newMessage)
-                messageText = ""
                 isThinking = true
             }
         }
         
-        // Generate AI response using Vertex AI
-        if let response = await firebaseManager.generateResponse(messages: messages) {
+        // Generate AI response using Firebase Function
+        if let llmResponse = await FirebaseManager.shared.generateResponse(
+            conversationId: conversationId, // Use a unique ID for each conversation
+            messages: messages,
+            images: [], // TODO: implement file upload, and include them here
+            mode: currentMode
+        )
+        {
             let aiMessage = ChatMessage(
-                content: response,
+                content: llmResponse,
                 isUser: false,
                 timestamp: Date()
             )
             
-            // Play receive haptic feedback
+            // Play receive haptic feedback and update UI
             await MainActor.run {
                 hapticService.playReceiveFeedback()
                 
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                     messages.append(aiMessage)
+                    isThinking = false
                 }
             }
         } else {
-            // If there's an error, use a fallback response
+            // Handle error with fallback message
             await MainActor.run {
                 let fallbackMessage = ChatMessage(
-                    content: "I seem to be having trouble connecting. Could we pause and reflect for a moment?",
+                    content: "I seem to be having trouble connecting. Can we pause and reflect for a moment?",
                     isUser: false,
                     timestamp: Date()
                 )
@@ -98,8 +115,19 @@ class ChatViewModel: ObservableObject {
                 
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                     messages.append(fallbackMessage)
+                    isThinking = false
                 }
             }
+        }
+    }
+    
+    private func getInitialMessage(for mode: FirebaseManager.ChatMode) -> String {
+        switch mode {
+        case .reg: return "what's weighing on your mind today?"
+        case .vibeCheck: return "let's check the vibes. what's up?"
+        case .ventMode: return "need to vent? I'm here."
+        case .existentialCrisis: return "feeling existential? let's talk."
+        case .roastMe: return "heard you wanted a roast?"
         }
     }
 }
