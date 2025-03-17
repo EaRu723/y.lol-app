@@ -13,7 +13,7 @@ struct ChatView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
     
-    @StateObject private var viewModel = ChatViewModel()
+    @StateObject var viewModel = ChatViewModel()
     @State private var showProfile = false
     @StateObject private var authManager = AuthenticationManager.shared
     @State private var isAuthenticated = false
@@ -77,8 +77,8 @@ struct ChatView: View {
                             // Action Pills and Input area
                             VStack {
                                 if !isActionsExpanded {
-                                    ActionPillsView { index in
-                                        handlePillTap(index)
+                                    ActionPillsView(currentMode: viewModel.currentMode) { mode in
+                                        handlePillTap(mode)
                                     }
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
                                 }
@@ -147,11 +147,12 @@ struct ChatView: View {
     private func sendMessage() {
         guard !messageText.isEmpty else { return }
         
-        // Set the message in the ViewModel before sending
+
         viewModel.messageText = messageText
-        
-        // Clear local message text
-        messageText = ""
+
+        DispatchQueue.main.async {
+            self.messageText = ""
+        }
         
         // Delegate to the ViewModel's sendMessage
         Task {
@@ -170,24 +171,9 @@ struct ChatView: View {
     }
     
     // Add this function to handle pill taps
-    private func handlePillTap(_ index: Int) {
-        // Handle the pill button taps here
-        switch index {
-        case 0:
-            // Handle first pill tap
-            print("Pill 1 tapped")
-        case 1:
-            // Handle second pill tap
-            print("Pill 2 tapped")
-        case 2:
-            // Handle third pill tap
-            print("Pill 3 tapped")
-        case 3:
-            // Handle 4th pill
-            print("Pill 4 tapped")
-        default:
-            break
-        }
+    private func handlePillTap(_ mode: FirebaseManager.ChatMode) {
+        viewModel.currentMode = mode
+        print("Switched to mode: \(mode)")
     }
 }
 

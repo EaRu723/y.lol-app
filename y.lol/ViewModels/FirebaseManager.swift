@@ -9,7 +9,6 @@ import FirebaseCore
 import FirebaseFunctions
 import FirebaseAuth
 
-// Simplified FirebaseManager without Vertex AI
 class FirebaseManager: ObservableObject {
     enum ChatMode {
         case reg
@@ -133,18 +132,12 @@ class FirebaseManager: ObservableObject {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.httpBody = createMultipartFormData(images: images, prompt: prompt, boundary: boundary)
         
-        print("Debug - Request URL: \(url.absoluteString)")
-        print("Debug - Image count: \(images.count)")
-        print("Debug - Request body size: \(request.httpBody?.count ?? 0) bytes")
-        
         // Make the request
         let (data, urlResponse) = try await URLSession.shared.data(for: request)
         
         guard let httpResponse = urlResponse as? HTTPURLResponse else {
             throw NSError(domain: "FirebaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response type"])
         }
-        
-        print("Debug - HTTP status code: \(httpResponse.statusCode)")
         
         // Handle error response codes
         if httpResponse.statusCode >= 400 {
