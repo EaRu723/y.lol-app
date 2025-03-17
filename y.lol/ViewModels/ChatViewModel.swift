@@ -23,6 +23,7 @@ class ChatViewModel: ObservableObject {
             }
         }
     }
+    @Published var selectedImage: UIImage?
     
     private let firebaseManager = FirebaseManager.shared
     private let hapticService = HapticService()
@@ -121,6 +122,46 @@ class ChatViewModel: ObservableObject {
         }
     }
     
+    func sendImageMessage(_ image: UIImage) {
+        // Play send haptic feedback
+        hapticService.playSendFeedback()
+        
+        // Create a message with the image
+        let newMessage = ChatMessage(
+            content: "",
+            isUser: true,
+            timestamp: Date(),
+            image: image
+        )
+        
+        // Add the message to the messages array
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            messages.append(newMessage)
+            isThinking = true
+        }
+        
+        // Here you would typically upload the image to your backend
+        // For now, we'll just add it to the local messages and simulate a response
+        
+        // Simulate AI response after a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            self.isThinking = false
+            
+            let aiResponse = ChatMessage(
+                content: "I received your image! It looks interesting.",
+                isUser: false,
+                timestamp: Date()
+            )
+            
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                self.messages.append(aiResponse)
+            }
+        }
+        
+        // TODO: In the future, you'll want to actually send the image to your backend
+        // and get a real response, similar to how text messages are handled
+    }
+    
     private func getInitialMessage(for mode: FirebaseManager.ChatMode) -> String {
         switch mode {
         case .reg: return "what's weighing on your mind today?"
@@ -131,3 +172,42 @@ class ChatViewModel: ObservableObject {
         }
     }
 }
+
+
+// TODO:
+// - Add image processing
+//@Published var selectedImage: UIImage?
+//
+//func sendImageMessage(_ image: UIImage) {
+//    // Create a message with the image
+//    let newMessage = Message(
+//        id: UUID().uuidString,
+//        text: "",
+//        sender: .user,
+//        timestamp: Date(),
+//        image: image
+//    )
+//    
+//    // Add the message to the messages array
+//    messages.append(newMessage)
+//    
+//    // Here you would typically upload the image to your backend
+//    // For now, we'll just add it to the local messages
+//    
+//    // Optional: You can also trigger an AI response to the image
+//    isThinking = true
+//    
+//    // Simulate AI response after a delay
+//    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+//        self.isThinking = false
+//        
+//        let aiResponse = Message(
+//            id: UUID().uuidString,
+//            text: "I received your image! It looks interesting.",
+//            sender: .ai,
+//            timestamp: Date()
+//        )
+//        
+//        self.messages.append(aiResponse)
+//    }
+//}

@@ -1,0 +1,41 @@
+func processSelectedImage(_ image: UIImage) {
+    // Here you can:
+    // 1. Upload the image to a server
+    // 2. Save it to local storage
+    // 3. Apply filters or processing
+    // 4. Add it to a message or post
+    
+    // Example: Compress and convert to Data for upload
+    if let imageData = image.jpegData(compressionQuality: 0.7) {
+        // Use imageData for upload or storage
+        uploadImage(imageData)
+    }
+}
+
+func uploadImage(_ imageData: Data) {
+    // Example upload function
+    // Replace with your actual API endpoint and implementation
+    
+    // Create URL request
+    guard let url = URL(string: "https://your-api-endpoint.com/upload") else { return }
+    var request = URLRequest(url: url)
+    request.httpMethod = "POST"
+    request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+    request.httpBody = imageData
+    
+    // Create upload task
+    let task = URLSession.shared.dataTask(with: request) { data, response, error in
+        if let error = error {
+            print("Error uploading image: \(error.localizedDescription)")
+            return
+        }
+        
+        // Handle successful upload
+        DispatchQueue.main.async {
+            // Update UI or state as needed
+            print("Image uploaded successfully")
+        }
+    }
+    
+    task.resume()
+}

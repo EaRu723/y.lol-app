@@ -8,6 +8,8 @@
 import Foundation
 import SwiftUI
 import FirebaseAuth
+import PhotosUI
+import AVFoundation
 
 struct ChatView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -31,6 +33,17 @@ struct ChatView: View {
     
     // Add an auth state listener
     @State private var authStateListener: AuthStateDidChangeListenerHandle?
+    
+    // Add these state variables to your view
+    @State private var isShowingCamera = false
+    @State private var isShowingPhotoLibrary = false
+    @State private var selectedImage: UIImage?
+    @State private var sourceType: UIImagePickerController.SourceType = .camera
+    
+    // Add this to your view
+    @StateObject private var permissionManager = PermissionManager()
+    @State private var showPermissionAlert = false
+    @State private var permissionAlertType = ""
     
     var body: some View {
         Group {
@@ -86,7 +99,26 @@ struct ChatView: View {
                                 MessageInputView(
                                     messageText: $messageText,
                                     isActionsExpanded: $isActionsExpanded,
-                                    onSend: sendMessage
+                                    onSend: sendMessage,
+                                    onCameraButtonTapped: {
+                                        permissionManager.checkCameraPermission()
+                                        if permissionManager.cameraPermissionGranted {
+                                            sourceType = .camera
+                                            isShowingCamera = true
+                                        } else {
+                                            permissionAlertType = "Camera"
+                                            showPermissionAlert = true
+                                        }
+                                    },
+                                    onPhotoLibraryButtonTapped: {
+                                        permissionManager.checkPhotoLibraryPermission()
+                                        if permissionManager.photoLibraryPermissionGranted {
+                                            isShowingPhotoLibrary = true
+                                        } else {
+                                            permissionAlertType = "Photo Library"
+                                            showPermissionAlert = true
+                                        }
+                                    }
                                 )
                                 .padding()
                             }
@@ -102,6 +134,32 @@ struct ChatView: View {
                         .sheet(isPresented: $showProfile) {
                             ProfileView()
                                 .environmentObject(authManager)
+                        }
+                        .sheet(isPresented: $isShowingCamera) {
+                            ImagePicker(selectedImage: $selectedImage, sourceType: sourceType)
+                                .onDisappear {
+                                    if let image = selectedImage {
+                                        handleSelectedImage(image)
+                                    }
+                                }
+                        }
+                        .sheet(isPresented: $isShowingPhotoLibrary) {
+                            PHPickerView(image: $selectedImage)
+                                .onDisappear {
+                                    if let image = selectedImage {
+                                        handleSelectedImage(image)
+                                    }
+                                }
+                        }
+                        .alert(isPresented: $showPermissionAlert) {
+                            Alert(
+                                title: Text("\(permissionAlertType) Access Required"),
+                                message: Text("Please allow access to your \(permissionAlertType.lowercased()) in Settings to use this feature."),
+                                primaryButton: .default(Text("Open Settings")) {
+                                    permissionManager.openAppSettings()
+                                },
+                                secondaryButton: .cancel()
+                            )
                         }
                     }
                 }
@@ -175,6 +233,15 @@ struct ChatView: View {
         viewModel.currentMode = mode
         print("Switched to mode: \(mode)")
     }
+    
+    // Add this function to handle the selected image
+    private func handleSelectedImage(_ image: UIImage) {
+        // Send the image message
+        viewModel.sendImageMessage(image)
+        
+        // Reset the selected image
+        selectedImage = nil
+    }
 }
 
 struct ChatView_Previews: PreviewProvider {
@@ -182,3 +249,91 @@ struct ChatView_Previews: PreviewProvider {
         ChatView()
     }
 }
+
+
+
+
+// ImagePicker for camera
+struct ImagePicker: UIViewControllerRepresentable {
+    @Binding var selectedImage: UIImage?
+    @Environment(\.presentationMode) var presentationMode
+    var sourceType: UIImagePickerController.SourceType
+    
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.sourceType = sourceType
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: ImagePicker
+        
+        init(_ parent: ImagePicker) {
+            self.parent = parent
+        }
+        
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                parent.selectedImage = image
+            }
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+        
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.presentationMode.wrappedValue.dismiss()
+        }
+    }
+}
+
+// PHPickerView for photo library
+struct PHPickerView: UIViewControllerRepresentable {
+    @Binding var image: UIImage?
+    @Environment(\.presentationMode) var presentationMode
+    
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var configuration = PHPickerConfiguration()
+        configuration.filter = .images
+        configuration.selectionLimit = 1
+        
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: PHPickerView
+        
+        init(_ parent: PHPickerView) {
+            self.parent = parent
+        }
+        
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            parent.presentationMode.wrappedValue.dismiss()
+            
+            guard let provider = results.first?.itemProvider else { return }
+            
+            if provider.canLoadObject(ofClass: UIImage.self) {
+                provider.loadObject(ofClass: UIImage.self) { image, error in
+                    DispatchQueue.main.async {
+                        self.parent.image = image as? UIImage
+                    }
+                }
+            }
+        }
+    }
+}
+
+
