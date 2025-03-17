@@ -7,6 +7,9 @@ struct MessageInputView: View {
     @Binding var isActionsExpanded: Bool
     let onSend: () -> Void
     
+    var onCameraButtonTapped: () -> Void
+    var onPhotoLibraryButtonTapped: () -> Void
+    
     var body: some View {
         ZStack(alignment: .top) {
             // Main input field
@@ -46,6 +49,22 @@ struct MessageInputView: View {
             // Action buttons popup
             if isActionsExpanded {
                 HStack(spacing: 16) {
+                    // Add these action buttons to your existing buttons
+                    Button(action: onCameraButtonTapped) {
+                            Image(systemName: "camera")
+                                .foregroundColor(colors.text(opacity: 0.5))
+                                .frame(width: 40, height: 40)
+                                .background(colors.background)
+                                .clipShape(Circle())
+                    }
+
+                    Button(action: onPhotoLibraryButtonTapped) {
+                            Image(systemName: "photo")
+                                .foregroundColor(colors.text(opacity: 0.5))
+                                .frame(width: 40, height: 40)
+                                .background(colors.background)
+                                .clipShape(Circle())
+                    }
                     Button(action: { /* TODO: Handle @ mentions */ }) {
                         Image(systemName: "at")
                             .foregroundColor(colors.text(opacity: 0.5))
