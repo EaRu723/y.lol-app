@@ -95,20 +95,30 @@ class ChatViewModel: ObservableObject {
             images: imageData,
             mode: currentMode
         ) {
-            let aiMessage = ChatMessage(
-                content: llmResponse,
-                isUser: false,
-                timestamp: Date()
-            )
+            // Split the response into individual bubbles
+            let bubbles = llmResponse.components(separatedBy: "\n\n").filter { !$0.isEmpty }
             
-            // Play receive haptic feedback and update UI
-            await MainActor.run {
-                hapticService.playReceiveFeedback()
+            // Create a message for each bubble
+            for bubble in bubbles {
+                let aiMessage = ChatMessage(
+                    content: bubble.trimmingCharacters(in: .whitespacesAndNewlines),
+                    isUser: false,
+                    timestamp: Date()
+                )
                 
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                    messages.append(aiMessage)
-                    isThinking = false
+                // Play receive haptic feedback and update UI
+                await MainActor.run {
+                    hapticService.playReceiveFeedback()
+                    
+                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                        messages.append(aiMessage)
+                    }
                 }
+            }
+            
+            // Set thinking to false after all bubbles are added
+            await MainActor.run {
+                isThinking = false
             }
         } else {
             // Handle error with fallback message

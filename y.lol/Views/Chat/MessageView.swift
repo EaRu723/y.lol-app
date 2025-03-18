@@ -14,8 +14,18 @@ struct MessageView: View {
     let totalCount: Int
     
     var body: some View {
-        VStack(spacing: 8) {
-            MessageBubble(text: message.content, isUser: message.isUser)
+        VStack(alignment: message.isUser ? .trailing : .leading, spacing: 8) {
+            HStack {
+                if message.isUser { Spacer() }
+                
+                Text(message.content)
+                    .padding(12)
+                    .background(message.isUser ? colors.userMessageBubble : colors.aiMessageBubble)
+                    .foregroundColor(message.isUser ? colors.userMessageText : colors.aiMessageText)
+                    .cornerRadius(16)
+                
+                if !message.isUser { Spacer() }
+            }
             
             if let image = message.image {
                 Image(uiImage: image)
