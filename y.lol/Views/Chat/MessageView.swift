@@ -8,58 +8,24 @@
 import SwiftUI
 
 struct MessageView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
-    
     let message: ChatMessage
     let index: Int
     let totalCount: Int
     
-    
     var body: some View {
-        HStack {
-            if message.isUser {
-                Spacer()
-            }
+        VStack(spacing: 8) {
+            MessageBubble(text: message.content, isUser: message.isUser)
             
-            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-                // Display image if present
-                if let image = message.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 250, maxHeight: 250)
-                        .cornerRadius(12)
-                        .padding(.vertical, 4)
-                }
-                
-                // Display text if not empty
-                if !message.content.isEmpty {
-                    Text(message.content)
-                        .padding()
-                        .background(message.isUser ? colors.userMessageBubble : colors.aiMessageBubble)
-                        .foregroundColor(message.isUser ? colors.userMessageText : colors.aiMessageText)
-                        .cornerRadius(12)
-                }
-                
-                // Timestamp
-                Text(formatTimestamp(message.timestamp))
-                    .font(.caption2)
-                    .foregroundColor(colors.text(opacity: 0.5))
-                    .padding(.horizontal, 4)
-            }
-            
-            if !message.isUser {
-                Spacer()
+            if let image = message.image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 200)
+                    .cornerRadius(12)
             }
         }
         .padding(.horizontal)
-    }
-    
-    private func formatTimestamp(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
     }
 }
            
