@@ -22,8 +22,8 @@ enum YTheme {
         // Message bubble colors
         static let userBubbleLight = Color(hex: "E4D5B7")  // Same as accentLight
         static let userBubbleDark = Color(hex: "B8A179")   // Same as accentDark
-        static let aiBubbleLight = Color(hex: "EDEADE")    // Slightly lighter than background
-        static let aiBubbleDark = Color(hex: "2C2C2E")     // Slightly lighter than dark background
+        static let aiBubbleLight = Color(hex: "E8E3D5")    // Make more distinct from background
+        static let aiBubbleDark = Color(hex: "2A2A2C")     // Make more distinct from background
         
         /// Dynamic colors that automatically adapt to color scheme
         struct Dynamic {
@@ -170,64 +170,8 @@ extension Color {
     }
 }
 
-#Preview {
-    ThemePreview()
-        .withYTheme() // Apply the theme modifier
-}
 
-// Updated preview component
-private struct ThemePreview: View {
-    @Environment(\.themeColors) private var colors
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            // Header to show which theme we're looking at
-            Text("Theme Preview")
-                .font(YTheme.Typography.title)
-            
-            // Color samples
-            VStack(alignment: .leading, spacing: 16) {
-                ColorSampleRow(label: "Background", color: colors.background)
-                ColorSampleRow(label: "Text", color: colors.text)
-                ColorSampleRow(label: "Accent", color: colors.accent)
-                ColorSampleRow(label: "User Message Bubble", color: colors.userMessageBubble)
-                ColorSampleRow(label: "AI Message Bubble", color: colors.aiMessageBubble)
-            }
-            .padding()
-            .background(colors.backgroundWithNoise)
-            .cornerRadius(12)
-            
-            // Mock message bubbles to simulate ContentView
-            VStack(spacing: 12) {
-                MessageBubble(text: "Hello there!", isUser: false)
-                MessageBubble(text: "Hi! How are you?", isUser: true)
-            }
-            .padding()
-        }
-        .padding()
-        .background(colors.background)
-    }
-}
-
-// Helper views for the preview
-private struct ColorSampleRow: View {
-    @Environment(\.themeColors) private var colors
-    let label: String
-    let color: Color
-    
-    var body: some View {
-        HStack {
-            Text(label)
-                .foregroundColor(colors.text)
-            Spacer()
-            RoundedRectangle(cornerRadius: 6)
-                .fill(color)
-                .frame(width: 60, height: 30)
-        }
-    }
-}
-
-private struct MessageBubble: View {
+struct MessageBubble: View {
     @Environment(\.themeColors) private var colors
     let text: String
     let isUser: Bool
