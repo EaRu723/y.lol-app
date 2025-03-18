@@ -14,28 +14,25 @@ struct MessageInputView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Image preview area
-            if let image = selectedImage {
-                HStack {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 100)
-                        .cornerRadius(8)
-                        .padding(.horizontal)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        selectedImage = nil
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(colors.text(opacity: 0.5))
-                            .font(.system(size: 20))
-                    }
-                    .padding(.trailing)
-                }
-                .padding(.top, 8)
-                .transition(.move(edge: .top).combined(with: .opacity))
+            if let selectedImage = selectedImage {
+                Image(uiImage: selectedImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 100)
+                    .cornerRadius(8)
+                    .padding(.top, 4)
+                    .overlay(
+                        Button(action: {
+                            self.selectedImage = nil
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.white)
+                                .background(Color.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
+                        .padding(4),
+                        alignment: .topTrailing
+                    )
             }
             
             ZStack(alignment: .top) {

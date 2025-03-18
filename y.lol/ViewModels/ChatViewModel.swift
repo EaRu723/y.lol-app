@@ -58,18 +58,26 @@ class ChatViewModel: ObservableObject {
     }
     
     // Send a user message and get AI response
-    func sendMessage() async {
-        // Trim whitespace and check if message is empty
+    func sendMessage(with image: UIImage? = nil) async {
+        // Trim whitespace and check if message is empty and no image
         let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedMessage.isEmpty else { return }
+        guard !trimmedMessage.isEmpty || image != nil else { return }
         
         // Play send haptic feedback
         hapticService.playSendFeedback()
         
+        // Convert image to Data if it exists
+        var imageData: [Data] = []
+        if let image = image, let jpegData = image.jpegData(compressionQuality: 0.7) {
+            imageData.append(jpegData)
+        }
+        
+        // Create the user message with text and possible image
         let newMessage = ChatMessage(
             content: trimmedMessage,
             isUser: true,
-            timestamp: Date()
+            timestamp: Date(),
+            image: image
         )
         
         // Update UI on main thread
@@ -80,14 +88,13 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // Generate AI response using Firebase Function
+        // Generate AI response using Firebase Function with image data if available
         if let llmResponse = await FirebaseManager.shared.generateResponse(
-            conversationId: conversationId, // Use a unique ID for each conversation
+            conversationId: conversationId,
             messages: messages,
-            images: [], // TODO: implement file upload, and include them here
+            images: imageData,
             mode: currentMode
-        )
-        {
+        ) {
             let aiMessage = ChatMessage(
                 content: llmResponse,
                 isUser: false,
@@ -117,72 +124,6 @@ class ChatViewModel: ObservableObject {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                     messages.append(fallbackMessage)
                     isThinking = false
-                }
-            }
-        }
-    }
-    
-    func sendImageMessage(_ image: UIImage, withText text: String?) {
-        // Play send haptic feedback
-        hapticService.playSendFeedback()
-        
-        // Create a message with the image and optional text
-        let newMessage = ChatMessage(
-            content: text ?? "",
-            isUser: true,
-            timestamp: Date(),
-            image: image
-        )
-        
-        // Add the message to the messages array
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-            messages.append(newMessage)
-            isThinking = true
-        }
-        
-        // Here you would upload the image to your backend and get a response
-        // For now, we'll process the message locally with a simulated response
-        Task {
-            // Call Firebase function with the image
-            if let imageData = image.jpegData(compressionQuality: 0.7) {
-                // Simulate AI response after processing the image
-                // In a real implementation, you would send the image to your backend
-                // along with the conversation context
-                
-                // Wait to simulate network delay
-                try? await Task.sleep(nanoseconds: 2_000_000_000)
-                
-                await MainActor.run {
-                    self.isThinking = false
-                    
-                    let responseText = text?.isEmpty ?? true
-                    ? "I received your image! It looks interesting."
-                    : "I received your image and message: \"\(text!)\". Thanks for sharing!"
-                    
-                    let aiResponse = ChatMessage(
-                        content: responseText,
-                        isUser: false,
-                        timestamp: Date()
-                    )
-                    
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                        self.messages.append(aiResponse)
-                    }
-                }
-            } else {
-                // Handle image conversion error
-                await MainActor.run {
-                    self.isThinking = false
-                    
-                    let errorResponse = ChatMessage(
-                        content: "I had trouble processing your image. Could you try sending it again?",
-                        isUser: false,
-                        timestamp: Date()
-                    )
-                    
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                        self.messages.append(errorResponse)
-                    }
                 }
             }
         }
