@@ -213,21 +213,18 @@ struct ChatView: View {
         guard !messageText.isEmpty || selectedImage != nil else { return }
         
         viewModel.messageText = messageText
-        
-        // If there's an image, send it along with the message
-        if let image = selectedImage {
-            viewModel.sendImageMessage(image, withText: messageText)
-            selectedImage = nil
-        } else {
-            // Just send a text message
-            Task {
-                await viewModel.sendMessage()
-            }
-        }
-        
+
+        let imageToSend = selectedImage
+
         DispatchQueue.main.async {
             self.messageText = ""
         }
+        
+        // Send the message to the LLM
+            Task {
+                await viewModel.sendMessage(with: imageToSend)
+                selectedImage = nil
+            }
     }
     
     private func scrollToLatest(proxy: ScrollViewProxy) {

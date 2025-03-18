@@ -24,5 +24,3 @@ struct ChatMessage: Identifiable {
     }
 }
 
-// TODO:
-// Add image
