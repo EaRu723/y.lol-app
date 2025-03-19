@@ -28,11 +28,18 @@ struct MessageView: View {
             }
             
             if let image = message.image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 200)
-                    .cornerRadius(12)
+                HStack {
+                    if message.isUser { Spacer() }
+                    
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 150)
+                        .cornerRadius(12)
+                    
+                    if !message.isUser { Spacer() }
+                }
+                .padding(.horizontal)
             }
         }
         .padding(.horizontal)

@@ -79,7 +79,7 @@ class ChatViewModel: ObservableObject {
         }
         
         // Increased delay between indicator hiding and message appearing
-        try? await Task.sleep(nanoseconds: UInt64(0.8 * 1_000_000_000))  // Changed from 0.5 to 0.8 seconds
+        try? await Task.sleep(nanoseconds: UInt64(0.8 * 1_000_000_000))
         
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
@@ -178,7 +178,7 @@ class ChatViewModel: ObservableObject {
     
     private func getInitialMessage(for mode: FirebaseManager.ChatMode) -> String {
         switch mode {
-        case .reg: return "what's weighing on your mind today?"
+        case .reg: return "why are you here?"
         case .vibeCheck: return "let's check the vibes. what's up?"
         case .ventMode: return "need to vent? I'm here."
         case .existentialCrisis: return "feeling existential? let's talk."
