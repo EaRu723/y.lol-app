@@ -65,9 +65,9 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // Reduced base delay range from 1.0-2.0 to 0.5-1.0 seconds
-        let baseDelay = Double.random(in: 0.5...1.0)
-        let characterDelay = Double(message.count) * 0.005  // Reduced from 0.01 to 0.005
+        // Increased base delay range from 0.8-1.5 seconds
+        let baseDelay = Double.random(in: 0.8...1.5)
+        let characterDelay = Double(message.count) * 0.005
         let totalDelay = baseDelay + characterDelay
         
         try? await Task.sleep(nanoseconds: UInt64(totalDelay * 1_000_000_000))
