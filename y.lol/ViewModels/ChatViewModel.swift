@@ -58,7 +58,7 @@ class ChatViewModel: ObservableObject {
         }
     }
     
-    private func deliverMessageWithDelay(_ message: String) async {
+    private func deliverMessageWithDelay(_ message: String, isLastMessage: Bool) async {
         await MainActor.run {
             isTyping = true
         }
@@ -70,6 +70,16 @@ class ChatViewModel: ObservableObject {
         
         try? await Task.sleep(nanoseconds: UInt64(totalDelay * 1_000_000_000))
         
+        // Hide typing indicator before showing message
+        await MainActor.run {
+            withAnimation(.easeOut(duration: 0.3)) {
+                isTyping = false
+            }
+        }
+        
+        // Small delay before showing message
+        try? await Task.sleep(nanoseconds: UInt64(0.2 * 1_000_000_000))
+        
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 messages.append(ChatMessage(
@@ -78,6 +88,17 @@ class ChatViewModel: ObservableObject {
                     timestamp: Date()
                 ))
                 hapticService.playReceiveFeedback()
+            }
+        }
+        
+        // If there are more messages coming, show typing indicator again
+        if !isLastMessage {
+            // Small delay before showing typing indicator again
+            try? await Task.sleep(nanoseconds: UInt64(0.5 * 1_000_000_000))
+            await MainActor.run {
+                withAnimation(.easeIn(duration: 0.3)) {
+                    isTyping = true
+                }
             }
         }
     }
@@ -128,11 +149,11 @@ class ChatViewModel: ObservableObject {
             await MainActor.run { isTyping = true }
             
             // Deliver each bubble with a delay
-            for bubble in bubbles {
-                await deliverMessageWithDelay(bubble)
+            for (index, bubble) in bubbles.enumerated() {
+                await deliverMessageWithDelay(bubble, isLastMessage: index == bubbles.count - 1)
             }
             
-            // Hide typing indicator and thinking state
+            // Final cleanup
             await MainActor.run {
                 isTyping = false
                 isThinking = false
