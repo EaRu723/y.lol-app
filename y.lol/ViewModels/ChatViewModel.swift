@@ -12,6 +12,7 @@ class ChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var messageText: String = ""
     @Published var isThinking: Bool = false
+    @Published var isTyping: Bool = false
     @Published var errorMessage: String?
     @Published var currentMode: FirebaseManager.ChatMode = .reg {
         didSet {
@@ -57,6 +58,30 @@ class ChatViewModel: ObservableObject {
         }
     }
     
+    private func deliverMessageWithDelay(_ message: String) async {
+        await MainActor.run {
+            isTyping = true
+        }
+        
+        // Longer delay based on message length
+        let baseDelay = Double.random(in: 1.0...2.0)
+        let characterDelay = Double(message.count) * 0.01
+        let totalDelay = baseDelay + characterDelay
+        
+        try? await Task.sleep(nanoseconds: UInt64(totalDelay * 1_000_000_000))
+        
+        await MainActor.run {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                messages.append(ChatMessage(
+                    content: message,
+                    isUser: false,
+                    timestamp: Date()
+                ))
+                hapticService.playReceiveFeedback()
+            }
+        }
+    }
+    
     // Send a user message and get AI response
     func sendMessage(with image: UIImage? = nil) async {
         // Trim whitespace and check if message is empty and no image
@@ -88,36 +113,28 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // Generate AI response using Firebase Function with image data if available
+        // Generate AI response using Firebase Function
         if let llmResponse = await FirebaseManager.shared.generateResponse(
             conversationId: conversationId,
             messages: messages,
             images: imageData,
             mode: currentMode
         ) {
-            // Split the response into individual bubbles
-            let bubbles = llmResponse.components(separatedBy: "\n\n").filter { !$0.isEmpty }
+            let bubbles = llmResponse.components(separatedBy: "\n\n")
+                .filter { !$0.isEmpty }
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             
-            // Create a message for each bubble
+            // Show typing indicator
+            await MainActor.run { isTyping = true }
+            
+            // Deliver each bubble with a delay
             for bubble in bubbles {
-                let aiMessage = ChatMessage(
-                    content: bubble.trimmingCharacters(in: .whitespacesAndNewlines),
-                    isUser: false,
-                    timestamp: Date()
-                )
-                
-                // Play receive haptic feedback and update UI
-                await MainActor.run {
-                    hapticService.playReceiveFeedback()
-                    
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                        messages.append(aiMessage)
-                    }
-                }
+                await deliverMessageWithDelay(bubble)
             }
             
-            // Set thinking to false after all bubbles are added
+            // Hide typing indicator and thinking state
             await MainActor.run {
+                isTyping = false
                 isThinking = false
             }
         } else {

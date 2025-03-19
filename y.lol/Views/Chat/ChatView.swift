@@ -81,11 +81,27 @@ struct ChatView: View {
                                                     removal: .opacity.combined(with: .scale(scale: 0.9))
                                                 ))
                                         }
+                                        
+                                        // Add typing indicator
+                                        if viewModel.isTyping {
+                                            HStack {
+                                                TypingIndicatorView()
+                                                Spacer()
+                                            }
+                                            .padding(.horizontal)
+                                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                                        }
                                     }
                                     .padding(.vertical)
                                 }
                                 .onChange(of: viewModel.messages.count) { oldCount, newCount in
                                     if newCount > oldCount {
+                                        scrollToLatest(proxy: proxy)
+                                    }
+                                }
+                                // Also scroll when typing indicator appears
+                                .onChange(of: viewModel.isTyping) { _, isTyping in
+                                    if isTyping {
                                         scrollToLatest(proxy: proxy)
                                     }
                                 }
