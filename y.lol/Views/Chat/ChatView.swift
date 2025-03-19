@@ -230,18 +230,27 @@ struct ChatView: View {
     private func sendMessage() {
         guard !messageText.isEmpty || selectedImage != nil else { return }
         
-        viewModel.messageText = messageText
-
+        // Store message content locally before clearing
+        let messageToSend = messageText
         let imageToSend = selectedImage
-
+        
+        // Clear input immediately
         withAnimation(.easeOut(duration: 0.2)) {
             messageText = ""
+            selectedImage = nil
         }
+        
+        // Use local copies for sending
+        viewModel.messageText = messageToSend
         
         // Send the message to the LLM
         Task {
             await viewModel.sendMessage(with: imageToSend)
-            selectedImage = nil
+            
+            // Force clear selectedImage again on the main thread after task completes
+            await MainActor.run {
+                selectedImage = nil
+            }
         }
     }
     
@@ -263,6 +272,11 @@ struct ChatView: View {
     
     // Modify this function to just set the selectedImage without sending it
     private func handleSelectedImage(_ image: UIImage) {
+        // Add a guard to prevent setting image if it's being cleared
+        if viewModel.isThinking {
+            return // Don't set image while message is being sent
+        }
+        
         // Just set the selected image without sending it
         selectedImage = image
     }
