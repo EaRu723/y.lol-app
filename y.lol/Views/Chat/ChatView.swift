@@ -130,6 +130,7 @@ struct ChatView: View {
                                             permissionAlertType = "Camera"
                                             showPermissionAlert = true
                                         }
+                                        isActionsExpanded = false
                                     },
                                     onPhotoLibraryButtonTapped: {
                                         permissionManager.checkPhotoLibraryPermission()
@@ -139,6 +140,7 @@ struct ChatView: View {
                                             permissionAlertType = "Photo Library"
                                             showPermissionAlert = true
                                         }
+                                        isActionsExpanded = false
                                     }
                                 )
                                 .padding()
