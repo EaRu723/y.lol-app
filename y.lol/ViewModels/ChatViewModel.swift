@@ -65,7 +65,6 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // Increased base delay range from 0.8-1.5 seconds
         let baseDelay = Double.random(in: 0.8...1.5)
         let characterDelay = Double(message.count) * 0.005
         let totalDelay = baseDelay + characterDelay
@@ -79,8 +78,8 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // Keep the pause between typing and message appearing
-        try? await Task.sleep(nanoseconds: UInt64(0.5 * 1_000_000_000))
+        // Increased delay between indicator hiding and message appearing
+        try? await Task.sleep(nanoseconds: UInt64(0.8 * 1_000_000_000))  // Changed from 0.5 to 0.8 seconds
         
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
