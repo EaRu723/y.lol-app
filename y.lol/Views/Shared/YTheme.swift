@@ -22,8 +22,8 @@ enum YTheme {
         // Message bubble colors
         static let userBubbleLight = Color(hex: "E4D5B7")  // Same as accentLight
         static let userBubbleDark = Color(hex: "B8A179")   // Same as accentDark
-        static let aiBubbleLight = Color(hex: "E8E3D5")    // Make more distinct from background
-        static let aiBubbleDark = Color(hex: "2A2A2C")     // Make more distinct from background
+        static let aiMessageBubbleLight = Color(hex: "E4E2DA")
+        static let aiMessageBubbleDark = Color(hex: "2C2C2E")
         
         /// Dynamic colors that automatically adapt to color scheme
         struct Dynamic {
@@ -51,7 +51,7 @@ enum YTheme {
             }
             
             var aiMessageBubble: Color {
-                colorScheme == .light ? aiBubbleLight : aiBubbleDark
+                colorScheme == .light ? aiMessageBubbleLight : aiMessageBubbleDark
             }
             
             var userMessageText: Color {

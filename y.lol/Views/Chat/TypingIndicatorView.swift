@@ -11,13 +11,14 @@ struct TypingIndicatorView: View {
     @Environment(\.themeColors) private var colors
     
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 3) {
             ForEach(0..<3) { index in
                 BouncingDot(delay: Double(index) * 0.15)
             }
         }
-        .padding(10)
-        .background(Color.gray.opacity(0.15))  // Lighter gray background
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(colors.aiMessageBubble)
         .cornerRadius(16)
     }
 }
@@ -31,8 +32,8 @@ private struct BouncingDot: View {
     
     var body: some View {
         Circle()
-            .fill(Color.gray.opacity(0.7))  // Lighter gray dots
-            .frame(width: 6, height: 6)
+            .fill(Color.gray.opacity(0.9))
+            .frame(width: 4, height: 4)
             .opacity(0.8)
             .offset(y: offset)
             .onAppear {
@@ -46,10 +47,9 @@ private struct BouncingDot: View {
     
     private func startAnimation() {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            // Create a timer that fires every 0.6 seconds
             timer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { _ in
                 withAnimation(.easeInOut(duration: 0.3)) {
-                    offset = -5
+                    offset = -4
                 }
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -58,8 +58,6 @@ private struct BouncingDot: View {
                     }
                 }
             }
-            
-            // Trigger the timer immediately
             timer?.fire()
         }
     }
