@@ -60,25 +60,27 @@ class ChatViewModel: ObservableObject {
     
     private func deliverMessageWithDelay(_ message: String, isLastMessage: Bool) async {
         await MainActor.run {
-            isTyping = true
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isTyping = true
+            }
         }
         
-        // Longer delay based on message length
-        let baseDelay = Double.random(in: 1.0...2.0)
-        let characterDelay = Double(message.count) * 0.01
+        // Reduced base delay range from 1.0-2.0 to 0.5-1.0 seconds
+        let baseDelay = Double.random(in: 0.5...1.0)
+        let characterDelay = Double(message.count) * 0.005  // Reduced from 0.01 to 0.005
         let totalDelay = baseDelay + characterDelay
         
         try? await Task.sleep(nanoseconds: UInt64(totalDelay * 1_000_000_000))
         
-        // Hide typing indicator before showing message
+        // Hide typing indicator
         await MainActor.run {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(.easeInOut(duration: 0.15)) {
                 isTyping = false
             }
         }
         
-        // Small delay before showing message
-        try? await Task.sleep(nanoseconds: UInt64(0.2 * 1_000_000_000))
+        // Keep the pause between typing and message appearing
+        try? await Task.sleep(nanoseconds: UInt64(0.5 * 1_000_000_000))
         
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
@@ -91,12 +93,10 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // If there are more messages coming, show typing indicator again
         if !isLastMessage {
-            // Small delay before showing typing indicator again
-            try? await Task.sleep(nanoseconds: UInt64(0.5 * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64(0.3 * 1_000_000_000))
             await MainActor.run {
-                withAnimation(.easeIn(duration: 0.3)) {
+                withAnimation(.easeInOut(duration: 0.15)) {
                     isTyping = true
                 }
             }
