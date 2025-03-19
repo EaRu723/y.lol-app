@@ -57,6 +57,16 @@ struct ContentView: View {
                                         ))
                                 }
                                 
+                                // Add typing indicator
+                                if viewModel.isTyping {
+                                    HStack {
+                                        TypingIndicatorView()
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal)
+                                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                                }
+                                
                                 if !isEditing {
                                     InlineEditorView(
                                         text: $messageText,
