@@ -17,7 +17,7 @@ struct TypingIndicatorView: View {
             }
         }
         .padding(10)
-        .background(colors.aiMessageBubble)
+        .background(Color.gray.opacity(0.15))  // Lighter gray background
         .cornerRadius(16)
     }
 }
@@ -31,7 +31,7 @@ private struct BouncingDot: View {
     
     var body: some View {
         Circle()
-            .fill(colors.aiMessageText)
+            .fill(Color.gray.opacity(0.7))  // Lighter gray dots
             .frame(width: 6, height: 6)
             .opacity(0.8)
             .offset(y: offset)
