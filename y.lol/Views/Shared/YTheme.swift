@@ -143,7 +143,6 @@ extension View {
     }
 }
 
-// Keep the Color hex extension here since it's theme-related
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)

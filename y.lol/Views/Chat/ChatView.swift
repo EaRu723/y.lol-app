@@ -232,15 +232,15 @@ struct ChatView: View {
 
         let imageToSend = selectedImage
 
-        DispatchQueue.main.async {
-            self.messageText = ""
+        withAnimation(.easeOut(duration: 0.2)) {
+            messageText = ""
         }
         
         // Send the message to the LLM
-            Task {
-                await viewModel.sendMessage(with: imageToSend)
-                selectedImage = nil
-            }
+        Task {
+            await viewModel.sendMessage(with: imageToSend)
+            selectedImage = nil
+        }
     }
     
     private func scrollToLatest(proxy: ScrollViewProxy) {
