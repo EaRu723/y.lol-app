@@ -179,6 +179,7 @@ struct MessageBubble: View {
         HStack {
             if isUser { Spacer() }
             Text(text)
+                .font(.system(size: 15))
                 .padding(12)
                 .background(isUser ? colors.userMessageBubble : colors.aiMessageBubble)
                 .foregroundColor(isUser ? colors.userMessageText : colors.aiMessageText)
