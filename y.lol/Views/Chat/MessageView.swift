@@ -8,46 +8,86 @@
 import SwiftUI
 
 struct MessageView: View {
-    @Environment(\.themeColors) private var colors
+    @Environment(\.colorScheme) private var colorScheme
     let message: ChatMessage
     let index: Int
     let totalCount: Int
     
     var body: some View {
-        VStack(alignment: message.isUser ? .trailing : .leading, spacing: 8) {
-            HStack {
-                if message.isUser { Spacer() }
-                
-                Text(message.content)
-                    .padding(12)
-                    .background(message.isUser ? colors.userMessageBubble : colors.aiMessageBubble)
-                    .foregroundColor(message.isUser ? colors.userMessageText : colors.aiMessageText)
-                    .cornerRadius(16)
-                
-                if !message.isUser { Spacer() }
+        HStack {
+            if message.isUser {
+                Spacer()
             }
             
-            if let image = message.image {
-                HStack {
-                    if message.isUser { Spacer() }
-                    
+            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
+                // Message text
+                Text(message.content)
+                    .padding(10)
+                    .background(getBubbleBackgroundColor())
+                    .foregroundColor(getBubbleTextColor())
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(getBubbleBorderColor(), lineWidth: 0.5)
+                    )
+                
+                // Image if present
+                if let image = message.image {
                     Image(uiImage: image)
                         .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 150)
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: 200, maxHeight: 200)
                         .cornerRadius(12)
-                    
-                    if !message.isUser { Spacer() }
+                        .clipped()
                 }
-                .padding(.horizontal)
+                
+                // Timestamp
+                Text(formattedTime(from: message.timestamp))
+                    .font(.caption2)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal, 4)
+            }
+            
+            if !message.isUser {
+                Spacer()
             }
         }
         .padding(.horizontal)
     }
+    
+    // Dynamic colors based on dark/light mode and sender
+    private func getBubbleBackgroundColor() -> Color {
+        if message.isUser {
+            return colorScheme == .dark ? .white : .black
+        } else {
+            return colorScheme == .dark ? .black : .white
+        }
+    }
+    
+    private func getBubbleTextColor() -> Color {
+        if message.isUser {
+            return colorScheme == .dark ? .black : .white
+        } else {
+            return colorScheme == .dark ? .white : .black
+        }
+    }
+    
+    private func getBubbleBorderColor() -> Color {
+        if message.isUser {
+            return .clear
+        } else {
+            return colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3)
+        }
+    }
+    
+    private func formattedTime(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
 }
-           
 
-// To preview this view, you can add this preview provider
+// Preview provider
 struct MessageView_Previews: PreviewProvider {
     static var previews: some View {
         VStack {

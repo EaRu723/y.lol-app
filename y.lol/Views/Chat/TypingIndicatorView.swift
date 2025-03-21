@@ -8,23 +8,29 @@
 import SwiftUI
 
 struct TypingIndicatorView: View {
-    @Environment(\.themeColors) private var colors
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 4) {
             ForEach(0..<3) { index in
                 BouncingDot(delay: Double(index) * 0.15)
             }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        .background(colors.aiMessageBubble)
+        .background(
+            colorScheme == .dark ? Color.black : Color.white
+        )
         .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+        )
     }
 }
 
 private struct BouncingDot: View {
-    @Environment(\.themeColors) private var colors
+    @Environment(\.colorScheme) private var colorScheme
     let delay: Double
     
     @State private var offset: CGFloat = 0
@@ -32,8 +38,8 @@ private struct BouncingDot: View {
     
     var body: some View {
         Circle()
-            .fill(Color.gray.opacity(0.9))
-            .frame(width: 4, height: 4)
+            .fill(colorScheme == .dark ? Color.white.opacity(0.7) : Color.black.opacity(0.7))
+            .frame(width: 6, height: 6)
             .opacity(0.8)
             .offset(y: offset)
             .onAppear {
@@ -66,8 +72,19 @@ private struct BouncingDot: View {
 // Preview provider
 struct TypingIndicatorView_Previews: PreviewProvider {
     static var previews: some View {
-        TypingIndicatorView()
-            .padding()
-            .previewLayout(.sizeThatFits)
+        Group {
+            TypingIndicatorView()
+                .padding()
+                .previewLayout(.sizeThatFits)
+                .background(Color.white)
+                .previewDisplayName("Light Mode")
+            
+            TypingIndicatorView()
+                .padding()
+                .previewLayout(.sizeThatFits)
+                .background(Color.black)
+                .preferredColorScheme(.dark)
+                .previewDisplayName("Dark Mode")
+        }
     }
-} 
+}

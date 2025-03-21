@@ -9,11 +9,9 @@ import SwiftUI
 
 struct HeaderView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.themeColors) private var colors
     @Binding var isThinking: Bool
-    @Binding var showProfile: Bool  // New binding for profile sheet
-    @State private var showButtons = false // Added missing state variable
-    
+    @Binding var showProfile: Bool
+    @State private var showButtons = false
     
     var body: some View {
         HStack {
@@ -22,7 +20,7 @@ struct HeaderView: View {
             }) {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 20))
-                    .foregroundColor(colors.text(opacity: 0.8))
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)
@@ -56,7 +54,7 @@ struct HeaderView: View {
             }) {
                 Image(systemName: "person.circle")
                     .font(.system(size: 20))
-                    .foregroundColor(colors.text(opacity: 0.8))
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)
@@ -64,6 +62,7 @@ struct HeaderView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 8)
+        .background(colorScheme == .dark ? Color.black : Color.white)
     }
 }
 
@@ -74,14 +73,14 @@ struct HeaderView_Previews: PreviewProvider {
             HeaderView(isThinking: .constant(false), showProfile: .constant(false))
                 .previewLayout(.sizeThatFits)
                 .padding()
-                .background(Color(hex: "F5F2E9"))
+                .background(Color.white)
                 .previewDisplayName("Light Mode")
             
             // Dark mode preview
             HeaderView(isThinking: .constant(true), showProfile: .constant(false))
                 .previewLayout(.sizeThatFits)
                 .padding()
-                .background(Color(hex: "1C1C1E"))
+                .background(Color.black)
                 .preferredColorScheme(.dark)
                 .previewDisplayName("Dark Mode (Loading)")
         }
