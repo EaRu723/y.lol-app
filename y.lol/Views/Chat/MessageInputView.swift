@@ -30,165 +30,163 @@ struct MessageInputView: View {
                     }) {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.white)
-                            .background(Circle().fill(Color.black.opacity(0.6)))
+                            .background(Circle().fill(Color.black.opacity(0.5)))
                             .padding(6)
                     }
                 }
                 .padding(.horizontal)
             }
             
-            ZStack(alignment: .top) {
-                // Main input field
-                HStack(spacing: 12) {
-                    // Plus button moved outside the input field
-                    Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            isActionsExpanded.toggle()
-                        }
-                    }) {
-                        Image(systemName: isActionsExpanded ? "chevron.up.circle.fill" : "plus.circle.fill")
-                            .resizable()
-                            .frame(width: 28, height: 28)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
+            // Input bar with rounded corners
+            HStack(spacing: 12) {
+                // Plus button on the left
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        isActionsExpanded.toggle()
                     }
-                    
-                    // Text field with rounded corners and gray border
-                    ZStack(alignment: .bottomTrailing) {
-                        ZStack(alignment: .leading) {
-                            // Invisible text view used to calculate height
-                            Text(messageText.isEmpty ? "Ask anything..." : messageText)
-                                .foregroundColor(.clear)
-                                .padding(.horizontal, 12)
-                                .lineLimit(5) // Maximum lines before scrolling
-                                .background(GeometryReader { geometry in
-                                    Color.clear.preference(
-                                        key: ViewHeightKey.self,
-                                        value: geometry.size.height + 16 // Add padding
-                                    )
-                                })
-                            
-                            // Placeholder text
-                            if messageText.isEmpty {
-                                Text("Ask anything...")
-                                    .foregroundColor(.gray)
-                                    .padding(.leading, 12)
-                                    .frame(height: textEditorHeight)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            
-                            // Actual text editor
-                            TextEditor(text: $messageText)
-                                .padding(.horizontal, 8)
-                                .frame(height: max(36, textEditorHeight))
-                                .frame(minHeight: 40)
-                                .background(Color.clear)
-                                .scrollContentBackground(.hidden)
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
-                                .focused($isFocused)
-                                .padding(.trailing, 40) // Add padding for the send button
-                        }
-                        .onPreferenceChange(ViewHeightKey.self) { height in
-                            self.textEditorHeight = height
-                        }
-                        
-                        // Send button only appears when there's text or an image
-                        if !messageText.isEmpty || selectedImage != nil {
-                            Button(action: onSend) {
-                                ZStack {
-                                    Circle()
-                                        .fill(colorScheme == .dark ? .white : .black)
-                                        .frame(width: 32, height: 32)
-                                    
-                                    Image(systemName: "arrow.up")
-                                        .font(.system(size: 15, weight: .bold))
-                                        .foregroundColor(colorScheme == .dark ? .black : .white)
-                                }
-                            }
-                            .padding(.trailing, 8)
-                            .padding(.bottom, 4)
-                        }
-                    }
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
-                    .background(colorScheme == .dark ? Color.black : Color.white)
-                    .cornerRadius(20)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                    )
+                }) {
+                    Image(systemName: isActionsExpanded ? "chevron.up.circle.fill" : "plus.circle.fill")
+                        .resizable()
+                        .frame(width: 28, height: 28)
+                        .foregroundColor(colorScheme == .dark ? .white : .black)
                 }
                 
-                // Action buttons popup
-                if isActionsExpanded {
-                    HStack(spacing: 16) {
-                        Button(action: onCameraButtonTapped) {
-                            Image(systemName: "camera")
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
-                                .frame(width: 40, height: 40)
-                                .background(colorScheme == .dark ? Color.black : Color.white)
-                                .overlay(
-                                    Circle()
-                                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                // Text field with rounded corners and gray border
+                HStack(alignment: .bottom) {
+                    ZStack(alignment: .leading) {
+                        // Invisible text view used to calculate height
+                        Text(messageText.isEmpty ? "Ask anything..." : messageText)
+                            .foregroundColor(.clear)
+                            .padding(.horizontal, 12)
+                            .lineLimit(5) // Maximum lines before scrolling
+                            .background(GeometryReader { geometry in
+                                Color.clear.preference(
+                                    key: ViewHeightKey.self,
+                                    value: geometry.size.height + 16 // Add padding
                                 )
-                                .clipShape(Circle())
-                        }
-
-                        Button(action: onPhotoLibraryButtonTapped) {
-                            Image(systemName: "photo")
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
-                                .frame(width: 40, height: 40)
-                                .background(colorScheme == .dark ? Color.black : Color.white)
-                                .overlay(
-                                    Circle()
-                                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                                )
-                                .clipShape(Circle())
+                            })
+                        
+                        // Placeholder text
+                        if messageText.isEmpty {
+                            Text("Ask anything...")
+                                .foregroundColor(.gray)
+                                .padding(.leading, 12)
+                                .frame(height: textEditorHeight)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         
-                        Button(action: { /* TODO: Handle @ mentions */ }) {
-                            Image(systemName: "at")
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
-                                .frame(width: 40, height: 40)
-                                .background(colorScheme == .dark ? Color.black : Color.white)
-                                .overlay(
-                                    Circle()
-                                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                                )
-                                .clipShape(Circle())
-                        }
-                        
-                        Button(action: { /* TODO: Handle attachments */ }) {
-                            Image(systemName: "paperclip")
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
-                                .frame(width: 40, height: 40)
-                                .background(colorScheme == .dark ? Color.black : Color.white)
-                                .overlay(
-                                    Circle()
-                                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                                )
-                                .clipShape(Circle())
-                        }
-                        
-                        Button(action: { /* TODO: Handle voice */ }) {
-                            Image(systemName: "mic")
-                                .foregroundColor(colorScheme == .dark ? .white : .black)
-                                .frame(width: 40, height: 40)
-                                .background(colorScheme == .dark ? Color.black : Color.white)
-                                .overlay(
-                                    Circle()
-                                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                                )
-                                .clipShape(Circle())
-                        }
+                        TextEditor(text: $messageText)
+                            .padding(.horizontal, 8)
+                            .frame(height: max(36, textEditorHeight))
+                            .background(Color.clear)
+                            .scrollContentBackground(.hidden)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .focused($isFocused)
                     }
-                    .offset(y: -50) // Adjust this value to position the buttons above the text field
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onPreferenceChange(ViewHeightKey.self) { height in
+                        self.textEditorHeight = height
+                    }
+                    
+                    if !messageText.isEmpty || selectedImage != nil {
+                        Button(action: onSend) {
+                            ZStack {
+                                Circle()
+                                    .fill(colorScheme == .dark ? .white : .black)
+                                    .frame(width: 32, height: 32)
+                                
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(colorScheme == .dark ? .black : .white)
+                            }
+                        }
+                        .padding(.trailing, 8)
+                        .padding(.bottom, 4)
+                        .transition(.opacity)
+                    }
                 }
+                .padding(.vertical, 4)
+                .background(colorScheme == .dark ? Color.black : Color.white)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .cornerRadius(20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                )
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            .background(colorScheme == .dark ? Color.black : Color.white)
+            
+            // Action buttons popup
+            if isActionsExpanded {
+                HStack(spacing: 16) {
+                    Button(action: onCameraButtonTapped) {
+                        Image(systemName: "camera")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+
+                    Button(action: onPhotoLibraryButtonTapped) {
+                        Image(systemName: "photo")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { /* TODO: Handle @ mentions */ }) {
+                        Image(systemName: "at")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { /* TODO: Handle attachments */ }) {
+                        Image(systemName: "paperclip")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { /* TODO: Handle voice */ }) {
+                        Image(systemName: "mic")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(colorScheme == .dark ? Color.black : Color.white)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedImage != nil)
-        .padding(.horizontal)
-        .padding(.vertical, 10)
         // Close actions when text field gains focus
         .onChange(of: isFocused) { _, newValue in
             if newValue {
