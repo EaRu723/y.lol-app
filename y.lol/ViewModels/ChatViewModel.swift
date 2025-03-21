@@ -14,13 +14,19 @@ class ChatViewModel: ObservableObject {
     @Published var isThinking: Bool = false
     @Published var isTyping: Bool = false
     @Published var errorMessage: String?
-    @Published var currentMode: FirebaseManager.ChatMode = .reg {
+    @Published var currentMode: FirebaseManager.ChatMode = .yin {
         didSet {
             if oldValue != currentMode {
-                conversationId = UUID().uuidString
-                messages = [
-                    ChatMessage(content: getInitialMessage(for: currentMode), isUser: false, timestamp: Date())
-                ]
+                // Force cancel any pending requests before switching modes
+                firebaseManager.cancelPendingRequests()
+                
+                // Generate new conversation with delay to ensure clean separation
+                DispatchQueue.main.async {
+                    self.conversationId = UUID().uuidString
+                    self.messages = [
+                        ChatMessage(content: self.getInitialMessage(for: self.currentMode), isUser: false, timestamp: Date())
+                    ]
+                }
             }
         }
     }
@@ -32,7 +38,7 @@ class ChatViewModel: ObservableObject {
     private var conversationId = UUID().uuidString
     
     init() {
-        // Subscribe to Firebase manager's state changes
+        // Subscribe to Firebase manager's state changes.
         firebaseManager.$isProcessingMessage
             .receive(on: RunLoop.main)
             .sink { [weak self] isProcessing in
@@ -47,7 +53,7 @@ class ChatViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
-        // Add initial message
+        // Add the initial message if none exist.
         if messages.isEmpty {
             let initialMessage = ChatMessage(
                 content: getInitialMessage(for: currentMode),
@@ -58,6 +64,7 @@ class ChatViewModel: ObservableObject {
         }
     }
     
+    // Delivers a message bubble with a delay to simulate typing.
     private func deliverMessageWithDelay(_ message: String, isLastMessage: Bool) async {
         await MainActor.run {
             withAnimation(.easeInOut(duration: 0.15)) {
@@ -71,14 +78,14 @@ class ChatViewModel: ObservableObject {
         
         try? await Task.sleep(nanoseconds: UInt64(totalDelay * 1_000_000_000))
         
-        // Hide typing indicator
+        // Hide typing indicator.
         await MainActor.run {
             withAnimation(.easeInOut(duration: 0.15)) {
                 isTyping = false
             }
         }
         
-        // Increased delay between indicator hiding and message appearing
+        // Pause a bit longer before showing the message.
         try? await Task.sleep(nanoseconds: UInt64(0.8 * 1_000_000_000))
         
         await MainActor.run {
@@ -102,22 +109,22 @@ class ChatViewModel: ObservableObject {
         }
     }
     
-    // Send a user message and get AI response
+    /// Sends a user message (with an optional image) and gets the AI response.
     func sendMessage(with image: UIImage? = nil) async {
-        // Trim whitespace and check if message is empty and no image
+        // Trim whitespace and verify that there's either text or an image.
         let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedMessage.isEmpty || image != nil else { return }
         
-        // Play send haptic feedback
+        // Play send feedback.
         hapticService.playSendFeedback()
         
-        // Convert image to Data if it exists
+        // Convert image to Data if available.
         var imageData: [Data] = []
         if let image = image, let jpegData = image.jpegData(compressionQuality: 0.7) {
             imageData.append(jpegData)
         }
         
-        // Create the user message with text and possible image
+        // Create the new user message.
         let newMessage = ChatMessage(
             content: trimmedMessage,
             isUser: true,
@@ -125,7 +132,7 @@ class ChatViewModel: ObservableObject {
             image: image
         )
         
-        // Update UI on main thread
+        // Update UI on the main thread.
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 messages.append(newMessage)
@@ -133,10 +140,10 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // Generate AI response using Firebase Function
-        if let llmResponse = await FirebaseManager.shared.generateResponse(
+        // Call the Firebase function to generate an AI response.
+        if let llmResponse = await firebaseManager.generateResponse(
             conversationId: conversationId,
-            messages: messages,
+            newMessages: messages,
             images: imageData,
             mode: currentMode
         ) {
@@ -144,21 +151,21 @@ class ChatViewModel: ObservableObject {
                 .filter { !$0.isEmpty }
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             
-            // Show typing indicator
+            // Show typing indicator.
             await MainActor.run { isTyping = true }
             
-            // Deliver each bubble with a delay
+            // Deliver each bubble with a delay.
             for (index, bubble) in bubbles.enumerated() {
                 await deliverMessageWithDelay(bubble, isLastMessage: index == bubbles.count - 1)
             }
             
-            // Final cleanup
+            // Final cleanup.
             await MainActor.run {
                 isTyping = false
                 isThinking = false
             }
         } else {
-            // Handle error with fallback message
+            // In case of an error, show a fallback response.
             await MainActor.run {
                 let fallbackMessage = ChatMessage(
                     content: "I seem to be having trouble connecting. Can we pause and reflect for a moment?",
@@ -176,14 +183,13 @@ class ChatViewModel: ObservableObject {
         }
     }
     
+    /// Returns the initial message for the given chat mode.
     private func getInitialMessage(for mode: FirebaseManager.ChatMode) -> String {
         switch mode {
-        case .reg: return "why are you here?"
-        case .vibeCheck: return "let's check the vibes. what's up?"
-        case .ventMode: return "need to vent? I'm here."
-        case .existentialCrisis: return "feeling existential? let's talk."
-        case .roastMe: return "heard you wanted a roast?"
+        case .yin:
+            return "what brings you here?"
+        case .yang:
+            return "what's good?"
         }
     }
 }
-
