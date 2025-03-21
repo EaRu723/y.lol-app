@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HeaderView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     @Binding var isThinking: Bool
     @Binding var showProfile: Bool
     @State private var showButtons = false
@@ -22,7 +23,7 @@ struct HeaderView: View {
             }) {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 20))
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .foregroundColor(colors.text)
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)
@@ -84,7 +85,7 @@ struct HeaderView: View {
             }) {
                 Image(systemName: "person.circle")
                     .font(.system(size: 20))
-                    .foregroundColor(colorScheme == .dark ? .white : .black)
+                    .foregroundColor(colors.text)
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)
@@ -92,7 +93,7 @@ struct HeaderView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 8)
-        .background(colorScheme == .dark ? Color.black : Color.white)
+        .background(colors.background)
     }
 }
 

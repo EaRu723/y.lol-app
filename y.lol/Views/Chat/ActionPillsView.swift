@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ActionPillsView: View {
+    @Environment(\.themeColors) private var colors
     var currentMode: FirebaseManager.ChatMode
     var onPillTapped: (FirebaseManager.ChatMode) -> Void
     
@@ -17,9 +18,9 @@ struct ActionPillsView: View {
                             .lineLimit(1)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(Capsule().fill(currentMode == mode ? Color.gray.opacity(0.4) : Color.gray.opacity(0.1)))
+                            .background(Capsule().fill(currentMode == mode ? colors.accent.opacity(0.4) : colors.accent.opacity(0.1)))
                             .foregroundColor(
-                                currentMode == mode ? Color.primary : Color.primary.opacity(0.7)
+                                currentMode == mode ? colors.text : colors.text(opacity: 0.7)
                             )
                     }
                 }
