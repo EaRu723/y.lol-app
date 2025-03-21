@@ -61,7 +61,7 @@ struct ChatView: View {
                 GeometryReader { geometry in
                     ZStack {
                         // Background
-                        (colorScheme == .dark ? Color.black : Color.white)
+                        colors.backgroundWithNoise
                             .ignoresSafeArea()
                         
                         VStack(spacing: 0) {
@@ -188,6 +188,7 @@ struct ChatView: View {
                 }
             }
         }
+        .withYTheme()
         .onAppear {
             setupAuthListener()
             checkAuthStatus()

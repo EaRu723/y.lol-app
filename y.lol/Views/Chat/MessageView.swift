@@ -9,6 +9,7 @@ import SwiftUI
 
 struct MessageView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     let message: ChatMessage
     let index: Int
     let totalCount: Int
@@ -23,12 +24,12 @@ struct MessageView: View {
                 // Message text
                 Text(message.content)
                     .padding(10)
-                    .background(getBubbleBackgroundColor())
-                    .foregroundColor(getBubbleTextColor())
+                    .background(message.isUser ? colors.userMessageBubble : colors.aiMessageBubble)
+                    .foregroundColor(message.isUser ? colors.userMessageText : colors.aiMessageText)
                     .cornerRadius(16)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(getBubbleBorderColor(), lineWidth: 0.5)
+                            .stroke(colors.text(opacity: 0.1), lineWidth: 0.5)
                     )
                 
                 // Image if present
@@ -49,29 +50,8 @@ struct MessageView: View {
         .padding(.horizontal)
     }
     
-    // Dynamic colors based on dark/light mode and sender
-    private func getBubbleBackgroundColor() -> Color {
-        if message.isUser {
-            return colorScheme == .dark ? .white : .black
-        } else {
-            return colorScheme == .dark ? .black : .white
-        }
-    }
-    
-    private func getBubbleTextColor() -> Color {
-        if message.isUser {
-            return colorScheme == .dark ? .black : .white
-        } else {
-            return colorScheme == .dark ? .white : .black
-        }
-    }
-    
     private func getBubbleBorderColor() -> Color {
-        if message.isUser {
-            return .clear
-        } else {
-            return colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3)
-        }
+        return colors.text(opacity: 0.1)
     }
 }
 

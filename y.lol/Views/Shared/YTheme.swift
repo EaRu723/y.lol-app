@@ -19,11 +19,11 @@ enum YTheme {
         static let accentLight = Color(hex: "E4D5B7")
         static let accentDark = Color(hex: "B8A179")
         
-        // Message bubble colors
-        static let userBubbleLight = Color(hex: "E4D5B7")
-        static let userBubbleDark = Color(hex: "B8A179")
-        static let aiMessageBubbleLight = Color(hex: "E4E2DA")
-        static let aiMessageBubbleDark = Color(hex: "2C2C2E")
+        // Message bubble colors - updated to black and white
+        static let userBubbleLight = Color.black
+        static let userBubbleDark = Color.white
+        static let aiMessageBubbleLight = Color.white
+        static let aiMessageBubbleDark = Color.black
         
         /// Dynamic colors that automatically adapt to color scheme
         struct Dynamic {
@@ -54,12 +54,13 @@ enum YTheme {
                 colorScheme == .light ? aiMessageBubbleLight : aiMessageBubbleDark
             }
             
+            // Updated message bubble text colors to ensure contrast
             var userMessageText: Color {
-                colorScheme == .light ? textLight : textDark
+                colorScheme == .light ? .white : .black // Reversed text color for contrast
             }
             
             var aiMessageText: Color {
-                colorScheme == .light ? textLight : textDark
+                colorScheme == .light ? .black : .white // Same as background text
             }
             
             /// Returns text color with custom opacity
@@ -67,14 +68,10 @@ enum YTheme {
                 text.opacity(opacity)
             }
             
-            /// Returns background color with noise overlay
+            /// Returns background color without noise
             var backgroundWithNoise: some View {
+                // Removed noise overlay, now just returns the plain background color
                 background
-                    .overlay(
-                        Color.primary
-                            .opacity(0.02)
-                            .blendMode(.multiply)
-                    )
             }
         }
     }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct InlineEditorView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     @Binding var text: String
     @Binding var isEditing: Bool
     @FocusState var isFocused: Bool
@@ -49,7 +50,7 @@ struct InlineEditorView: View {
                             .frame(minHeight: 36, maxHeight: 120)
                             .frame(height: max(36, textEditorHeight))
                             .font(.body)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .foregroundColor(colors.text)
                             .scrollContentBackground(.hidden)
                             .background(Color.clear)
                             .padding(.horizontal, 8)
@@ -68,12 +69,12 @@ struct InlineEditorView: View {
                         Button(action: onSend) {
                             ZStack {
                                 Circle()
-                                    .fill(colorScheme == .dark ? .white : .black)
+                                    .fill(colors.accent)
                                     .frame(width: 32, height: 32)
                                 
                                 Image(systemName: "arrow.up")
                                     .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(colorScheme == .dark ? .black : .white)
+                                    .foregroundColor(colors.background)
                             }
                         }
                         .padding(.trailing, 8)
@@ -82,7 +83,7 @@ struct InlineEditorView: View {
                     }
                 }
                 .padding(.vertical, 4)
-                .background(colorScheme == .dark ? Color.black : Color.white)
+                .background(colors.background)
                 .cornerRadius(20)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
@@ -91,7 +92,7 @@ struct InlineEditorView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 10)
-            .background(colorScheme == .dark ? Color.black : Color.white)
+            .background(colors.background)
             .onAppear {
                 isFocused = true
             }

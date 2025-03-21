@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TypingIndicatorView: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     
     var body: some View {
         HStack(spacing: 4) {
@@ -18,19 +18,17 @@ struct TypingIndicatorView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        .background(
-            colorScheme == .dark ? Color.black : Color.white
-        )
+        .background(colors.aiMessageBubble)
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                .stroke(colors.text(opacity: 0.1), lineWidth: 0.5)
         )
     }
 }
 
 private struct BouncingDot: View {
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     let delay: Double
     
     @State private var offset: CGFloat = 0
@@ -38,7 +36,7 @@ private struct BouncingDot: View {
     
     var body: some View {
         Circle()
-            .fill(colorScheme == .dark ? Color.white.opacity(0.7) : Color.black.opacity(0.7))
+            .fill(colors.text(opacity: 0.7))
             .frame(width: 6, height: 6)
             .opacity(0.8)
             .offset(y: offset)
