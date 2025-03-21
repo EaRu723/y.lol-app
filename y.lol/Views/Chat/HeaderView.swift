@@ -37,7 +37,7 @@ struct HeaderView: View {
                     .font(.subheadline)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Capsule().fill(currentMode == .yin ? Color.gray.opacity(0.4) : Color.gray.opacity(0.1)))
+                    .background(Capsule().fill(currentMode == .yin ? Color.gray.opacity(0.2) : Color.clear))
                     .foregroundColor(currentMode == .yin ? Color.primary : Color.primary.opacity(0.7))
             }
             
@@ -72,7 +72,7 @@ struct HeaderView: View {
                     .font(.subheadline)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Capsule().fill(currentMode == .yang ? Color.gray.opacity(0.4) : Color.gray.opacity(0.1)))
+                    .background(Capsule().fill(currentMode == .yang ? Color.gray.opacity(0.2) : Color.clear))
                     .foregroundColor(currentMode == .yang ? Color.primary : Color.primary.opacity(0.7))
             }
             
