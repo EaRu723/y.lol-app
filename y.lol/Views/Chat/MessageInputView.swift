@@ -40,7 +40,7 @@ struct MessageInputView: View {
             ZStack(alignment: .top) {
                 // Main input field
                 HStack(spacing: 12) {
-                    // Plus button on the left
+                    // Plus button moved outside the input field
                     Button(action: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             isActionsExpanded.toggle()
@@ -53,7 +53,7 @@ struct MessageInputView: View {
                     }
                     
                     // Text field with rounded corners and gray border
-                    HStack(alignment: .bottom) {
+                    ZStack(alignment: .bottomTrailing) {
                         ZStack(alignment: .leading) {
                             // Invisible text view used to calculate height
                             Text(messageText.isEmpty ? "Ask anything..." : messageText)
@@ -85,40 +85,38 @@ struct MessageInputView: View {
                                 .scrollContentBackground(.hidden)
                                 .foregroundColor(colorScheme == .dark ? .white : .black)
                                 .focused($isFocused)
+                                .padding(.trailing, 40) // Add padding for the send button
                         }
                         .onPreferenceChange(ViewHeightKey.self) { height in
                             self.textEditorHeight = height
                         }
                         
-                        // Send button
-                        Button(action: onSend) {
-                            ZStack {
-                                Circle()
-                                    .fill((!messageText.isEmpty || selectedImage != nil) ?
-                                        (colorScheme == .dark ? .white : .black) :
-                                        Color.gray.opacity(0.3))
-                                    .frame(width: 32, height: 32)
-                                
-                                Image(systemName: "arrow.up")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor((!messageText.isEmpty || selectedImage != nil) ?
-                                        (colorScheme == .dark ? .black : .white) :
-                                        Color.gray.opacity(0.5))
+                        // Send button only appears when there's text or an image
+                        if !messageText.isEmpty || selectedImage != nil {
+                            Button(action: onSend) {
+                                ZStack {
+                                    Circle()
+                                        .fill(colorScheme == .dark ? .white : .black)
+                                        .frame(width: 32, height: 32)
+                                    
+                                    Image(systemName: "arrow.up")
+                                        .font(.system(size: 15, weight: .bold))
+                                        .foregroundColor(colorScheme == .dark ? .black : .white)
+                                }
                             }
+                            .padding(.trailing, 8)
+                            .padding(.bottom, 4)
                         }
-                        .disabled(messageText.isEmpty && selectedImage == nil)
-                        .padding(.trailing, 8)
-                        .padding(.bottom, 4)
                     }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(colorScheme == .dark ? Color.black : Color.white)
+                    .cornerRadius(20)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                    )
                 }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(colorScheme == .dark ? Color.black : Color.white)
-                .cornerRadius(20)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                )
                 
                 // Action buttons popup
                 if isActionsExpanded {
