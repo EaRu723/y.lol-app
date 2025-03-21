@@ -11,6 +11,7 @@ import FirebaseFirestore
 
 struct ProfileView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
     @Environment(\.presentationMode) private var presentationMode
     @EnvironmentObject private var authManager: AuthenticationManager
     @State private var showingLogoutAlert = false
@@ -18,39 +19,11 @@ struct ProfileView: View {
     @State private var isLoading = true
     @State private var errorMessage = ""
     
-    // Colors based on color scheme
-    private var colors: (background: Color, text: Color, accent: Color) {
-        switch colorScheme {
-        case .light:
-            return (
-                background: Color(hex: "F5F2E9"),    // light parchment
-                text: Color(hex: "2C2C2C"),          // dark gray
-                accent: Color(hex: "E4D5B7")         // warm beige
-            )
-        case .dark:
-            return (
-                background: Color(hex: "1C1C1E"),    // dark background
-                text: Color(hex: "F5F2E9"),          // light text
-                accent: Color(hex: "B8A179")         // darker warm accent
-            )
-        @unknown default:
-            return (
-                background: Color(hex: "F5F2E9"),
-                text: Color(hex: "2C2C2C"),
-                accent: Color(hex: "E4D5B7")
-            )
-        }
-    }
     
     var body: some View {
         ZStack {
             // Background
-            colors.background
-                .overlay(
-                    Color.primary
-                        .opacity(0.03)
-                        .blendMode(.multiply)
-                )
+            colors.backgroundWithNoise
                 .ignoresSafeArea()
             
             VStack {
@@ -95,23 +68,23 @@ struct ProfileView: View {
                         YinYangLogoView(
                             size: 80,
                             isLoading: false,
-                            lightColor: colorScheme == .light ? .white : Color(hex: "1C1C1E"),
-                            darkColor: colorScheme == .light ? Color(hex: "2C2C2C") : Color(hex: "F5F2E9")
+                            lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
+                            darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
                         )
                         
                         // User details
                         VStack(spacing: 12) {
                             Text(user.name)
-                                .font(.system(size: 24, weight: .medium, design: .serif))
+                                .font(YTheme.Typography.title)
                                 .foregroundColor(colors.text)
                             
                             Text(user.email)
-                                .font(.system(size: 16, weight: .light, design: .serif))
-                                .foregroundColor(colors.text.opacity(0.7))
+                                .font(YTheme.Typography.body)
+                                .foregroundColor(colors.text(opacity: 0.7))
                             
                             Text("Joined \(formatDate(timestamp: user.joined))")
-                                .font(.system(size: 14, weight: .light, design: .serif))
-                                .foregroundColor(colors.text.opacity(0.5))
+                                .font(YTheme.Typography.caption)
+                                .foregroundColor(colors.text(opacity: 0.5))
                                 .padding(.top, 8)
                         }
                         .padding(.vertical, 20)
@@ -120,7 +93,7 @@ struct ProfileView: View {
                         if !user.scores.isEmpty {
                             VStack(spacing: 16) {
                                 Text("Activity")
-                                    .font(.system(size: 18, weight: .medium, design: .serif))
+                                    .font(YTheme.Typography.subtitle)
                                     .foregroundColor(colors.text)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 
@@ -128,15 +101,13 @@ struct ProfileView: View {
                                     StatCard(
                                         title: "Total Sessions",
                                         value: "\(user.scores.count)",
-                                        icon: "calendar",
-                                        colors: colors
+                                        icon: "calendar"
                                     )
                                     
                                     StatCard(
                                         title: "Best Score",
                                         value: "\(getBestScore(scores: user.scores))",
-                                        icon: "star.fill",
-                                        colors: colors
+                                        icon: "star.fill"
                                     )
                                 }
                             }
@@ -180,8 +151,8 @@ struct ProfileView: View {
                         Spacer()
                         
                         Text(errorMessage.isEmpty ? "No user information available" : errorMessage)
-                            .font(.system(size: 16, weight: .regular, design: .serif))
-                            .foregroundColor(colors.text.opacity(0.7))
+                            .font(YTheme.Typography.body)
+                            .foregroundColor(colors.text(opacity: 0.7))
                             .multilineTextAlignment(.center)
                             .padding()
                         
@@ -198,6 +169,7 @@ struct ProfileView: View {
                 }
             }
         }
+        .withYTheme()
         .onAppear {
             fetchUserData()
         }
@@ -289,22 +261,22 @@ struct StatCard: View {
     let title: String
     let value: String
     let icon: String
-    let colors: (background: Color, text: Color, accent: Color)
+    @Environment(\.themeColors) private var colors
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 14))
-                    .foregroundColor(colors.text.opacity(0.7))
+                    .foregroundColor(colors.text(opacity: 0.7))
                 
                 Text(title)
-                    .font(.system(size: 14, weight: .medium, design: .serif))
-                    .foregroundColor(colors.text.opacity(0.7))
+                    .font(YTheme.Typography.caption)
+                    .foregroundColor(colors.text(opacity: 0.7))
             }
             
             Text(value)
-                .font(.system(size: 22, weight: .bold, design: .serif))
+                .font(YTheme.Typography.subtitle)
                 .foregroundColor(colors.text)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -317,4 +289,5 @@ struct StatCard: View {
 #Preview {
     ProfileView()
         .environmentObject(AuthenticationManager.shared)
+        .withYTheme()
 }

@@ -11,19 +11,19 @@ import SwiftUI
 enum YTheme {
     /// Core color palette for the app
     enum Colors {
-        // Base colors
-        static let parchmentLight = Color(hex: "F5F2E9")
-        static let parchmentDark = Color(hex: "1C1C1E")
-        static let textLight = Color(hex: "2C2C2C")
-        static let textDark = Color(hex: "F5F2E9")
-        static let accentLight = Color(hex: "E4D5B7")
-        static let accentDark = Color(hex: "B8A179")
+        // Base colors - Updated to match chat UI style
+        static let parchmentLight = Color(hex: "F9F6F0") // Slightly warmer off-white
+        static let parchmentDark = Color(hex: "121212") // Deeper black for dark mode
+        static let textLight = Color(hex: "1A1A1A") // Nearly black text for light mode
+        static let textDark = Color(hex: "F9F6F0") // Same as parchmentLight for text in dark mode
+        static let accentLight = Color(hex: "E8E1D9") // Subtle warm accent for light mode
+        static let accentDark = Color(hex: "3A3A3C") // Subtle dark accent for dark mode
         
         // Message bubble colors
-        static let userBubbleLight = Color(hex: "E4D5B7")  // Same as accentLight
-        static let userBubbleDark = Color(hex: "B8A179")   // Same as accentDark
-        static let aiMessageBubbleLight = Color(hex: "E4E2DA")
-        static let aiMessageBubbleDark = Color(hex: "2C2C2E")
+        static let userBubbleLight = Color(hex: "E8E1D9") // Same as accentLight
+        static let userBubbleDark = Color(hex: "3A3A3C") // Same as accentDark
+        static let aiMessageBubbleLight = Color(hex: "F1F1F1") // Light gray for AI bubbles in light mode
+        static let aiMessageBubbleDark = Color(hex: "1E1E1E") // Dark gray for AI bubbles in dark mode
         
         /// Dynamic colors that automatically adapt to color scheme
         struct Dynamic {
@@ -88,7 +88,7 @@ enum YTheme {
             .system(size: size, weight: weight)
         }
         
-        // Add these new convenience methods
+        // Update typography to be more minimal and clean if desired
         static var title: Font {
             serif(size: 24, weight: .bold)
         }
