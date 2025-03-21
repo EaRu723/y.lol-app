@@ -12,67 +12,96 @@ struct InlineEditorView: View {
     @Binding var text: String
     @Binding var isEditing: Bool
     @FocusState var isFocused: Bool
+    @State private var textEditorHeight: CGFloat = 36
     var onSend: () -> Void
     let hapticService: HapticService
     
     var body: some View {
         VStack(spacing: 0) {
-            TextEditor(text: $text)
-                .focused($isFocused)
-                .frame(minHeight: 36, maxHeight: 120)
-                .frame(height: text.isEmpty ? 36 : nil)
-                .font(YTheme.Typography.body)
-                .foregroundColor(colorScheme == .light ?
-                    Color(hex: "2C2C2C").opacity(0.9) :
-                    Color(hex: "F5F2E9").opacity(0.9))
-                .scrollContentBackground(.hidden)
-                .background(Color.clear)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 20)
-                .onChange(of: text) { oldValue, newValue in
-                    if newValue.count > oldValue.count {
-                        hapticService.playTypingFeedback()
+            HStack(spacing: 12) {
+                // Text editor container
+                HStack(alignment: .bottom) {
+                    ZStack(alignment: .leading) {
+                        // Invisible text view to calculate height
+                        Text(text.isEmpty ? "Add comment or Send" : text)
+                            .foregroundColor(.clear)
+                            .padding(.horizontal, 12)
+                            .lineLimit(5)
+                            .background(GeometryReader { geometry in
+                                Color.clear.preference(
+                                    key: ViewHeightKey.self,
+                                    value: geometry.size.height + 16
+                                )
+                            })
+                        
+                        // Placeholder
+                        if text.isEmpty {
+                            Text("Add comment or Send")
+                                .foregroundColor(.gray)
+                                .padding(.leading, 12)
+                                .frame(height: textEditorHeight)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        
+                        // Actual text editor
+                        TextEditor(text: $text)
+                            .focused($isFocused)
+                            .frame(minHeight: 36, maxHeight: 120)
+                            .frame(height: max(36, textEditorHeight))
+                            .font(.body)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .scrollContentBackground(.hidden)
+                            .background(Color.clear)
+                            .padding(.horizontal, 8)
+                            .onChange(of: text) { oldValue, newValue in
+                                if newValue.count > oldValue.count {
+                                    hapticService.playTypingFeedback()
+                                }
+                            }
+                    }
+                    .onPreferenceChange(ViewHeightKey.self) { height in
+                        self.textEditorHeight = height
+                    }
+                    
+                    // Send button
+                    if !text.isEmpty {
+                        Button(action: onSend) {
+                            ZStack {
+                                Circle()
+                                    .fill(colorScheme == .dark ? .white : .black)
+                                    .frame(width: 32, height: 32)
+                                
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(colorScheme == .dark ? .black : .white)
+                            }
+                        }
+                        .padding(.trailing, 8)
+                        .padding(.bottom, 4)
+                        .transition(.opacity)
                     }
                 }
-                .onAppear {
-                    isFocused = true
-                }
-                .onTapGesture {
-                    isEditing = true
-                }
-            Spacer()
-            // Custom toolbar view
-//            KeyboardToolbarView(text: $text, onSend: onSend, hapticService: hapticService)
-//                .padding(.horizontal)
-//                .padding(.bottom, 8)
-//                .background(colors.background)
-        }
-        .background(colors.background)
-    }
-    
-    private var colors: (background: Color, text: Color, accent: Color) {
-        switch colorScheme {
-        case .light:
-            return (
-                background: Color(hex: "F5F2E9"),
-                text: Color(hex: "2C2C2C"),
-                accent: Color(hex: "E4D5B7")
-            )
-        case .dark:
-            return (
-                background: Color(hex: "1C1C1E"),
-                text: Color(hex: "F5F2E9"),
-                accent: Color(hex: "B8A179")
-            )
-        @unknown default:
-            return (
-                background: Color(hex: "F5F2E9"),
-                text: Color(hex: "2C2C2C"),
-                accent: Color(hex: "E4D5B7")
-            )
+                .padding(.vertical, 4)
+                .background(colorScheme == .dark ? Color.black : Color.white)
+                .cornerRadius(20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                )
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 10)
+            .background(colorScheme == .dark ? Color.black : Color.white)
+            .onAppear {
+                isFocused = true
+            }
+            .onTapGesture {
+                isEditing = true
+            }
         }
     }
 }
+
 
 struct InlineEditorView_Previews: PreviewProvider {
     static var previews: some View {
@@ -91,7 +120,7 @@ struct InlineEditorView_Previews: PreviewProvider {
                     )
                 }
                 .padding()
-                .background(Color(hex: "F5F2E9"))
+                .background(Color.white)
             }
         }
         
@@ -101,7 +130,7 @@ struct InlineEditorView_Previews: PreviewProvider {
             
             PreviewWrapper()
                 .preferredColorScheme(.dark)
-                .background(Color(hex: "1C1C1E"))
+                .background(Color.black)
                 .previewDisplayName("Dark Mode")
         }
     }

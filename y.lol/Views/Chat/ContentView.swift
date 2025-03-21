@@ -27,16 +27,13 @@ struct ContentView: View {
     @State private var isEditing: Bool = false
     @FocusState private var isFocused: Bool
     
-    // Remove this since we don't need it anymore - initial message is handled in ViewModel
-    // @State private var hasInitialized = false
-    
     private let hapticService = HapticService()
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Background with texture
-                colors.backgroundWithNoise
+                // Background
+                (colorScheme == .dark ? Color.black : Color.white)
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
@@ -103,9 +100,6 @@ struct ContentView: View {
                         stopBreathingHaptics()
                     }
                 }
-                
-                // Remove the onAppear block that was adding the initial message
-                // since it's now handled in the ViewModel
                 
                 .sheet(isPresented: $showProfile) {
                     ProfileView()

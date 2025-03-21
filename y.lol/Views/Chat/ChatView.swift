@@ -60,8 +60,8 @@ struct ChatView: View {
             } else {
                 GeometryReader { geometry in
                     ZStack {
-                        // Background with texture
-                        colors.backgroundWithNoise
+                        // Background
+                        (colorScheme == .dark ? Color.black : Color.white)
                             .ignoresSafeArea()
                         
                         VStack(spacing: 0) {
@@ -143,7 +143,7 @@ struct ChatView: View {
                                         isActionsExpanded = false
                                     }
                                 )
-                                .padding()
+                                .padding(.bottom, 8)
                             }
                             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActionsExpanded)
                         }
@@ -288,10 +288,7 @@ struct ChatView_Previews: PreviewProvider {
     }
 }
 
-
-
-
-// ImagePicker for camera
+// Keep the ImagePicker implementation
 struct ImagePicker: UIViewControllerRepresentable {
     @Binding var selectedImage: UIImage?
     @Environment(\.presentationMode) var presentationMode
@@ -329,49 +326,3 @@ struct ImagePicker: UIViewControllerRepresentable {
         }
     }
 }
-
-// PHPickerView for photo library
-struct PHPickerView: UIViewControllerRepresentable {
-    @Binding var image: UIImage?
-    @Environment(\.presentationMode) var presentationMode
-    
-    func makeUIViewController(context: Context) -> PHPickerViewController {
-        var configuration = PHPickerConfiguration()
-        configuration.filter = .images
-        configuration.selectionLimit = 1
-        
-        let picker = PHPickerViewController(configuration: configuration)
-        picker.delegate = context.coordinator
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, PHPickerViewControllerDelegate {
-        let parent: PHPickerView
-        
-        init(_ parent: PHPickerView) {
-            self.parent = parent
-        }
-        
-        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-            parent.presentationMode.wrappedValue.dismiss()
-            
-            guard let provider = results.first?.itemProvider else { return }
-            
-            if provider.canLoadObject(ofClass: UIImage.self) {
-                provider.loadObject(ofClass: UIImage.self) { image, error in
-                    DispatchQueue.main.async {
-                        self.parent.image = image as? UIImage
-                    }
-                }
-            }
-        }
-    }
-}
-
-
