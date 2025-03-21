@@ -37,7 +37,15 @@ struct ContentView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    HeaderView(isThinking: $viewModel.isThinking, showProfile: $showProfile)
+                    HeaderView(
+                        isThinking: $viewModel.isThinking, 
+                        showProfile: $showProfile,
+                        currentMode: viewModel.currentMode,
+                        onPillTapped: { mode in
+                            viewModel.currentMode = mode
+                            print("Switched to mode: \(mode)")
+                        }
+                    )
                     
                     ScrollViewReader { proxy in
                         ScrollView {
