@@ -65,7 +65,12 @@ struct ChatView: View {
                             .ignoresSafeArea()
                         
                         VStack(spacing: 0) {
-                            HeaderView(isThinking: $viewModel.isThinking, showProfile: $showProfile)
+                            HeaderView(
+                                isThinking: $viewModel.isThinking, 
+                                showProfile: $showProfile,
+                                currentMode: viewModel.currentMode,
+                                onPillTapped: handlePillTap
+                            )
                             
                             ScrollViewReader { proxy in
                                 ScrollView {
@@ -109,13 +114,6 @@ struct ChatView: View {
                             
                             // Action Pills and Input area
                             VStack {
-                                if !isActionsExpanded {
-                                    ActionPillsView(currentMode: viewModel.currentMode) { mode in
-                                        handlePillTap(mode)
-                                    }
-                                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                                }
-                                
                                 MessageInputView(
                                     messageText: $messageText,
                                     isActionsExpanded: $isActionsExpanded,
