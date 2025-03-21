@@ -34,7 +34,7 @@ struct HeaderView: View {
                 onPillTapped(.yin)
             }) {
                 Text("😇")
-                    .font(.subheadline)
+                    .font(.system(size: 20))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Capsule().fill(currentMode == .yin ? Color.gray.opacity(0.2) : Color.clear))
@@ -69,7 +69,7 @@ struct HeaderView: View {
                 onPillTapped(.yang)
             }) {
                 Text("😈")
-                    .font(.subheadline)
+                    .font(.system(size: 20))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(Capsule().fill(currentMode == .yang ? Color.gray.opacity(0.2) : Color.clear))
