@@ -37,6 +37,75 @@ struct MessageInputView: View {
                 .padding(.horizontal)
             }
             
+            // Action buttons popup - moved up here before the input bar
+            if isActionsExpanded {
+                HStack(spacing: 16) {
+                    Button(action: onCameraButtonTapped) {
+                        Image(systemName: "camera")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+
+                    Button(action: onPhotoLibraryButtonTapped) {
+                        Image(systemName: "photo")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { /* TODO: Handle @ mentions */ }) {
+                        Image(systemName: "at")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { /* TODO: Handle attachments */ }) {
+                        Image(systemName: "paperclip")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { /* TODO: Handle voice */ }) {
+                        Image(systemName: "mic")
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                            .frame(width: 40, height: 40)
+                            .background(colorScheme == .dark ? Color.black : Color.white)
+                            .overlay(
+                                Circle()
+                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+                            )
+                            .clipShape(Circle())
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(colorScheme == .dark ? Color.black : Color.white)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            
             // Input bar with rounded corners
             HStack(spacing: 12) {
                 // Plus button on the left
@@ -116,75 +185,6 @@ struct MessageInputView: View {
             .padding(.horizontal)
             .padding(.vertical, 10)
             .background(colorScheme == .dark ? Color.black : Color.white)
-            
-            // Action buttons popup
-            if isActionsExpanded {
-                HStack(spacing: 16) {
-                    Button(action: onCameraButtonTapped) {
-                        Image(systemName: "camera")
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                            .frame(width: 40, height: 40)
-                            .background(colorScheme == .dark ? Color.black : Color.white)
-                            .overlay(
-                                Circle()
-                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                            )
-                            .clipShape(Circle())
-                    }
-
-                    Button(action: onPhotoLibraryButtonTapped) {
-                        Image(systemName: "photo")
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                            .frame(width: 40, height: 40)
-                            .background(colorScheme == .dark ? Color.black : Color.white)
-                            .overlay(
-                                Circle()
-                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                            )
-                            .clipShape(Circle())
-                    }
-                    
-                    Button(action: { /* TODO: Handle @ mentions */ }) {
-                        Image(systemName: "at")
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                            .frame(width: 40, height: 40)
-                            .background(colorScheme == .dark ? Color.black : Color.white)
-                            .overlay(
-                                Circle()
-                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                            )
-                            .clipShape(Circle())
-                    }
-                    
-                    Button(action: { /* TODO: Handle attachments */ }) {
-                        Image(systemName: "paperclip")
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                            .frame(width: 40, height: 40)
-                            .background(colorScheme == .dark ? Color.black : Color.white)
-                            .overlay(
-                                Circle()
-                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                            )
-                            .clipShape(Circle())
-                    }
-                    
-                    Button(action: { /* TODO: Handle voice */ }) {
-                        Image(systemName: "mic")
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                            .frame(width: 40, height: 40)
-                            .background(colorScheme == .dark ? Color.black : Color.white)
-                            .overlay(
-                                Circle()
-                                    .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                            )
-                            .clipShape(Circle())
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 10)
-                .background(colorScheme == .dark ? Color.black : Color.white)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedImage != nil)
         // Close actions when text field gains focus
