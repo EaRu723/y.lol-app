@@ -40,12 +40,6 @@ struct MessageView: View {
                         .cornerRadius(12)
                         .clipped()
                 }
-                
-                // Timestamp
-                Text(formattedTime(from: message.timestamp))
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-                    .padding(.horizontal, 4)
             }
             
             if !message.isUser {
@@ -78,12 +72,6 @@ struct MessageView: View {
         } else {
             return colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3)
         }
-    }
-    
-    private func formattedTime(from date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
     }
 }
 
