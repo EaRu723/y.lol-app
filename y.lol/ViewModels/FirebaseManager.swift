@@ -25,12 +25,25 @@ class FirebaseManager: ObservableObject {
     
     // Conversation history cache: [conversationId: [ChatMessage]]
     private var conversationCache: [String: [ChatMessage]] = [:]
-    private let maxContextMessages = 10
+    
+    // Add this property
+    private let authManager = AuthenticationManager.shared
     
     // MARK: - Public API
     
     /// Generates a response given the conversationId, a new message, and optional images.
     func generateResponse(conversationId: String, newMessages: [ChatMessage], images: [Data] = [], mode: ChatMode = .yin) async -> String? {
+        // Check for token errors but don't immediately abort
+        if authManager.hasTokenError {
+            // Try to refresh the token first
+            let refreshSucceeded = await authManager.validateToken()
+            if !refreshSucceeded {
+                print("Token refresh failed, aborting request")
+                return nil
+            }
+            print("Token refreshed successfully, continuing with request")
+        }
+        
         guard !isRequestInProgress else {
             print("Request already in progress. Skipping...")
             return nil
@@ -95,8 +108,8 @@ class FirebaseManager: ObservableObject {
         }
         
         // Trim history if it exceeds twice the max context messages.
-        if let cachedMessages = conversationCache[conversationId], cachedMessages.count > maxContextMessages * 2 {
-            conversationCache[conversationId] = Array(cachedMessages.suffix(maxContextMessages))
+        if let cachedMessages = conversationCache[conversationId] {
+            conversationCache[conversationId] = Array(cachedMessages)
         }
     }
     
@@ -150,6 +163,24 @@ class FirebaseManager: ObservableObject {
     /// Calls the Firebase function endpoint (based on the chat mode) using multipart form data.
     /// The request includes the new prompt, the conversation history JSON, and any image files.
     private func callFirebaseFunction(mode: ChatMode, images: [Data], prompt: String, historyJSON: String) async throws -> String? {
+        do {
+            return try await actualCallImplementation(mode: mode, images: images, prompt: prompt, historyJSON: historyJSON)
+        } catch let error as NSError {
+            // Check if this is an auth error (401/403)
+            if error.domain == "FirebaseManager" && (error.code == 401 || error.code == 403) {
+                // Try to refresh token and retry
+                return try await authManager.refreshTokenAndRetry {
+                    try await self.actualCallImplementation(mode: mode, images: images, prompt: prompt, historyJSON: historyJSON)
+                }
+            } else {
+                // For non-auth errors, just re-throw
+                throw error
+            }
+        }
+    }
+    
+    // Extract the actual implementation to a separate method for reuse in retry
+    private func actualCallImplementation(mode: ChatMode, images: [Data], prompt: String, historyJSON: String) async throws -> String {
         let endpoint = getFunctionEndpoint(for: mode)
         guard let url = URL(string: endpoint) else {
             throw NSError(domain: "FirebaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
@@ -157,6 +188,12 @@ class FirebaseManager: ObservableObject {
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        
+        // Include auth ID token for authenticated request
+        guard let idToken = AuthenticationManager.shared.idToken else {
+            throw NSError(domain: "FirebaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Missing ID Token for authentication"])
+        }
+        request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
         
         // Create multipart form data with the new prompt, history JSON, and images.
         let boundary = "Boundary\(UUID().uuidString)"
@@ -172,11 +209,35 @@ class FirebaseManager: ObservableObject {
         // If error code received, throw error.
         if httpResponse.statusCode >= 400 {
             print("Debug - Error response: \(String(data: data, encoding: .utf8) ?? "No readable response")")
-            throw NSError(
-                domain: "FirebaseManager",
-                code: httpResponse.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "Server returned error code \(httpResponse.statusCode)"]
-            )
+            // Check for auth errors specifically
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                // Try to refresh the token before failing
+                do {
+                    return try await authManager.refreshTokenAndRetry {
+                        // Retry the same request after token refresh
+                        // Use parameters from the current function context instead
+                        return try await self.actualCallImplementation(
+                            mode: mode, 
+                            images: images, 
+                            prompt: prompt, 
+                            historyJSON: historyJSON
+                        )
+                    }
+                } catch {
+                    // Only set token error if refresh and retry failed
+                    await MainActor.run {
+                        AuthenticationManager.shared.hasTokenError = true
+                    }
+                    throw error
+                }
+            }
+
+            // Parse error response if possible
+            if let errorText = String(data: data, encoding: .utf8) {
+                throw NSError(domain: "FirebaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: errorText])
+            } else {
+                throw NSError(domain: "FirebaseManager", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "HTTP Error \(httpResponse.statusCode)"])
+            }
         }
         
         // Try to parse the JSON response.
@@ -197,9 +258,9 @@ class FirebaseManager: ObservableObject {
     }
     
     /// Creates the multipart form data payload.
-    /// It includes:
-    ///  - The "prompt" field (new user message)
-    ///  - The "history" field (JSON string of conversation history)
+    /// Includes:
+    ///  - "prompt" field (new user message)
+    ///  - "history" field (JSON string of conversation history)
     ///  - Each image under the "images" field.
     private func createMultipartFormData(prompt: String, historyJSON: String, images: [Data], boundary: String) -> Data {
         var data = Data()
@@ -231,9 +292,9 @@ class FirebaseManager: ObservableObject {
     }
     
     /// Returns the appropriate Firebase function endpoint based on the chat mode.
-    /// For example, for yin mode the endpoint is ".../yin", and for yang mode it is ".../yang".
     private func getFunctionEndpoint(for mode: ChatMode) -> String {
         let baseUrl = "https://us-central1-ylol-011235.cloudfunctions.net"
+//        let baseUrl = "http://127.0.0.1:5001/ylol-011235/us-central1"
         switch mode {
         case .yin:
             return "\(baseUrl)/yin"
@@ -243,7 +304,6 @@ class FirebaseManager: ObservableObject {
     }
     
     func cancelPendingRequests() {
-        // Add code to cancel any in-flight network requests
         isRequestInProgress = false
     }
 }
