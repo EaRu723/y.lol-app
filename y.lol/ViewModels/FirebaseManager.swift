@@ -301,30 +301,34 @@ class FirebaseManager: ObservableObject {
     
     /// Uploads an image to Firebase Cloud Storage and return the URL
     func uploadImage(_ image: UIImage, completion: @escaping (Result<URL, Error>) -> Void) {
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            completion(.failure(NSError(domain: "FirebaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unable to convert image to data."])))
+        guard let imageData = image.jpegData(compressionQuality: 0.7) else {
+            completion(.failure(NSError(domain: "ImageConversion", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image to data"])))
             return
         }
         
-        let storageRef = Storage.storage().reference().child("images/\(UUID().uuidString).jpg")
+        // Get the current user's UID
+        guard let uid = Auth.auth().currentUser?.uid else {
+            completion(.failure(NSError(domain: "Auth", code: 0, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])))
+            return
+        }
         
-        let uploadTask = storageRef.putData(imageData, metadata: nil)
+        // Create a reference to the storage location
+        let storageRef = Storage.storage().reference().child("user_images/\(uid)/\(UUID().uuidString).jpg")
         
-        // Observe success
-        uploadTask.observe(.success) {_ in
+        // Upload the image data
+        storageRef.putData(imageData, metadata: nil) { metadata, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            // Get the download URL
             storageRef.downloadURL { url, error in
                 if let error = error {
                     completion(.failure(error))
                 } else if let url = url {
                     completion(.success(url))
                 }
-            }
-        }
-        
-        // Observe failure
-        uploadTask.observe(.failure) { snapshot in
-            if let error = snapshot.error {
-                completion(.failure(error))
             }
         }
     }
