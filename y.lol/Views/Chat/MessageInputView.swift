@@ -7,11 +7,12 @@ struct MessageInputView: View {
     @Binding var isActionsExpanded: Bool
     @Binding var selectedImage: UIImage?
     @State private var textEditorHeight: CGFloat = 36
-    let onSend: () -> Void
+    @EnvironmentObject var firebaseManager: FirebaseManager
     
+    let onSend: () -> Void
     var onCameraButtonTapped: () -> Void
     var onPhotoLibraryButtonTapped: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Image preview area
@@ -37,7 +38,7 @@ struct MessageInputView: View {
                 .padding(.horizontal)
             }
             
-            // Action buttons popup - moved up here before the input bar
+            // Action buttons popup
             if isActionsExpanded {
                 HStack(spacing: 16) {
                     Button(action: onCameraButtonTapped) {
@@ -51,7 +52,7 @@ struct MessageInputView: View {
                             )
                             .clipShape(Circle())
                     }
-
+                    
                     Button(action: onPhotoLibraryButtonTapped) {
                         Image(systemName: "photo")
                             .foregroundColor(colorScheme == .dark ? .white : .black)
@@ -127,11 +128,11 @@ struct MessageInputView: View {
                         Text(messageText.isEmpty ? "Ask anything..." : messageText)
                             .foregroundColor(.clear)
                             .padding(.horizontal, 12)
-                            .lineLimit(5) // Maximum lines before scrolling
+                            .lineLimit(5)
                             .background(GeometryReader { geometry in
                                 Color.clear.preference(
                                     key: ViewHeightKey.self,
-                                    value: geometry.size.height + 16 // Add padding
+                                    value: geometry.size.height + 16
                                 )
                             })
                         
@@ -156,17 +157,10 @@ struct MessageInputView: View {
                         self.textEditorHeight = height
                     }
                     
+                    // Send button with loading spinner
                     if !messageText.isEmpty || selectedImage != nil {
                         Button(action: onSend) {
-                            ZStack {
-                                Circle()
-                                    .fill(colorScheme == .dark ? .white : .black)
-                                    .frame(width: 32, height: 32)
-                                
-                                Image(systemName: "arrow.up")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(colorScheme == .dark ? .black : .white)
-                            }
+                            sendButtonContent
                         }
                         .padding(.trailing, 8)
                         .padding(.bottom, 4)
@@ -187,12 +181,34 @@ struct MessageInputView: View {
             .background(colorScheme == .dark ? Color.black : Color.white)
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedImage != nil)
-        // Close actions when text field gains focus
         .onChange(of: isFocused) { _, newValue in
             if newValue {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     isActionsExpanded = false
                 }
+            }
+        }
+    }
+    
+    // Computed property for the send button content
+    private var sendButtonContent: some View {
+        ZStack {
+            Circle()
+                .fill(colorScheme == .dark ? Color.white : Color.black)
+                .frame(width: 32, height: 32)
+            
+            if firebaseManager.isProcessingMessage {
+                ProgressView()
+                    .progressViewStyle(
+                        CircularProgressViewStyle(
+                            tint: colorScheme == .dark ? Color.black : Color.white
+                        )
+                    )
+                    .scaleEffect(0.8)
+            } else {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
             }
         }
     }

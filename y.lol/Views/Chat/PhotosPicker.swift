@@ -30,12 +30,20 @@ struct PhotosPickerView: View {
                 Task {
                     if let data = try? await newItem.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
-                        DispatchQueue.main.async {
-                            selectedImage = image
-                            if let onImageSelected = onImageSelected {
-                                onImageSelected(image)
+                        
+                        FirebaseManager.shared.uploadImage(image) { result in
+                            DispatchQueue.main.async {
+                                switch result {
+                                case .success(let downloadURL):
+                                    selectedImage = image
+                                    onImageSelected?(image)
+                                    isPresented = false // Hide loading indicator / re-enable send button
+                                    print("Debug - Image uploaded successfully: \(downloadURL)")
+                                case .failure(let error):
+                                    // TODO: Handle error
+                                    print("Debug - Error uploading image: \(error.localizedDescription)")
+                                }
                             }
-                            isPresented = false
                         }
                     }
                 }

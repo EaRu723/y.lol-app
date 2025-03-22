@@ -144,6 +144,7 @@ struct ChatView: View {
                                         isActionsExpanded = false
                                     }
                                 )
+                                .environmentObject(FirebaseManager.shared)
                                 .padding(.bottom, 8)
                             }
                             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActionsExpanded)

@@ -8,6 +8,7 @@ import SwiftUI
 import FirebaseCore
 import FirebaseFunctions
 import FirebaseAuth
+import FirebaseStorage
 
 /// FirebaseManager that sends messages to Firebase functions.
 class FirebaseManager: ObservableObject {
@@ -289,6 +290,36 @@ class FirebaseManager: ObservableObject {
         // Append the final boundary.
         data.append("--\(boundary)--\r\n".data(using: .utf8)!)
         return data
+    }
+    
+    /// Uploads an image to Firebase Cloud Storage and return the URL
+    func uploadImage(_ image: UIImage, completion: @escaping (Result<URL, Error>) -> Void) {
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            completion(.failure(NSError(domain: "FirebaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Unable to convert image to data."])))
+            return
+        }
+        
+        let storageRef = Storage.storage().reference().child("images/\(UUID().uuidString).jpg")
+        
+        let uploadTask = storageRef.putData(imageData, metadata: nil)
+        
+        // Observe success
+        uploadTask.observe(.success) {_ in
+            storageRef.downloadURL { url, error in
+                if let error = error {
+                    completion(.failure(error))
+                } else if let url = url {
+                    completion(.success(url))
+                }
+            }
+        }
+        
+        // Observe failure
+        uploadTask.observe(.failure) { snapshot in
+            if let error = snapshot.error {
+                completion(.failure(error))
+            }
+        }
     }
     
     /// Returns the appropriate Firebase function endpoint based on the chat mode.
