@@ -49,12 +49,15 @@ struct ChatView: View {
     @State private var showPermissionAlert = false
     @State private var permissionAlertType = ""
     
+    // Add this to your existing properties
+    @State private var hasTokenError: Bool = false
+    
     var body: some View {
         Group {
             if !hasCompletedOnboarding {
                 OnboardingView()
                     .environmentObject(authManager)
-            } else if !isAuthenticated {
+            } else if !isAuthenticated || authManager.hasTokenError {
                 LoginView()
                     .environmentObject(authManager)
             } else {
@@ -192,6 +195,18 @@ struct ChatView: View {
         .onAppear {
             setupAuthListener()
             checkAuthStatus()
+            // Add token validation
+            Task {
+                let isValid = await authManager.validateToken()
+                if isValid {
+                    // If token is valid, make sure UI reflects authenticated state
+                    await MainActor.run {
+                        if Auth.auth().currentUser != nil {
+                            isAuthenticated = true
+                        }
+                    }
+                }
+            }
             print("Debug - ChatView appeared, auth status: \(isAuthenticated)")
         }
         .onDisappear {
@@ -199,6 +214,10 @@ struct ChatView: View {
             if let listener = authStateListener {
                 Auth.auth().removeStateDidChangeListener(listener)
             }
+        }
+        // Add an observer for token errors
+        .onReceive(authManager.$hasTokenError) { hasError in
+            self.hasTokenError = hasError
         }
     }
     
@@ -278,6 +297,22 @@ struct ChatView: View {
         
         // Just set the selected image without sending it
         selectedImage = image
+    }
+    
+    private func makeAuthenticatedRequest() async {
+        do {
+            // Attempt to validate token before making requests
+            await authManager.validateToken()
+            
+            // If we have a token error, don't proceed with the request
+            guard !authManager.hasTokenError else {
+                return
+            }
+            
+            // Continue with your authenticated request...
+        } catch {
+            print("Request error: \(error.localizedDescription)")
+        }
     }
 }
 
