@@ -33,31 +33,25 @@ class FirebaseManager: ObservableObject {
     // MARK: - Public API
     
     /// Generates a response given the conversationId, a new message, and optional images.
-    func generateResponse(conversationId: String, newMessages: [ChatMessage], images: [Data] = [], mode: ChatMode = .yin) async -> String? {
-        // Check for token errors but don't immediately abort
-        if authManager.hasTokenError {
-            // Try to refresh the token first
-            let refreshSucceeded = await authManager.validateToken()
-            if !refreshSucceeded {
-                print("Token refresh failed, aborting request")
-                return nil
-            }
-            print("Token refreshed successfully, continuing with request")
-        }
-        
-        guard !isRequestInProgress else {
-            print("Request already in progress. Skipping...")
-            return nil
-        }
-        isRequestInProgress = true
-        defer { isRequestInProgress = false }
-        
-        DispatchQueue.main.async {
-            self.isProcessingMessage = true
-            self.errorMessage = nil
-        }
+    func generateResponse(conversationId: String, newMessages: [ChatMessage], currentImageData: [Data], mode: ChatMode) async -> String? {
+        isProcessingMessage = true
         
         do {
+            // Collect all image data from the conversation history
+            var allImageData: [Data] = []
+            
+            // First, add any previous images from the conversation
+            for message in newMessages where message.isUser {
+                if let imageUrl = message.imageUrl,
+                   let image = await loadImageFromURL(imageUrl),
+                   let imageData = image.jpegData(compressionQuality: 0.7) {
+                    allImageData.append(imageData)
+                }
+            }
+            
+            // Add the current message's image data
+            allImageData.append(contentsOf: currentImageData)
+            
             // Update the conversation cache with the new messages.
             updateConversationCache(conversationId: conversationId, messages: newMessages)
             
@@ -69,17 +63,23 @@ class FirebaseManager: ObservableObject {
             // Convert conversation history (without the new prompt) to JSON
             let historyJSON = createHistoryJSON(from: historyMessages)
             
-            // Call the appropriate Firebase function (yin or yang)
-            let response = try await callFirebaseFunction(mode: mode, images: images, prompt: prompt, historyJSON: historyJSON)
+            // Call the Firebase function with ALL image data
+            let response = try await callFirebaseFunction(
+                mode: mode,
+                images: allImageData,  // All images from the conversation
+                prompt: prompt,
+                historyJSON: historyJSON
+            )
             
             // Cache the assistant's response if available.
             if let responseText = response {
-                let assistantMessage = ChatMessage(content: responseText, isUser: false, timestamp: Date())
+                let assistantMessage = ChatMessage(
+                    content: responseText,
+                    isUser: false,
+                    timestamp: Date(),
+                    image: nil  // Explicitly pass nil if no image is available
+                )
                 updateConversationCache(conversationId: conversationId, messages: [assistantMessage])
-            }
-            
-            DispatchQueue.main.async {
-                self.isProcessingMessage = false
             }
             
             return response
@@ -143,12 +143,19 @@ class FirebaseManager: ObservableObject {
         var contents: [[String: Any]] = []
         for message in messages {
             let role = message.isUser ? "user" : "model"
-            let contentDict: [String: Any] = [
-                "role": role,
-                "parts": [
-                    ["text": message.content]
-                ]
+            var contentDict: [String: Any] = [
+                "role": role
             ]
+            
+            var parts: [[String: Any]] = [["text": message.content]]
+            
+            // For user messages that had images, add an inline text reference
+            // This helps the LLM associate the binary image data we'll send separately
+            if message.isUser, message.imageUrl != nil {
+                parts.append(["text": "[Image]"])
+            }
+            
+            contentDict["parts"] = parts
             contents.append(contentDict)
         }
         
@@ -324,8 +331,8 @@ class FirebaseManager: ObservableObject {
     
     /// Returns the appropriate Firebase function endpoint based on the chat mode.
     private func getFunctionEndpoint(for mode: ChatMode) -> String {
-        let baseUrl = "https://us-central1-ylol-011235.cloudfunctions.net"
-//        let baseUrl = "http://127.0.0.1:5001/ylol-011235/us-central1"
+//        let baseUrl = "https://us-central1-ylol-011235.cloudfunctions.net"
+        let baseUrl = "http://127.0.0.1:5001/ylol-011235/us-central1"
         switch mode {
         case .yin:
             return "\(baseUrl)/yin"
@@ -336,5 +343,18 @@ class FirebaseManager: ObservableObject {
     
     func cancelPendingRequests() {
         isRequestInProgress = false
+    }
+    
+    // Helper function to load image data from URL
+    private func loadImageFromURL(_ urlString: String) async -> UIImage? {
+        guard let url = URL(string: urlString) else { return nil }
+        
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            return UIImage(data: data)
+        } catch {
+            print("Error loading image from URL: \(error)")
+            return nil
+        }
     }
 }

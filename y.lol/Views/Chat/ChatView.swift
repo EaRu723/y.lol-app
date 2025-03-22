@@ -52,6 +52,9 @@ struct ChatView: View {
     // Add this to your existing properties
     @State private var hasTokenError: Bool = false
     
+    // Add a state property for storing the image URL
+    @State private var selectedImageUrl: String?
+    
     var body: some View {
         Group {
             if !hasCompletedOnboarding {
@@ -171,9 +174,12 @@ struct ChatView: View {
                         .sheet(isPresented: $isPhotosPickerPresented) {
                             PhotosPickerView(
                                 selectedImage: $selectedImage,
+                                selectedImageUrl: $selectedImageUrl,
                                 isPresented: $isPhotosPickerPresented,
-                                onImageSelected: { image in
+                                onImageSelected: { image, url in
                                     handleSelectedImage(image)
+                                    // Store the URL if needed
+                                    selectedImageUrl = url
                                 }
                             )
                             .presentationDetents([.medium, .large])

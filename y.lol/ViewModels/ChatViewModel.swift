@@ -24,7 +24,7 @@ class ChatViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self.conversationId = UUID().uuidString
                     self.messages = [
-                        ChatMessage(content: self.getInitialMessage(for: self.currentMode), isUser: false, timestamp: Date())
+                        ChatMessage(content: self.getInitialMessage(for: self.currentMode), isUser: false, timestamp: Date(), image: nil)
                     ]
                 }
             }
@@ -58,7 +58,8 @@ class ChatViewModel: ObservableObject {
             let initialMessage = ChatMessage(
                 content: getInitialMessage(for: currentMode),
                 isUser: false,
-                timestamp: Date()
+                timestamp: Date(),
+                image: nil
             )
             messages.append(initialMessage)
         }
@@ -93,7 +94,8 @@ class ChatViewModel: ObservableObject {
                 messages.append(ChatMessage(
                     content: message,
                     isUser: false,
-                    timestamp: Date()
+                    timestamp: Date(),
+                    image: nil
                 ))
                 hapticService.playReceiveFeedback()
             }
@@ -111,28 +113,46 @@ class ChatViewModel: ObservableObject {
     
     /// Sends a user message (with an optional image) and gets the AI response.
     func sendMessage(with image: UIImage? = nil) async {
-        // Trim whitespace and verify that there's either text or an image.
         let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedMessage.isEmpty || image != nil else { return }
         
-        // Play send feedback.
         hapticService.playSendFeedback()
         
-        // Convert image to Data if available.
-        var imageData: [Data] = []
-        if let image = image, let jpegData = image.jpegData(compressionQuality: 0.7) {
-            imageData.append(jpegData)
+        var currentImageData: [Data] = []
+        var imageUrl: String? = nil
+        
+        // If there's a new image, upload it and prepare its data
+        if let image = image {
+            await MainActor.run {
+                isThinking = true
+            }
+            
+            // Upload image and get URL
+            await withCheckedContinuation { continuation in
+                firebaseManager.uploadImage(image) { result in
+                    switch result {
+                    case .success(let url):
+                        imageUrl = url.absoluteString
+                        // Prepare image data for API call
+                        if let jpegData = image.jpegData(compressionQuality: 0.7) {
+                            currentImageData.append(jpegData)
+                        }
+                    case .failure(let error):
+                        print("Error uploading image: \(error.localizedDescription)")
+                    }
+                    continuation.resume()
+                }
+            }
         }
         
-        // Create the new user message.
+        // Create and add the new message
         let newMessage = ChatMessage(
             content: trimmedMessage,
             isUser: true,
             timestamp: Date(),
-            image: image
+            imageUrl: imageUrl
         )
         
-        // Update UI on the main thread.
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 messages.append(newMessage)
@@ -140,11 +160,11 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // Call the Firebase function to generate an AI response.
+        // Generate AI response with all conversation images
         if let llmResponse = await firebaseManager.generateResponse(
             conversationId: conversationId,
             newMessages: messages,
-            images: imageData,
+            currentImageData: currentImageData,
             mode: currentMode
         ) {
             let bubbles = llmResponse.components(separatedBy: "\n\n")
@@ -170,7 +190,8 @@ class ChatViewModel: ObservableObject {
                 let fallbackMessage = ChatMessage(
                     content: "I seem to be having trouble connecting. Can we pause and reflect for a moment?",
                     isUser: false,
-                    timestamp: Date()
+                    timestamp: Date(),
+                    image: nil
                 )
                 
                 hapticService.playReceiveFeedback()
