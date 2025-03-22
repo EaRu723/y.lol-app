@@ -10,8 +10,9 @@ import PhotosUI
 
 struct PhotosPickerView: View {
     @Binding var selectedImage: UIImage?
+    @Binding var selectedImageUrl: String?
     @Binding var isPresented: Bool
-    var onImageSelected: ((UIImage) -> Void)?
+    var onImageSelected: ((UIImage, String) -> Void)?
     
     @State private var selectedItem: PhotosPickerItem?
     
@@ -36,7 +37,8 @@ struct PhotosPickerView: View {
                                 switch result {
                                 case .success(let downloadURL):
                                     selectedImage = image
-                                    onImageSelected?(image)
+                                    selectedImageUrl = downloadURL.absoluteString
+                                    onImageSelected?(image, downloadURL.absoluteString)
                                     isPresented = false // Hide loading indicator / re-enable send button
                                     print("Debug - Image uploaded successfully: \(downloadURL)")
                                 case .failure(let error):

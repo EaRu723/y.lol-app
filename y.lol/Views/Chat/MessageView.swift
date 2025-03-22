@@ -14,40 +14,84 @@ struct MessageView: View {
     let index: Int
     let totalCount: Int
     
+    // Add computed properties for the missing variables
+    private var textColor: Color {
+        message.isUser ? colors.userMessageText : colors.aiMessageText
+    }
+    
+    private var bubbleBackground: Color {
+        message.isUser ? colors.userMessageBubble : colors.aiMessageBubble
+    }
+    
+    private var formattedTimestamp: String {
+        // Format the date as needed
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: message.timestamp)
+    }
+    
     var body: some View {
-        HStack {
-            if message.isUser {
-                Spacer()
-            }
-            
-            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-                // Message text
-                Text(message.content)
-                    .padding(10)
-                    .background(message.isUser ? colors.userMessageBubble : colors.aiMessageBubble)
-                    .foregroundColor(message.isUser ? colors.userMessageText : colors.aiMessageText)
-                    .cornerRadius(16)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(colors.text(opacity: 0.1), lineWidth: 0.5)
-                    )
+        VStack(alignment: message.isUser ? .trailing : .leading, spacing: 2) {
+            // Message content
+            HStack {
+                if !message.isUser {
+                    // AI avatar if needed
+                }
                 
-                // Image if present
-                if let image = message.image {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: 200, maxHeight: 200)
-                        .cornerRadius(12)
-                        .clipped()
+                // Message bubble
+                VStack(alignment: message.isUser ? .trailing : .leading, spacing: 8) {
+                    Text(message.content)
+                        .font(.body)
+                        .foregroundColor(textColor)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(bubbleBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    
+                    // Image content if available - from URL or direct image
+                    if let imageUrl = message.imageUrl {
+                        AsyncImage(url: URL(string: imageUrl)) { phase in
+                            switch phase {
+                            case .empty:
+                                ProgressView()
+                                    .frame(width: 200, height: 150)
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(maxWidth: 200, maxHeight: 200)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            case .failure:
+                                Image(systemName: "photo.fill")
+                                    .foregroundColor(.gray)
+                                    .frame(width: 200, height: 150)
+                            @unknown default:
+                                EmptyView()
+                            }
+                        }
+                    } else if let image = message.image {
+                        Image(uiImage: image)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxWidth: 200, maxHeight: 200)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+                
+                if message.isUser {
+                    // User avatar if needed
                 }
             }
             
-            if !message.isUser {
-                Spacer()
-            }
+            // Timestamp
+            Text(formattedTimestamp)
+                .font(.caption2)
+                .foregroundColor(.gray.opacity(0.8))
+                .padding(.horizontal, 4)
         }
-        .padding(.horizontal)
+        .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
     }
     
     private func getBubbleBorderColor() -> Color {
@@ -63,7 +107,8 @@ struct MessageView_Previews: PreviewProvider {
                 message: ChatMessage(
                     content: "Hello, how are you?",
                     isUser: true,
-                    timestamp: Date()
+                    timestamp: Date(),
+                    image: nil
                 ),
                 index: 0,
                 totalCount: 2
@@ -73,7 +118,8 @@ struct MessageView_Previews: PreviewProvider {
                 message: ChatMessage(
                     content: "I'm doing well, thank you for asking. How can I help you today?",
                     isUser: false,
-                    timestamp: Date()
+                    timestamp: Date(),
+                    image: nil
                 ),
                 index: 1,
                 totalCount: 2
