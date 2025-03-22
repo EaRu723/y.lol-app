@@ -31,6 +31,7 @@ class ChatViewModel: ObservableObject {
         }
     }
     @Published var selectedImage: UIImage?
+    @Published var isUploadingImage: Bool = false
     
     private let firebaseManager = FirebaseManager.shared
     private let hapticService = HapticService()
@@ -125,6 +126,7 @@ class ChatViewModel: ObservableObject {
         if let image = image {
             await MainActor.run {
                 isThinking = true
+                isUploadingImage = true // Start showing the spinner
             }
             
             // Upload image and get URL
@@ -142,6 +144,10 @@ class ChatViewModel: ObservableObject {
                     }
                     continuation.resume()
                 }
+            }
+            
+            await MainActor.run {
+                isUploadingImage = false // Stop showing the spinner
             }
         }
         
