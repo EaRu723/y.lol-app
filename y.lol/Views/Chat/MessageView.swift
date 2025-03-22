@@ -47,6 +47,10 @@ struct MessageView: View {
                         .padding(.vertical, 8)
                         .background(bubbleBackground)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(getBubbleBorderColor(), lineWidth: 1)
+                        )
                     
                     // Image content if available - from URL or direct image
                     if let imageUrl = message.imageUrl {

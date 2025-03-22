@@ -8,6 +8,7 @@ struct MessageInputView: View {
     @Binding var selectedImage: UIImage?
     @State private var textEditorHeight: CGFloat = 36
     @EnvironmentObject var firebaseManager: FirebaseManager
+    @StateObject private var viewModel = ChatViewModel()
     
     let onSend: () -> Void
     var onCameraButtonTapped: () -> Void
@@ -197,7 +198,7 @@ struct MessageInputView: View {
                 .fill(colorScheme == .dark ? Color.white : Color.black)
                 .frame(width: 32, height: 32)
             
-            if firebaseManager.isProcessingMessage {
+            if viewModel.isUploadingImage {
                 ProgressView()
                     .progressViewStyle(
                         CircularProgressViewStyle(
