@@ -55,148 +55,188 @@ struct ChatView: View {
     // Add a state property for storing the image URL
     @State private var selectedImageUrl: String?
     
+    // Add the scenePhase environment value
+    @Environment(\.scenePhase) private var scenePhase
+    
+    @State private var isDrawerOpen = false
+    @State private var isThinking = false
+
     var body: some View {
-        Group {
-            if !hasCompletedOnboarding {
-                OnboardingView()
-                    .environmentObject(authManager)
-            } else if !isAuthenticated || authManager.hasTokenError {
-                LoginView()
-                    .environmentObject(authManager)
-            } else {
-                GeometryReader { geometry in
-                    ZStack {
-                        // Background
-                        colors.backgroundWithNoise
-                            .ignoresSafeArea()
-                        
-                        VStack(spacing: 0) {
-                            HeaderView(
-                                isThinking: $viewModel.isThinking, 
-                                showProfile: $showProfile,
-                                currentMode: viewModel.currentMode,
-                                onPillTapped: handlePillTap
-                            )
-                            
-                            ScrollViewReader { proxy in
-                                ScrollView {
-                                    LazyVStack(spacing: 12) {
-                                        ForEach(viewModel.messages) { message in
-                                            MessageView(message: message, index: 0, totalCount: viewModel.messages.count)
-                                                .id(message.id)
-                                                .transition(.asymmetric(
-                                                    insertion: .modifier(
-                                                        active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
-                                                        identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
-                                                    ),
-                                                    removal: .opacity.combined(with: .scale(scale: 0.9))
-                                                ))
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                NavigationView {
+                    VStack {
+                        if !hasCompletedOnboarding {
+                            OnboardingView()
+                                .environmentObject(authManager)
+                        } else if !isAuthenticated || authManager.hasTokenError {
+                            LoginView()
+                                .environmentObject(authManager)
+                        } else {
+                            GeometryReader { geometry in
+                                ZStack {
+                                    // Background
+                                    colors.backgroundWithNoise
+                                        .ignoresSafeArea()
+                                    
+                                    VStack(spacing: 0) {
+                                        HeaderView(
+                                            isThinking: $isThinking,
+                                            showProfile: $showProfile,
+                                            isDrawerOpen: $isDrawerOpen,
+                                            currentMode: viewModel.currentMode,
+                                            onPillTapped: { mode in
+                                                viewModel.currentMode = mode
+                                                print("Switched to mode: \(mode)")
+                                            },
+                                            onSaveChat: {
+                                                viewModel.saveCurrentChatSession()
+                                            }
+                                        )
+                                        
+                                        ScrollViewReader { proxy in
+                                            ScrollView {
+                                                LazyVStack(spacing: 12) {
+                                                    ForEach(viewModel.messages) { message in
+                                                        MessageView(message: message, index: 0, totalCount: viewModel.messages.count)
+                                                            .id(message.id)
+                                                            .transition(.asymmetric(
+                                                                insertion: .modifier(
+                                                                    active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
+                                                                    identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
+                                                                ),
+                                                                removal: .opacity.combined(with: .scale(scale: 0.9))
+                                                            ))
+                                                    }
+                                                    
+                                                    // Add typing indicator
+                                                    if viewModel.isTyping {
+                                                        HStack {
+                                                            TypingIndicatorView()
+                                                            Spacer()
+                                                        }
+                                                        .padding(.horizontal)
+                                                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                                                    }
+                                                }
+                                                .padding(.vertical)
+                                            }
+                                            .onChange(of: viewModel.messages.count) { oldCount, newCount in
+                                                if newCount > oldCount {
+                                                    scrollToLatest(proxy: proxy)
+                                                }
+                                            }
+                                            // Also scroll when typing indicator appears
+                                            .onChange(of: viewModel.isTyping) { _, isTyping in
+                                                if isTyping {
+                                                    scrollToLatest(proxy: proxy)
+                                                }
+                                            }
                                         }
                                         
-                                        // Add typing indicator
-                                        if viewModel.isTyping {
-                                            HStack {
-                                                TypingIndicatorView()
-                                                Spacer()
+                                        // Action Pills and Input area
+                                        VStack {
+                                            MessageInputView(
+                                                messageText: $messageText,
+                                                isActionsExpanded: $isActionsExpanded,
+                                                selectedImage: $selectedImage,
+                                                onSend: sendMessage,
+                                                onCameraButtonTapped: {
+                                                    permissionManager.checkCameraPermission()
+                                                    if permissionManager.cameraPermissionGranted {
+                                                        sourceType = .camera
+                                                        isShowingCamera = true
+                                                    } else {
+                                                        permissionAlertType = "Camera"
+                                                        showPermissionAlert = true
+                                                    }
+                                                    isActionsExpanded = false
+                                                },
+                                                onPhotoLibraryButtonTapped: {
+                                                    permissionManager.checkPhotoLibraryPermission()
+                                                    if permissionManager.photoLibraryPermissionGranted {
+                                                        isPhotosPickerPresented = true
+                                                    } else {
+                                                        permissionAlertType = "Photo Library"
+                                                        showPermissionAlert = true
+                                                    }
+                                                    isActionsExpanded = false
+                                                }
+                                            )
+                                            .environmentObject(FirebaseManager.shared)
+                                            .padding(.bottom, 8)
+                                        }
+                                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActionsExpanded)
+                                    }
+                                    .onChange(of: viewModel.isThinking) { oldValue, newValue in
+                                        if newValue {
+                                            hapticService.startBreathing()
+                                        } else {
+                                            hapticService.stopBreathing()
+                                        }
+                                    }
+                                    .sheet(isPresented: $showProfile) {
+                                        ProfileView()
+                                            .environmentObject(authManager)
+                                    }
+                                    .sheet(isPresented: $isShowingCamera) {
+                                        ImagePicker(selectedImage: $selectedImage, sourceType: sourceType)
+                                            .onDisappear {
+                                                if let image = selectedImage {
+                                                    handleSelectedImage(image)
+                                                }
                                             }
-                                            .padding(.horizontal)
-                                            .transition(.opacity.combined(with: .move(edge: .bottom)))
-                                        }
                                     }
-                                    .padding(.vertical)
-                                }
-                                .onChange(of: viewModel.messages.count) { oldCount, newCount in
-                                    if newCount > oldCount {
-                                        scrollToLatest(proxy: proxy)
+                                    .sheet(isPresented: $isPhotosPickerPresented) {
+                                        PhotosPickerView(
+                                            selectedImage: $selectedImage,
+                                            selectedImageUrl: $selectedImageUrl,
+                                            isPresented: $isPhotosPickerPresented,
+                                            onImageSelected: { image, url in
+                                                handleSelectedImage(image)
+                                                // Store the URL if needed
+                                                selectedImageUrl = url
+                                            }
+                                        )
+                                        .presentationDetents([.medium, .large])
                                     }
-                                }
-                                // Also scroll when typing indicator appears
-                                .onChange(of: viewModel.isTyping) { _, isTyping in
-                                    if isTyping {
-                                        scrollToLatest(proxy: proxy)
+                                    .alert(isPresented: $showPermissionAlert) {
+                                        Alert(
+                                            title: Text("\(permissionAlertType) Access Required"),
+                                            message: Text("Please allow access to your \(permissionAlertType.lowercased()) in Settings to use this feature."),
+                                            primaryButton: .default(Text("Open Settings")) {
+                                                permissionManager.openAppSettings()
+                                            },
+                                            secondaryButton: .cancel()
+                                        )
                                     }
                                 }
                             }
-                            
-                            // Action Pills and Input area
-                            VStack {
-                                MessageInputView(
-                                    messageText: $messageText,
-                                    isActionsExpanded: $isActionsExpanded,
-                                    selectedImage: $selectedImage,
-                                    onSend: sendMessage,
-                                    onCameraButtonTapped: {
-                                        permissionManager.checkCameraPermission()
-                                        if permissionManager.cameraPermissionGranted {
-                                            sourceType = .camera
-                                            isShowingCamera = true
-                                        } else {
-                                            permissionAlertType = "Camera"
-                                            showPermissionAlert = true
-                                        }
-                                        isActionsExpanded = false
-                                    },
-                                    onPhotoLibraryButtonTapped: {
-                                        permissionManager.checkPhotoLibraryPermission()
-                                        if permissionManager.photoLibraryPermissionGranted {
-                                            isPhotosPickerPresented = true
-                                        } else {
-                                            permissionAlertType = "Photo Library"
-                                            showPermissionAlert = true
-                                        }
-                                        isActionsExpanded = false
-                                    }
-                                )
-                                .environmentObject(FirebaseManager.shared)
-                                .padding(.bottom, 8)
-                            }
-                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActionsExpanded)
-                        }
-                        .onChange(of: viewModel.isThinking) { oldValue, newValue in
-                            if newValue {
-                                hapticService.startBreathing()
-                            } else {
-                                hapticService.stopBreathing()
-                            }
-                        }
-                        .sheet(isPresented: $showProfile) {
-                            ProfileView()
-                                .environmentObject(authManager)
-                        }
-                        .sheet(isPresented: $isShowingCamera) {
-                            ImagePicker(selectedImage: $selectedImage, sourceType: sourceType)
-                                .onDisappear {
-                                    if let image = selectedImage {
-                                        handleSelectedImage(image)
-                                    }
-                                }
-                        }
-                        .sheet(isPresented: $isPhotosPickerPresented) {
-                            PhotosPickerView(
-                                selectedImage: $selectedImage,
-                                selectedImageUrl: $selectedImageUrl,
-                                isPresented: $isPhotosPickerPresented,
-                                onImageSelected: { image, url in
-                                    handleSelectedImage(image)
-                                    // Store the URL if needed
-                                    selectedImageUrl = url
-                                }
-                            )
-                            .presentationDetents([.medium, .large])
-                        }
-                        .alert(isPresented: $showPermissionAlert) {
-                            Alert(
-                                title: Text("\(permissionAlertType) Access Required"),
-                                message: Text("Please allow access to your \(permissionAlertType.lowercased()) in Settings to use this feature."),
-                                primaryButton: .default(Text("Open Settings")) {
-                                    permissionManager.openAppSettings()
-                                },
-                                secondaryButton: .cancel()
-                            )
                         }
                     }
                 }
+                .frame(width: geometry.size.width)
+                .offset(x: isDrawerOpen ? geometry.size.width * 0.75 : 0)
+                .disabled(isDrawerOpen) // Disable interaction when drawer is open
+                .animation(.easeInOut, value: isDrawerOpen)
+
+                if isDrawerOpen {
+                    DrawerView(conversations: viewModel.previousConversations)
+                        .frame(width: geometry.size.width * 0.8)
+                        .background(Color.white)
+                        .shadow(radius: 5)
+                        .transition(.move(edge: .leading))
+                }
             }
+            .gesture(DragGesture()
+                .onEnded { value in
+                    if value.translation.width < -100 {
+                        withAnimation {
+                            isDrawerOpen = false
+                        }
+                    }
+                }
+            )
         }
         .withYTheme()
         .onAppear {
@@ -225,6 +265,12 @@ struct ChatView: View {
         // Add an observer for token errors
         .onReceive(authManager.$hasTokenError) { hasError in
             self.hasTokenError = hasError
+        }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .background {
+                print("App is moving to the background. Saving chat session.")
+                viewModel.saveCurrentChatSession()
+            }
         }
     }
     
@@ -287,12 +333,6 @@ struct ChatView: View {
                 proxy.scrollTo(lastMessage.id, anchor: .bottom)
             }
         }
-    }
-    
-    // Add this function to handle pill taps
-    private func handlePillTap(_ mode: FirebaseManager.ChatMode) {
-        viewModel.currentMode = mode
-        print("Switched to mode: \(mode)")
     }
     
     // Modify this function to just set the selectedImage without sending it
