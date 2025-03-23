@@ -32,6 +32,7 @@ class ChatViewModel: ObservableObject {
     }
     @Published var selectedImage: UIImage?
     @Published var isUploadingImage: Bool = false
+    @Published var previousConversations: [ChatSession] = []
     
     private let firebaseManager = FirebaseManager.shared
     private let hapticService = HapticService()
@@ -39,6 +40,8 @@ class ChatViewModel: ObservableObject {
     private var conversationId = UUID().uuidString
     
     init() {
+        fetchPreviousConversations()
+        
         // Subscribe to Firebase manager's state changes.
         firebaseManager.$isProcessingMessage
             .receive(on: RunLoop.main)
@@ -63,6 +66,19 @@ class ChatViewModel: ObservableObject {
                 image: nil
             )
             messages.append(initialMessage)
+        }
+    }
+    
+    private func fetchPreviousConversations() {
+        FirebaseManager.shared.fetchChatSessions { result in
+            switch result {
+            case .success(let sessions):
+                DispatchQueue.main.async {
+                    self.previousConversations = sessions
+                }
+            case .failure(let error):
+                print("Error fetching previous conversations: \(error.localizedDescription)")
+            }
         }
     }
     
@@ -217,6 +233,24 @@ class ChatViewModel: ObservableObject {
             return "why are you here?"
         case .yang:
             return "what's good?"
+        }
+    }
+    
+    func saveCurrentChatSession() {
+        guard messages.contains(where: { $0.isUser }) else {
+            print("No user messages to save.")
+            return
+        }
+        
+        let chatSession = ChatSession(id: conversationId, messages: messages, timestamp: Date())
+        
+        firebaseManager.saveChatSession(chatSession: chatSession) { result in
+            switch result {
+            case .success():
+                print("Chat session saved successfully.")
+            case .failure(let error):
+                print("Error saving chat session: \(error.localizedDescription)")
+            }
         }
     }
 }

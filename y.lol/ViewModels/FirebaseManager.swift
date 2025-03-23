@@ -9,6 +9,14 @@ import FirebaseCore
 import FirebaseFunctions
 import FirebaseAuth
 import FirebaseStorage
+import FirebaseFirestore
+
+
+struct ChatSession: Identifiable, Codable {
+    var id: String
+    var messages: [ChatMessage]
+    var timestamp: Date
+}
 
 /// FirebaseManager that sends messages to Firebase functions.
 class FirebaseManager: ObservableObject {
@@ -359,6 +367,63 @@ class FirebaseManager: ObservableObject {
         } catch {
             print("Error loading image from URL: \(error)")
             return nil
+        }
+    }
+    
+    func saveChatSession(chatSession: ChatSession, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            completion(.failure(NSError(domain: "Auth", code: 0, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])))
+            return
+        }
+        
+        let db = Firestore.firestore()
+        let chatRef = db.collection("users").document(uid).collection("conversations").document(chatSession.id)
+        
+        // Set persistence to enable offline data
+        let settings = db.settings
+        settings.isPersistenceEnabled = true
+        db.settings = settings
+        
+        do {
+            let data = try JSONEncoder().encode(chatSession)
+            let json = try JSONSerialization.jsonObject(with: data, options: [])
+            
+            // Use merge: true to prevent overwriting existing data
+            chatRef.setData(json as! [String: Any], merge: true) { error in
+                if let error = error {
+                    // Log the error but don't treat network connectivity errors as failures
+                    if (error as NSError).domain == "FIRFirestoreErrorDomain" && 
+                       (error as NSError).code == 8 { // Unavailable error code
+                        print("Network unavailable, data will be synced when connection is restored")
+                        completion(.success(())) // Consider it a success as data will be synced later
+                    } else {
+                        completion(.failure(error))
+                    }
+                } else {
+                    completion(.success(()))
+                }
+            }
+        } catch {
+            completion(.failure(error))
+        }
+    }
+    
+    func fetchChatSessions(completion: @escaping (Result<[ChatSession], Error>) -> Void) {
+        guard let uid = Auth.auth().currentUser?.uid else {
+            completion(.failure(NSError(domain: "Auth", code: 0, userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])))
+            return
+        }
+        
+        let db = Firestore.firestore()
+        db.collection("users").document(uid).collection("conversations").getDocuments { snapshot, error in
+            if let error = error {
+                completion(.failure(error))
+            } else if let snapshot = snapshot {
+                let chatSessions = snapshot.documents.compactMap { document -> ChatSession? in
+                    try? document.data(as: ChatSession.self)
+                }
+                completion(.success(chatSessions))
+            }
         }
     }
 }

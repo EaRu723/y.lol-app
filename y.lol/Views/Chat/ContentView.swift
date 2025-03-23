@@ -27,6 +27,8 @@ struct ContentView: View {
     @State private var isEditing: Bool = false
     @FocusState private var isFocused: Bool
     
+    @State private var isDrawerOpen = false
+    
     private let hapticService = HapticService()
     
     var body: some View {
@@ -38,12 +40,16 @@ struct ContentView: View {
                 
                 VStack(spacing: 0) {
                     HeaderView(
-                        isThinking: $viewModel.isThinking, 
+                        isThinking: $isThinking,
                         showProfile: $showProfile,
+                        isDrawerOpen: $isDrawerOpen,
                         currentMode: viewModel.currentMode,
                         onPillTapped: { mode in
                             viewModel.currentMode = mode
                             print("Switched to mode: \(mode)")
+                        },
+                        onSaveChat: {
+                            viewModel.saveCurrentChatSession()
                         }
                     )
                     

@@ -13,17 +13,21 @@ struct HeaderView: View {
     @Binding var isThinking: Bool
     @Binding var showProfile: Bool
     @State private var showButtons = false
+    @Binding var isDrawerOpen: Bool
     var currentMode: FirebaseManager.ChatMode
     var onPillTapped: (FirebaseManager.ChatMode) -> Void
+    var onSaveChat: () -> Void
     
     var body: some View {
         HStack {
             Button(action: {
-                // Menu action
+                withAnimation {
+                    isDrawerOpen.toggle()
+                }
             }) {
-                Image(systemName: "line.3.horizontal")
+                Image(systemName: "line.horizontal.3")
                     .font(.system(size: 20))
-                    .foregroundColor(colors.text)
+                    .foregroundColor(.primary)
             }
             .opacity(showButtons ? 1 : 0)
             .animation(.easeInOut(duration: 0.2), value: showButtons)
@@ -33,6 +37,7 @@ struct HeaderView: View {
             // Yin (😇) pill button
             Button(action: {
                 onPillTapped(.yin)
+                onSaveChat()
             }) {
                 Text("😇")
                     .font(.system(size: 20))
@@ -68,6 +73,7 @@ struct HeaderView: View {
             // Yang (😈) pill button
             Button(action: {
                 onPillTapped(.yang)
+                onSaveChat()
             }) {
                 Text("😈")
                     .font(.system(size: 20))
@@ -104,8 +110,10 @@ struct HeaderView_Previews: PreviewProvider {
             HeaderView(
                 isThinking: .constant(false), 
                 showProfile: .constant(false),
+                isDrawerOpen: .constant(false),
                 currentMode: .yin,
-                onPillTapped: { _ in }
+                onPillTapped: { _ in },
+                onSaveChat: {}
             )
                 .previewLayout(.sizeThatFits)
                 .padding()
@@ -116,8 +124,10 @@ struct HeaderView_Previews: PreviewProvider {
             HeaderView(
                 isThinking: .constant(true), 
                 showProfile: .constant(false),
+                isDrawerOpen: .constant(false),
                 currentMode: .yang,
-                onPillTapped: { _ in }
+                onPillTapped: { _ in },
+                onSaveChat: {}
             )
                 .previewLayout(.sizeThatFits)
                 .padding()
