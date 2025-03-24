@@ -86,12 +86,6 @@ struct MessageView: View {
                     // User avatar if needed
                 }
             }
-            
-            // Timestamp
-            Text(formattedTimestamp)
-                .font(.caption2)
-                .foregroundColor(.gray.opacity(0.8))
-                .padding(.horizontal, 4)
         }
         .frame(maxWidth: .infinity, alignment: message.isUser ? .trailing : .leading)
         .padding(.horizontal, 8)
