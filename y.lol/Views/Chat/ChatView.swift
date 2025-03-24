@@ -59,30 +59,11 @@ struct ChatView: View {
     
     @State private var isDrawerOpen = false
     @State private var isThinking = false
+    @State private var isSearching = false  // New state for search functionality
 
     var body: some View {
         GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                mainContentView(geometry: geometry)
-                
-                // Drawer view
-                if isDrawerOpen {
-                    DrawerView(conversations: viewModel.previousConversations)
-                        .frame(width: geometry.size.width * 0.8)
-                        .background(Color.white)
-                        .shadow(radius: 5)
-                        .transition(.move(edge: .leading))
-                }
-            }
-            .gesture(DragGesture()
-                .onEnded { value in
-                    if value.translation.width < -100 {
-                        withAnimation {
-                            isDrawerOpen = false
-                        }
-                    }
-                }
-            )
+            mainContentView(geometry: geometry)
         }
         .withYTheme()
         .onAppear {
@@ -119,9 +100,6 @@ struct ChatView: View {
             }
         }
         .frame(width: geometry.size.width)
-        .offset(x: isDrawerOpen ? geometry.size.width * 0.75 : 0)
-        .disabled(isDrawerOpen)
-        .animation(.easeInOut, value: isDrawerOpen)
     }
     
     @ViewBuilder
@@ -135,6 +113,19 @@ struct ChatView: View {
                 VStack(spacing: 0) {
                     // Header
                     headerView()
+                    
+                    // Add the SearchView component
+                    if isSearching {
+                        SearchView(
+                            isSearching: $isSearching,
+                            onSearch: { searchQuery in
+                                // Handle search logic here
+                                print("Searching for: \(searchQuery)")
+                                // After search is complete, you might want to:
+                                // isSearching = false
+                            }
+                        )
+                    }
                     
                     // Messages area
                     messagesArea()
@@ -164,7 +155,7 @@ struct ChatView: View {
         HeaderView(
             isThinking: $isThinking,
             showProfile: $showProfile,
-            isDrawerOpen: $isDrawerOpen,
+            isSearching: $isSearching,
             currentMode: viewModel.currentMode,
             onPillTapped: { mode in
                 viewModel.currentMode = mode

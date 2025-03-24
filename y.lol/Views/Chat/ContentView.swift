@@ -27,7 +27,8 @@ struct ContentView: View {
     @State private var isEditing: Bool = false
     @FocusState private var isFocused: Bool
     
-    @State private var isDrawerOpen = false
+    // Replace drawer with search
+    @State private var isSearching = false
     
     private let hapticService = HapticService()
     
@@ -42,7 +43,7 @@ struct ContentView: View {
                     HeaderView(
                         isThinking: $isThinking,
                         showProfile: $showProfile,
-                        isDrawerOpen: $isDrawerOpen,
+                        isSearching: $isSearching,
                         currentMode: viewModel.currentMode,
                         onPillTapped: { mode in
                             viewModel.currentMode = mode
@@ -52,6 +53,11 @@ struct ContentView: View {
                             viewModel.saveCurrentChatSession()
                         }
                     )
+                    
+                    // Optional: Add search UI when isSearching is true
+                    if isSearching {
+                        searchView()
+                    }
                     
                     ScrollViewReader { proxy in
                         ScrollView {
@@ -120,6 +126,14 @@ struct ContentView: View {
                         .environmentObject(authManager)
                 }
             }
+        }
+    }
+    
+    // New search view
+    @ViewBuilder
+    private func searchView() -> some View {
+        SearchView(isSearching: $isSearching) { searchText in
+            // Handle search
         }
     }
     
