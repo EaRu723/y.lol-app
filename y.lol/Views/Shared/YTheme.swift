@@ -11,15 +11,17 @@ import SwiftUI
 enum YTheme {
     /// Core color palette for the app
     enum Colors {
-        // Base colors
+        // Base colors - Make these pure black and white
         static let parchmentLight = Color.white
         static let parchmentDark = Color.black
         static let textLight = Color.black
         static let textDark = Color.white
-        static let accentLight = Color(hex: "E4D5B7")
-        static let accentDark = Color(hex: "B8A179")
         
-        // Message bubble colors - updated to black and white
+        // Change accent colors to grayscale
+        static let accentLight = Color(white: 0.9) // Light gray
+        static let accentDark = Color(white: 0.2)  // Dark gray
+        
+        // Message bubble colors - already black and white
         static let userBubbleLight = Color.black
         static let userBubbleDark = Color.white
         static let aiMessageBubbleLight = Color.white

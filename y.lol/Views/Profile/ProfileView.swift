@@ -42,7 +42,7 @@ struct ProfileView: View {
                     Spacer()
                     
                     Text("Profile")
-                        .font(.system(size: 20, weight: .light, design: .serif))
+                        .font(YTheme.Typography.subtitle)
                         .foregroundColor(colors.text)
                     
                     Spacer()
@@ -130,7 +130,7 @@ struct ProfileView: View {
                                     HStack {
                                         Image(systemName: "rectangle.portrait.and.arrow.right")
                                         Text("Sign Out")
-                                            .font(.system(size: 16, weight: .medium))
+                                            .font(YTheme.Typography.body)
                                     }
                                     .foregroundColor(Color.white)
                                     .frame(maxWidth: .infinity)
