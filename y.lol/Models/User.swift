@@ -14,6 +14,7 @@ struct User: Codable {
     let email: String
     let joined: TimeInterval
     var dateOfBirth: TimeInterval?
+    var vibe: String?
     
     var scores: [Score] = []
     
@@ -27,6 +28,10 @@ struct User: Codable {
         
         if let dob = dateOfBirth {
             dict["dateOfBirth"] = dob
+        }
+        
+        if let vibe = vibe {
+            dict["vibe"] = vibe
         }
         
         if includeScores {
