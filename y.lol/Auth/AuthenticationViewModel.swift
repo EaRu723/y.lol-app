@@ -124,23 +124,13 @@ extension AuthenticationViewModel {
                 return
             }
             
-            // Pull scores from Firestore data
-            let scores: [Score] = (data["scores"] as? [[String: Any]] ?? []).compactMap { dict in
-                guard let score = dict["score"] as? Int,
-                      let date = dict["date"] as? TimeInterval,
-                      let hintsUsed = dict["hintsUsed"] as? Int else {
-                    return nil
-                }
-                return Score(score: score, date: date, hintsUsed: hintsUsed)
-            }
             
             // Update user object in the main thread
             DispatchQueue.main.async {
                 self?.user = User(id: data["id"] as? String ?? "",
                                   name: data["name"] as? String ?? "",
                                   email: data["email"] as? String ?? "",
-                                  joined: data["joined"] as? TimeInterval ?? 0,
-                                  scores: scores
+                                  joined: data["joined"] as? TimeInterval ?? 0
                 )
             }
         }
