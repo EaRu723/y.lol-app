@@ -63,200 +63,9 @@ struct ChatView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                NavigationView {
-                    VStack {
-                        if !hasCompletedOnboarding {
-                            OnboardingView()
-                                .environmentObject(authManager)
-                        } else if !isAuthenticated || authManager.hasTokenError {
-                            LoginView()
-                                .environmentObject(authManager)
-                        } else {
-                            GeometryReader { geometry in
-                                ZStack {
-                                    // Background
-                                    colors.backgroundWithNoise
-                                        .ignoresSafeArea()
-                                    
-                                    VStack(spacing: 0) {
-                                        HeaderView(
-                                            isThinking: $isThinking,
-                                            showProfile: $showProfile,
-                                            isDrawerOpen: $isDrawerOpen,
-                                            currentMode: viewModel.currentMode,
-                                            onPillTapped: { mode in
-                                                viewModel.currentMode = mode
-                                                print("Switched to mode: \(mode)")
-                                            },
-                                            onSaveChat: {
-                                                viewModel.saveCurrentChatSession()
-                                            }
-                                        )
-                                        
-                                        ScrollViewReader { proxy in
-                                            ScrollView {
-                                                LazyVStack(spacing: 12) {
-                                                    ForEach(viewModel.messages) { message in
-                                                        MessageView(message: message, index: 0, totalCount: viewModel.messages.count)
-                                                            .id(message.id)
-                                                            .transition(.asymmetric(
-                                                                insertion: .modifier(
-                                                                    active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
-                                                                    identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
-                                                                ),
-                                                                removal: .opacity.combined(with: .scale(scale: 0.9))
-                                                            ))
-                                                    }
-                                                    
-                                                    // Modify the typing indicator section
-                                                    if viewModel.isTyping {
-                                                        HStack {
-                                                            TypingIndicatorView()
-                                                            Spacer()
-                                                        }
-                                                        .padding(.horizontal)
-                                                        .id("typingIndicator")
-                                                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                                                        .onAppear {
-                                                            // Force scroll when the indicator appears
-                                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                                withAnimation(.easeOut(duration: 0.15)) {
-                                                                    proxy.scrollTo("typingIndicator", anchor: .bottom)
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    // Add this empty spacer at the end of the LazyVStack to maintain space
-                                                    // This helps prevent the "scroll up" effect
-                                                    Rectangle()
-                                                        .frame(height: 1)
-                                                        .foregroundColor(.clear)
-                                                        .id("bottomSpacer")
-                                                }
-                                                .padding(.vertical)
-                                            }
-                                            .onChange(of: viewModel.messages.count) { oldCount, newCount in
-                                                if newCount > oldCount {
-                                                    scrollToLatest(proxy: proxy)
-                                                }
-                                            }
-                                            .onChange(of: viewModel.isTyping) { oldValue, newValue in
-                                                if newValue {
-                                                    // When typing starts, scroll to typing indicator
-                                                    withAnimation(.easeOut(duration: 0.15)) {
-                                                        scrollToLatest(proxy: proxy)
-                                                    }
-                                                } else if !newValue && oldValue {
-                                                    // When typing ends, maintain position momentarily
-                                                    withAnimation(.easeOut(duration: 0.3)) {
-                                                        proxy.scrollTo("bottomSpacer", anchor: .bottom)
-                                                    }
-                                                    
-                                                    // Then after a short delay, scroll to the latest message
-                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                                                        withAnimation(.easeOut(duration: 0.2)) {
-                                                            if let lastMessage = viewModel.messages.last {
-                                                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            .onReceive(Timer.publish(every: 0.3, on: .main, in: .common).autoconnect()) { _ in
-                                                if viewModel.isTyping {
-                                                    scrollToLatest(proxy: proxy)
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Action Pills and Input area
-                                        VStack {
-                                            MessageInputView(
-                                                messageText: $messageText,
-                                                isActionsExpanded: $isActionsExpanded,
-                                                selectedImage: $selectedImage,
-                                                onSend: sendMessage,
-                                                onCameraButtonTapped: {
-                                                    permissionManager.checkCameraPermission()
-                                                    if permissionManager.cameraPermissionGranted {
-                                                        sourceType = .camera
-                                                        isShowingMediaPicker = true
-                                                    } else {
-                                                        permissionAlertType = "Camera"
-                                                        showPermissionAlert = true
-                                                    }
-                                                    isActionsExpanded = false
-                                                },
-                                                onPhotoLibraryButtonTapped: {
-                                                    permissionManager.checkPhotoLibraryPermission()
-                                                    if permissionManager.photoLibraryPermissionGranted {
-                                                        sourceType = .photoLibrary
-                                                        isShowingMediaPicker = true
-                                                    } else {
-                                                        permissionAlertType = "Photo Library"
-                                                        showPermissionAlert = true
-                                                    }
-                                                    isActionsExpanded = false
-                                                }
-                                            )
-                                            .environmentObject(FirebaseManager.shared)
-                                            .padding(.bottom, 8)
-                                        }
-                                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActionsExpanded)
-                                    }
-                                    .onChange(of: viewModel.isThinking) { oldValue, newValue in
-                                        if newValue {
-                                            hapticService.startBreathing()
-                                        } else {
-                                            hapticService.stopBreathing()
-                                        }
-                                    }
-                                    .sheet(isPresented: $showProfile) {
-                                        ProfileView()
-                                            .environmentObject(authManager)
-                                    }
-                                    .sheet(isPresented: $isShowingMediaPicker) {
-                                        if sourceType == .camera {
-                                            CameraView(selectedImage: $selectedImage)
-                                                .onDisappear {
-                                                    if let image = selectedImage {
-                                                        handleSelectedImage(image)
-                                                    }
-                                                }
-                                        } else {
-                                            PhotosPickerView(
-                                                selectedImage: $selectedImage,
-                                                selectedImageUrl: $selectedImageUrl,
-                                                isPresented: $isShowingMediaPicker,
-                                                onImageSelected: { image, url in
-                                                    handleSelectedImage(image)
-                                                    selectedImageUrl = url
-                                                }
-                                            )
-                                            .presentationDetents([.medium, .large])
-                                        }
-                                    }
-                                    .alert(isPresented: $showPermissionAlert) {
-                                        Alert(
-                                            title: Text("\(permissionAlertType) Access Required"),
-                                            message: Text("Please allow access to your \(permissionAlertType.lowercased()) in Settings to use this feature."),
-                                            primaryButton: .default(Text("Open Settings")) {
-                                                permissionManager.openAppSettings()
-                                            },
-                                            secondaryButton: .cancel()
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                .frame(width: geometry.size.width)
-                .offset(x: isDrawerOpen ? geometry.size.width * 0.75 : 0)
-                .disabled(isDrawerOpen) // Disable interaction when drawer is open
-                .animation(.easeInOut, value: isDrawerOpen)
-
+                mainContentView(geometry: geometry)
+                
+                // Drawer view
                 if isDrawerOpen {
                     DrawerView(conversations: viewModel.previousConversations)
                         .frame(width: geometry.size.width * 0.8)
@@ -279,36 +88,316 @@ struct ChatView: View {
         .onAppear {
             setupAuthListener()
             checkAuthStatus()
-            // Add token validation
-            Task {
-                let isValid = await authManager.validateToken()
-                if isValid {
-                    // If token is valid, make sure UI reflects authenticated state
-                    await MainActor.run {
-                        if Auth.auth().currentUser != nil {
-                            isAuthenticated = true
-                        }
-                    }
-                }
-            }
-            print("Debug - ChatView appeared, auth status: \(isAuthenticated)")
+            performInitialTokenValidation()
         }
         .onDisappear {
-            // Remove listener when view disappears
-            if let listener = authStateListener {
-                Auth.auth().removeStateDidChangeListener(listener)
-            }
+            removeAuthListener()
         }
-        // Add an observer for token errors
         .onReceive(authManager.$hasTokenError) { hasError in
             self.hasTokenError = hasError
         }
         .onChange(of: scenePhase) { newPhase in
-            if newPhase == .background {
-                print("App is moving to the background. Saving chat session.")
-                viewModel.saveCurrentChatSession()
+            handleScenePhaseChange(newPhase)
+        }
+    }
+    
+    // MARK: - View Components
+    
+    @ViewBuilder
+    private func mainContentView(geometry: GeometryProxy) -> some View {
+        NavigationView {
+            VStack {
+                if !hasCompletedOnboarding {
+                    OnboardingView()
+                        .environmentObject(authManager)
+                } else if !isAuthenticated || authManager.hasTokenError {
+                    LoginView()
+                        .environmentObject(authManager)
+                } else {
+                    authenticatedContentView()
+                }
             }
         }
+        .frame(width: geometry.size.width)
+        .offset(x: isDrawerOpen ? geometry.size.width * 0.75 : 0)
+        .disabled(isDrawerOpen)
+        .animation(.easeInOut, value: isDrawerOpen)
+    }
+    
+    @ViewBuilder
+    private func authenticatedContentView() -> some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Background
+                colors.backgroundWithNoise
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Header
+                    headerView()
+                    
+                    // Messages area
+                    messagesArea()
+                    
+                    // Input area
+                    inputArea()
+                }
+                .onChange(of: viewModel.isThinking) { oldValue, newValue in
+                    handleThinkingStateChange(oldValue: oldValue, newValue: newValue)
+                }
+                .sheet(isPresented: $showProfile) {
+                    ProfileView()
+                        .environmentObject(authManager)
+                }
+                .sheet(isPresented: $isShowingMediaPicker) {
+                    mediaPicker()
+                }
+                .alert(isPresented: $showPermissionAlert) {
+                    permissionAlert()
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func headerView() -> some View {
+        HeaderView(
+            isThinking: $isThinking,
+            showProfile: $showProfile,
+            isDrawerOpen: $isDrawerOpen,
+            currentMode: viewModel.currentMode,
+            onPillTapped: { mode in
+                viewModel.currentMode = mode
+                print("Switched to mode: \(mode)")
+            },
+            onSaveChat: {
+                viewModel.saveCurrentChatSession()
+            }
+        )
+    }
+    
+    @ViewBuilder
+    private func messagesArea() -> some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                messagesContent(proxy: proxy)
+            }
+            .onChange(of: viewModel.messages.count) { oldCount, newCount in
+                if newCount > oldCount {
+                    scrollToLatest(proxy: proxy)
+                }
+            }
+            .onChange(of: viewModel.isTyping) { oldValue, newValue in
+                handleTypingStateChange(oldValue: oldValue, newValue: newValue, proxy: proxy)
+            }
+            .onReceive(Timer.publish(every: 0.3, on: .main, in: .common).autoconnect()) { _ in
+                if viewModel.isTyping {
+                    scrollToLatest(proxy: proxy)
+                }
+            }
+            .onChange(of: isFocused) { oldValue, newValue in
+                if newValue == true {
+                    // When the text field becomes focused, scroll to the latest message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            scrollToLatest(proxy: proxy)
+                        }
+                    }
+                }
+            }
+        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged({ _ in
+                    hideKeyboard()
+                })
+        )
+    }
+    
+    @ViewBuilder
+    private func messagesContent(proxy: ScrollViewProxy) -> some View {
+        LazyVStack(spacing: 12) {
+            ForEach(viewModel.messages) { message in
+                MessageView(message: message, index: 0, totalCount: viewModel.messages.count)
+                    .id(message.id)
+                    .transition(.asymmetric(
+                        insertion: .modifier(
+                            active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
+                            identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
+                        ),
+                        removal: .opacity.combined(with: .scale(scale: 0.9))
+                    ))
+            }
+            
+            // Typing indicator
+            if viewModel.isTyping {
+                typingIndicator(proxy: proxy)
+            }
+            
+            // Bottom spacer
+            Rectangle()
+                .frame(height: 1)
+                .foregroundColor(.clear)
+                .id("bottomSpacer")
+        }
+        .padding(.vertical)
+    }
+    
+    @ViewBuilder
+    private func typingIndicator(proxy: ScrollViewProxy) -> some View {
+        HStack {
+            TypingIndicatorView()
+            Spacer()
+        }
+        .padding(.horizontal)
+        .id("typingIndicator")
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
+        .onAppear {
+            // Force scroll when the indicator appears
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeOut(duration: 0.15)) {
+                    proxy.scrollTo("typingIndicator", anchor: .bottom)
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func inputArea() -> some View {
+        VStack {
+            MessageInputView(
+                messageText: $messageText,
+                isActionsExpanded: $isActionsExpanded,
+                selectedImage: $selectedImage,
+                onSend: sendMessage,
+                onCameraButtonTapped: handleCameraButtonTapped,
+                onPhotoLibraryButtonTapped: handlePhotoLibraryButtonTapped
+            )
+            .environmentObject(FirebaseManager.shared)
+            .padding(.bottom, 8)
+            .focused($isFocused)
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActionsExpanded)
+    }
+    
+    @ViewBuilder
+    private func mediaPicker() -> some View {
+        Group {
+            if sourceType == .camera {
+                CameraView(selectedImage: $selectedImage)
+                    .onDisappear {
+                        if let image = selectedImage {
+                            handleSelectedImage(image)
+                        }
+                    }
+            } else {
+                PhotosPickerView(
+                    selectedImage: $selectedImage,
+                    selectedImageUrl: $selectedImageUrl,
+                    isPresented: $isShowingMediaPicker,
+                    onImageSelected: { image, url in
+                        handleSelectedImage(image)
+                        selectedImageUrl = url
+                    }
+                )
+                .presentationDetents([.medium, .large])
+            }
+        }
+    }
+    
+    private func permissionAlert() -> Alert {
+        Alert(
+            title: Text("\(permissionAlertType) Access Required"),
+            message: Text("Please allow access to your \(permissionAlertType.lowercased()) in Settings to use this feature."),
+            primaryButton: .default(Text("Open Settings")) {
+                permissionManager.openAppSettings()
+            },
+            secondaryButton: .cancel()
+        )
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func performInitialTokenValidation() {
+        Task {
+            let isValid = await authManager.validateToken()
+            if isValid {
+                await MainActor.run {
+                    if Auth.auth().currentUser != nil {
+                        isAuthenticated = true
+                    }
+                }
+            }
+        }
+        print("Debug - ChatView appeared, auth status: \(isAuthenticated)")
+    }
+    
+    private func removeAuthListener() {
+        if let listener = authStateListener {
+            Auth.auth().removeStateDidChangeListener(listener)
+        }
+    }
+    
+    private func handleScenePhaseChange(_ newPhase: ScenePhase) {
+        if newPhase == .background {
+            print("App is moving to the background. Saving chat session.")
+            viewModel.saveCurrentChatSession()
+        }
+    }
+    
+    private func handleThinkingStateChange(oldValue: Bool, newValue: Bool) {
+        if newValue {
+            hapticService.startBreathing()
+        } else {
+            hapticService.stopBreathing()
+        }
+    }
+    
+    private func handleTypingStateChange(oldValue: Bool, newValue: Bool, proxy: ScrollViewProxy) {
+        if newValue {
+            // When typing starts, scroll to typing indicator
+            withAnimation(.easeOut(duration: 0.15)) {
+                scrollToLatest(proxy: proxy)
+            }
+        } else if !newValue && oldValue {
+            // When typing ends, maintain position momentarily
+            withAnimation(.easeOut(duration: 0.3)) {
+                proxy.scrollTo("bottomSpacer", anchor: .bottom)
+            }
+            
+            // Then after a short delay, scroll to the latest message
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    if let lastMessage = viewModel.messages.last {
+                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func handleCameraButtonTapped() {
+        permissionManager.checkCameraPermission()
+        if permissionManager.cameraPermissionGranted {
+            sourceType = .camera
+            isShowingMediaPicker = true
+        } else {
+            permissionAlertType = "Camera"
+            showPermissionAlert = true
+        }
+        isActionsExpanded = false
+    }
+    
+    private func handlePhotoLibraryButtonTapped() {
+        permissionManager.checkPhotoLibraryPermission()
+        if permissionManager.photoLibraryPermissionGranted {
+            sourceType = .photoLibrary
+            isShowingMediaPicker = true
+        } else {
+            permissionAlertType = "Photo Library"
+            showPermissionAlert = true
+        }
+        isActionsExpanded = false
     }
     
     private func setupAuthListener() {
@@ -389,20 +478,9 @@ struct ChatView: View {
         selectedImage = image
     }
     
-    private func makeAuthenticatedRequest() async {
-        do {
-            // Attempt to validate token before making requests
-            await authManager.validateToken()
-            
-            // If we have a token error, don't proceed with the request
-            guard !authManager.hasTokenError else {
-                return
-            }
-            
-            // Continue with your authenticated request...
-        } catch {
-            print("Request error: \(error.localizedDescription)")
-        }
+    private func hideKeyboard() {
+        isFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
