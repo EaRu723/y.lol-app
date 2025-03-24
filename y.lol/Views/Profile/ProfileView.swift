@@ -238,18 +238,17 @@ struct ProfileView: View {
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                     
                                     HStack(spacing: 20) {
-                                        StatCard(
-                                            title: "Total Sessions",
-                                            value: "\(user.scores.count)",
-                                            icon: "calendar"
-                                        )
+                                        Text("Total Sessions: \(user.scores.count)")
+                                            .font(YTheme.Typography.body)
+                                            .foregroundColor(colors.text)
                                         
-                                        StatCard(
-                                            title: "Best Score",
-                                            value: "\(viewModel.getBestScore(scores: user.scores))",
-                                            icon: "star.fill"
-                                        )
+                                        Text("Best Score: \(viewModel.getBestScore(scores: user.scores))")
+                                            .font(YTheme.Typography.body)
+                                            .foregroundColor(colors.text)
                                     }
+                                    .padding()
+                                    .background(colors.accent.opacity(0.3))
+                                    .cornerRadius(12)
                                 }
                                 .padding(.horizontal)
                             }
@@ -329,36 +328,6 @@ struct ProfileView: View {
         } catch {
             viewModel.errorMessage = "Error signing out: \(error.localizedDescription)"
         }
-    }
-}
-
-// Helper view for stats
-struct StatCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    @Environment(\.themeColors) private var colors
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundColor(colors.text(opacity: 0.7))
-                
-                Text(title)
-                    .font(YTheme.Typography.caption)
-                    .foregroundColor(colors.text(opacity: 0.7))
-            }
-            
-            Text(value)
-                .font(YTheme.Typography.subtitle)
-                .foregroundColor(colors.text)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(colors.accent.opacity(0.3))
-        .cornerRadius(12)
     }
 }
 
