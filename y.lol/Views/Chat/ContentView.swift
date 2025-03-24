@@ -54,10 +54,6 @@ struct ContentView: View {
                         }
                     )
                     
-                    // Optional: Add search UI when isSearching is true
-                    if isSearching {
-                        searchView()
-                    }
                     
                     ScrollViewReader { proxy in
                         ScrollView {
@@ -129,13 +125,7 @@ struct ContentView: View {
         }
     }
     
-    // New search view
-    @ViewBuilder
-    private func searchView() -> some View {
-        SearchView(isSearching: $isSearching) { searchText in
-            // Handle search
-        }
-    }
+
     
     private func startBreathingHaptics() {
         hapticService.startBreathing()

@@ -113,20 +113,7 @@ struct ChatView: View {
                 VStack(spacing: 0) {
                     // Header
                     headerView()
-                    
-                    // Add the SearchView component
-                    if isSearching {
-                        SearchView(
-                            isSearching: $isSearching,
-                            onSearch: { searchQuery in
-                                // Handle search logic here
-                                print("Searching for: \(searchQuery)")
-                                // After search is complete, you might want to:
-                                // isSearching = false
-                            }
-                        )
-                    }
-                    
+                                        
                     // Messages area
                     messagesArea()
                     
