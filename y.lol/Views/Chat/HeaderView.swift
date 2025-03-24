@@ -46,6 +46,8 @@ struct HeaderView: View {
                     .background(Capsule().fill(currentMode == .yin ? Color.gray.opacity(0.2) : Color.clear))
                     .foregroundColor(currentMode == .yin ? Color.primary : Color.primary.opacity(0.7))
             }
+            .opacity(showButtons ? 1 : 0)
+            .animation(.easeInOut(duration: 0.2), value: showButtons)
             
             Spacer(minLength: 8)
             
@@ -54,18 +56,42 @@ struct HeaderView: View {
                     showButtons.toggle()
                 }
             }) {
-                YinYangLogoView(
-                    size: 40,
-                    isLoading: isThinking,
-                    lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
-                    darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
-                )
-                .background(
-                    Circle()
-                        .fill(Color.clear)
-                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                )
-                .rotationEffect(Angle(degrees: 90))
+                if isThinking {
+                    YinYangLogoView(
+                        size: 40,
+                        isLoading: true,
+                        lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
+                        darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
+                    )
+                    .background(
+                        Circle()
+                            .fill(Color.clear)
+                            .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    )
+                    .rotationEffect(Angle(degrees: 90))
+                } else if showButtons {
+                    YinYangLogoView(
+                        size: 40,
+                        isLoading: false,
+                        lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
+                        darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
+                    )
+                    .background(
+                        Circle()
+                            .fill(Color.clear)
+                            .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    )
+                    .rotationEffect(Angle(degrees: 90))
+                } else {
+                    Text(currentMode == .yin ? "😇" : "😈")
+                        .font(.system(size: 25))
+                        .frame(width: 40, height: 40)
+                        .background(
+                            Circle()
+                                .fill(Color.gray.opacity(0.1))
+                                .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        )
+                }
             }
             
             Spacer(minLength: 8)
@@ -82,6 +108,8 @@ struct HeaderView: View {
                     .background(Capsule().fill(currentMode == .yang ? Color.gray.opacity(0.2) : Color.clear))
                     .foregroundColor(currentMode == .yang ? Color.primary : Color.primary.opacity(0.7))
             }
+            .opacity(showButtons ? 1 : 0)
+            .animation(.easeInOut(duration: 0.2), value: showButtons)
             
             Spacer()
             
