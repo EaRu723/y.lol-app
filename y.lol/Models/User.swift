@@ -15,15 +15,16 @@ struct User: Codable {
     let joined: TimeInterval
     var dateOfBirth: TimeInterval?
     var vibe: String?
+    var streak: Int = 0
     
-    var scores: [Score] = []
     
     func asDictionary(includeScores: Bool = false) -> [String: Any] {
         var dict: [String: Any] = [
             "id": id,
             "name": name,
             "email": email,
-            "joined": joined
+            "joined": joined,
+            "streak": streak
         ]
         
         if let dob = dateOfBirth {
@@ -34,25 +35,10 @@ struct User: Codable {
             dict["vibe"] = vibe
         }
         
-        if includeScores {
-            dict["scores"] = scores.map { $0.asDictionary() }
-        }
         return dict
     }
 }
 
-struct Score: Codable {
-    let score: Int // Time to finish puzzle
-    let date: TimeInterval // Store date as TimeInterval to comply with Firestore
-    let hintsUsed: Int // Hints used
-    
-    func asDictionary() -> [String: Any] {
-        return [
-            "score": score,
-            "date": date,
-            "hintsUsed": hintsUsed]
-    }
-}
 
 extension User {
     init(from firebaseUser: FirebaseAuth.User) {

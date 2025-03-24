@@ -229,29 +229,6 @@ struct ProfileView: View {
                             }
                             .padding(.vertical, 20)
                             
-                            // Stats section
-                            if !user.scores.isEmpty && !viewModel.isEditMode {
-                                VStack(spacing: 16) {
-                                    Text("Activity")
-                                        .font(YTheme.Typography.subtitle)
-                                        .foregroundColor(colors.text)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                    
-                                    HStack(spacing: 20) {
-                                        Text("Total Sessions: \(user.scores.count)")
-                                            .font(YTheme.Typography.body)
-                                            .foregroundColor(colors.text)
-                                        
-                                        Text("Best Score: \(viewModel.getBestScore(scores: user.scores))")
-                                            .font(YTheme.Typography.body)
-                                            .foregroundColor(colors.text)
-                                    }
-                                    .padding()
-                                    .background(colors.accent.opacity(0.3))
-                                    .cornerRadius(12)
-                                }
-                                .padding(.horizontal)
-                            }
                             
                             Spacer()
                             

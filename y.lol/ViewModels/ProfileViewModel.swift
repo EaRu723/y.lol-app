@@ -47,21 +47,15 @@ class ProfileViewModel: ObservableObject {
                 let document = try await docRef.getDocument()
                 
                 if let data = document.data() {
-                    // Extract scores if they exist
-                    let scores: [Score] = (data["scores"] as? [[String: Any]] ?? []).compactMap { dict in
-                        guard let score = dict["score"] as? Int,
-                              let date = dict["date"] as? TimeInterval,
-                              let hintsUsed = dict["hintsUsed"] as? Int else {
-                            return nil
-                        }
-                        return Score(score: score, date: date, hintsUsed: hintsUsed)
-                    }
                     
                     // Get date of birth if available
                     let dateOfBirth = data["dateOfBirth"] as? TimeInterval
                     
                     // Get vibe if available
                     let vibe = data["vibe"] as? String
+                    
+                    // Get streak if available
+                    let streak = data["streak"] as? Int ?? 0
                     
                     // Create user with data from Firestore
                     let user = User(
@@ -71,7 +65,7 @@ class ProfileViewModel: ObservableObject {
                         joined: data["joined"] as? TimeInterval ?? Date().timeIntervalSince1970,
                         dateOfBirth: dateOfBirth,
                         vibe: vibe,
-                        scores: scores
+                        streak: streak
                     )
                     
                     // All this code now runs on the main actor
@@ -172,8 +166,4 @@ class ProfileViewModel: ObservableObject {
         return formatter.string(from: date)
     }
     
-    func getBestScore(scores: [Score]) -> Int {
-        guard !scores.isEmpty else { return 0 }
-        return scores.min(by: { $0.score < $1.score })?.score ?? 0
-    }
 }
