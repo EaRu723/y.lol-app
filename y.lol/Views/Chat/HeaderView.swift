@@ -13,7 +13,7 @@ struct HeaderView: View {
     @Binding var isThinking: Bool
     @Binding var showProfile: Bool
     @State private var showButtons = false
-    @Binding var isDrawerOpen: Bool
+    @Binding var isSearching: Bool
     var currentMode: FirebaseManager.ChatMode
     var onPillTapped: (FirebaseManager.ChatMode) -> Void
     var onSaveChat: () -> Void
@@ -22,10 +22,10 @@ struct HeaderView: View {
         HStack {
             Button(action: {
                 withAnimation {
-                    isDrawerOpen.toggle()
+                    isSearching.toggle()
                 }
             }) {
-                Image(systemName: "line.horizontal.3")
+                Image(systemName: "magnifyingglass")
                     .font(.system(size: 20))
                     .foregroundColor(.primary)
             }
@@ -138,7 +138,7 @@ struct HeaderView_Previews: PreviewProvider {
             HeaderView(
                 isThinking: .constant(false), 
                 showProfile: .constant(false),
-                isDrawerOpen: .constant(false),
+                isSearching: .constant(false),
                 currentMode: .yin,
                 onPillTapped: { _ in },
                 onSaveChat: {}
@@ -152,7 +152,7 @@ struct HeaderView_Previews: PreviewProvider {
             HeaderView(
                 isThinking: .constant(true), 
                 showProfile: .constant(false),
-                isDrawerOpen: .constant(false),
+                isSearching: .constant(false),
                 currentMode: .yang,
                 onPillTapped: { _ in },
                 onSaveChat: {}
