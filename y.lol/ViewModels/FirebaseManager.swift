@@ -42,7 +42,11 @@ class FirebaseManager: ObservableObject {
     
     /// Generates a response given the conversationId, a new message, and optional images.
     func generateResponse(conversationId: String, newMessages: [ChatMessage], currentImageData: [Data], mode: ChatMode) async -> String? {
-        isProcessingMessage = true
+        // Update on main thread
+        await MainActor.run {
+            self.isProcessingMessage = true
+            self.errorMessage = nil
+        }
         
         do {
             // Collect all image data from the conversation history
@@ -92,7 +96,8 @@ class FirebaseManager: ObservableObject {
             
             return response
         } catch {
-            DispatchQueue.main.async {
+            // Update on main thread
+            await MainActor.run {
                 self.isProcessingMessage = false
                 self.errorMessage = error.localizedDescription
             }
