@@ -19,6 +19,7 @@ class ProfileViewModel: ObservableObject {
     @Published var editedName = ""
     @Published var editedEmail = ""
     @Published var editedDateOfBirth: Date?
+    @Published var editedVibe = ""
     
     // Save status
     @Published var isSaving = false
@@ -59,6 +60,9 @@ class ProfileViewModel: ObservableObject {
                     // Get date of birth if available
                     let dateOfBirth = data["dateOfBirth"] as? TimeInterval
                     
+                    // Get vibe if available
+                    let vibe = data["vibe"] as? String
+                    
                     // Create user with data from Firestore
                     let user = User(
                         id: currentUser.id,
@@ -66,6 +70,7 @@ class ProfileViewModel: ObservableObject {
                         email: data["email"] as? String ?? currentUser.email,
                         joined: data["joined"] as? TimeInterval ?? Date().timeIntervalSince1970,
                         dateOfBirth: dateOfBirth,
+                        vibe: vibe,
                         scores: scores
                     )
                     
@@ -89,6 +94,7 @@ class ProfileViewModel: ObservableObject {
     private func setupEditableFields(from user: User) {
         editedName = user.name
         editedEmail = user.email
+        editedVibe = user.vibe ?? ""
         if let dobTimestamp = user.dateOfBirth {
             editedDateOfBirth = Date(timeIntervalSince1970: dobTimestamp)
         }
@@ -117,7 +123,8 @@ class ProfileViewModel: ObservableObject {
                 let userRef = db.collection("users").document(currentUser.id)
                 
                 var updateData: [String: Any] = [
-                    "name": editedName
+                    "name": editedName,
+                    "vibe": editedVibe
                 ]
                 
                 // Only update email through Firebase Auth if it changed

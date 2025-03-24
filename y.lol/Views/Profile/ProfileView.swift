@@ -120,6 +120,21 @@ struct ProfileView: View {
                                     }
                                     .padding(.horizontal)
                                     
+                                    // Editable vibe field
+                                    VStack(alignment: .leading) {
+                                        Text("Vibe")
+                                            .font(YTheme.Typography.caption)
+                                            .foregroundColor(colors.text(opacity: 0.7))
+                                        
+                                        TextField("What's your vibe?", text: $viewModel.editedVibe)
+                                            .font(YTheme.Typography.body)
+                                            .padding()
+                                            .background(colors.accent.opacity(0.2))
+                                            .cornerRadius(8)
+                                            .foregroundColor(colors.text)
+                                    }
+                                    .padding(.horizontal)
+                                    
                                     // Date of Birth picker
                                     VStack(alignment: .leading) {
                                         Text("Date of Birth")
@@ -192,6 +207,12 @@ struct ProfileView: View {
                                     Text(user.email)
                                         .font(YTheme.Typography.body)
                                         .foregroundColor(colors.text(opacity: 0.7))
+                                    
+                                    // Display vibe if available
+                                    if let vibe = user.vibe, !vibe.isEmpty {
+                                        VibeView(vibe: vibe)
+                                            .padding(.top, 4)
+                                    }
                                     
                                     // Display date of birth if available
                                     if let dob = user.dateOfBirth {
