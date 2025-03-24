@@ -27,6 +27,12 @@ enum YTheme {
         static let aiMessageBubbleLight = Color.white
         static let aiMessageBubbleDark = Color.black
         
+        // Add Yin (blue) and Yang (red) shadow colors
+        static let yinShadowLight = Color(hex: "3B82F6") // Blue 500
+        static let yinShadowDark = Color(hex: "60A5FA") // Blue 400
+        static let yangShadowLight = Color(hex: "EF4444") // Red 500
+        static let yangShadowDark = Color(hex: "F87171") // Red 400
+        
         /// Dynamic colors that automatically adapt to color scheme
         struct Dynamic {
             let colorScheme: ColorScheme
@@ -45,6 +51,15 @@ enum YTheme {
             
             var accent: Color {
                 colorScheme == .light ? accentLight : accentDark
+            }
+            
+            // Yin and Yang shadow colors
+            var yinShadow: Color {
+                colorScheme == .light ? yinShadowLight : yinShadowDark
+            }
+            
+            var yangShadow: Color {
+                colorScheme == .light ? yangShadowLight : yangShadowDark
             }
             
             // New properties for message bubbles
@@ -76,6 +91,34 @@ enum YTheme {
                 background
             }
         }
+    }
+    
+    /// Standardized spacing system for consistent layouts
+    enum Spacing {
+        // Edge spacing
+        static let screenEdge: CGFloat = 16
+        static let safeArea: CGFloat = 20
+        
+        // Content spacing
+        static let tiny: CGFloat = 4
+        static let small: CGFloat = 8
+        static let medium: CGFloat = 16
+        static let large: CGFloat = 24
+        static let xlarge: CGFloat = 32
+        static let xxlarge: CGFloat = 48
+        
+        // Component-specific spacing
+        static let buttonPadding: CGFloat = 12
+        static let cardPadding: CGFloat = 16
+        static let inputFieldHeight: CGFloat = 44
+        
+        // Stack spacing
+        static let vStackDefault: CGFloat = 12
+        static let hStackDefault: CGFloat = 10
+        
+        // List and grid spacing
+        static let listRowSpacing: CGFloat = 8
+        static let gridSpacing: CGFloat = 12
     }
     
     /// Typography definitions
@@ -143,6 +186,50 @@ extension View {
     }
 }
 
+// MARK: - Common Layout Modifiers
+
+/// Adds standard screen edge padding
+extension View {
+    func withScreenEdgePadding() -> some View {
+        self.padding(.horizontal, YTheme.Spacing.screenEdge)
+    }
+    
+    func withStandardSpacing() -> some View {
+        self.padding(YTheme.Spacing.medium)
+    }
+    
+    // For Yin mode elements with blue shadow
+    func withYinShadow(radius: CGFloat = 4) -> some View {
+        self.modifier(YinShadowModifier(radius: radius))
+    }
+    
+    // For Yang mode elements with red shadow
+    func withYangShadow(radius: CGFloat = 4) -> some View {
+        self.modifier(YangShadowModifier(radius: radius))
+    }
+}
+
+// Shadow modifiers for Yin and Yang elements
+struct YinShadowModifier: ViewModifier {
+    @Environment(\.themeColors) private var colors
+    let radius: CGFloat
+    
+    func body(content: Content) -> some View {
+        content
+            .shadow(color: colors.yinShadow.opacity(0.5), radius: radius, x: 0, y: 2)
+    }
+}
+
+struct YangShadowModifier: ViewModifier {
+    @Environment(\.themeColors) private var colors
+    let radius: CGFloat
+    
+    func body(content: Content) -> some View {
+        content
+            .shadow(color: colors.yangShadow.opacity(0.5), radius: radius, x: 0, y: 2)
+    }
+}
+
 extension Color {
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -169,7 +256,6 @@ extension Color {
     }
 }
 
-
 struct MessageBubble: View {
     @Environment(\.themeColors) private var colors
     let text: String
@@ -180,7 +266,7 @@ struct MessageBubble: View {
             if isUser { Spacer() }
             Text(text)
                 .font(.system(size: 15))
-                .padding(12)
+                .padding(YTheme.Spacing.buttonPadding)
                 .background(isUser ? colors.userMessageBubble : colors.aiMessageBubble)
                 .foregroundColor(isUser ? colors.userMessageText : colors.aiMessageText)
                 .cornerRadius(16)
