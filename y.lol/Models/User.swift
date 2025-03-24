@@ -13,6 +13,7 @@ struct User: Codable {
     let name: String
     let email: String
     let joined: TimeInterval
+    var dateOfBirth: TimeInterval?
     
     var scores: [Score] = []
     
@@ -23,6 +24,11 @@ struct User: Codable {
             "email": email,
             "joined": joined
         ]
+        
+        if let dob = dateOfBirth {
+            dict["dateOfBirth"] = dob
+        }
+        
         if includeScores {
             dict["scores"] = scores.map { $0.asDictionary() }
         }
