@@ -116,22 +116,52 @@ struct ChatView: View {
                                                         }
                                                         .padding(.horizontal)
                                                         .id("typingIndicator")
-                                                        .transition(.opacity)
+                                                        .transition(.opacity.combined(with: .move(edge: .bottom)))
                                                         .onAppear {
                                                             // Force scroll when the indicator appears
                                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                                                proxy.scrollTo("typingIndicator", anchor: .bottom)
+                                                                withAnimation(.easeOut(duration: 0.15)) {
+                                                                    proxy.scrollTo("typingIndicator", anchor: .bottom)
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    // Add this empty spacer at the end of the LazyVStack to maintain space
+                                                    // This helps prevent the "scroll up" effect
+                                                    Rectangle()
+                                                        .frame(height: 1)
+                                                        .foregroundColor(.clear)
+                                                        .id("bottomSpacer")
+                                                }
+                                                .padding(.vertical)
+                                            }
+                                            .onChange(of: viewModel.messages.count) { oldCount, newCount in
+                                                if newCount > oldCount {
+                                                    scrollToLatest(proxy: proxy)
+                                                }
+                                            }
+                                            .onChange(of: viewModel.isTyping) { oldValue, newValue in
+                                                if newValue {
+                                                    // When typing starts, scroll to typing indicator
+                                                    withAnimation(.easeOut(duration: 0.15)) {
+                                                        scrollToLatest(proxy: proxy)
+                                                    }
+                                                } else if !newValue && oldValue {
+                                                    // When typing ends, maintain position momentarily
+                                                    withAnimation(.easeOut(duration: 0.3)) {
+                                                        proxy.scrollTo("bottomSpacer", anchor: .bottom)
+                                                    }
+                                                    
+                                                    // Then after a short delay, scroll to the latest message
+                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                                        withAnimation(.easeOut(duration: 0.2)) {
+                                                            if let lastMessage = viewModel.messages.last {
+                                                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
                                                             }
                                                         }
                                                     }
                                                 }
-                                                .padding(.vertical)
-                                            }
-                                            .onChange(of: viewModel.messages.count) { _, _ in
-                                                scrollToLatest(proxy: proxy)
-                                            }
-                                            .onChange(of: viewModel.isTyping) { _, _ in
-                                                scrollToLatest(proxy: proxy)
                                             }
                                             .onReceive(Timer.publish(every: 0.3, on: .main, in: .common).autoconnect()) { _ in
                                                 if viewModel.isTyping {
@@ -333,14 +363,15 @@ struct ChatView: View {
     }
     
     private func scrollToLatest(proxy: ScrollViewProxy) {
-        // Create a consistent delay to allow layout updates to complete
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.spring(response: 0.2)) {
+        // Use a very short delay to allow layout updates to complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+            // Use a short animation for smoother transition
+            withAnimation(.easeOut(duration: 0.15)) {
                 if viewModel.isTyping {
-                    // Scroll to typing indicator when typing
+                    // Always scroll to typing indicator when AI is typing
                     proxy.scrollTo("typingIndicator", anchor: .bottom)
                 } else if let lastMessage = viewModel.messages.last {
-                    // Scroll to last message otherwise
+                    // Scroll to last message when new message arrives
                     proxy.scrollTo(lastMessage.id, anchor: .bottom)
                 }
             }
