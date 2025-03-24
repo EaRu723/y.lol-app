@@ -35,8 +35,7 @@ struct ChatView: View {
     @State private var authStateListener: AuthStateDidChangeListenerHandle?
     
     // Add these state variables to your view
-    @State private var isShowingCamera = false
-    @State private var isShowingPhotoLibrary = false
+    @State private var isShowingMediaPicker = false
     @State private var selectedImage: UIImage?
     @State private var sourceType: UIImagePickerController.SourceType = .camera
     
@@ -145,7 +144,7 @@ struct ChatView: View {
                                                     permissionManager.checkCameraPermission()
                                                     if permissionManager.cameraPermissionGranted {
                                                         sourceType = .camera
-                                                        isShowingCamera = true
+                                                        isShowingMediaPicker = true
                                                     } else {
                                                         permissionAlertType = "Camera"
                                                         showPermissionAlert = true
@@ -155,7 +154,8 @@ struct ChatView: View {
                                                 onPhotoLibraryButtonTapped: {
                                                     permissionManager.checkPhotoLibraryPermission()
                                                     if permissionManager.photoLibraryPermissionGranted {
-                                                        isPhotosPickerPresented = true
+                                                        sourceType = .photoLibrary
+                                                        isShowingMediaPicker = true
                                                     } else {
                                                         permissionAlertType = "Photo Library"
                                                         showPermissionAlert = true
@@ -179,26 +179,26 @@ struct ChatView: View {
                                         ProfileView()
                                             .environmentObject(authManager)
                                     }
-                                    .sheet(isPresented: $isShowingCamera) {
-                                        ImagePicker(selectedImage: $selectedImage, sourceType: sourceType)
-                                            .onDisappear {
-                                                if let image = selectedImage {
-                                                    handleSelectedImage(image)
+                                    .sheet(isPresented: $isShowingMediaPicker) {
+                                        if sourceType == .camera {
+                                            CameraView(selectedImage: $selectedImage)
+                                                .onDisappear {
+                                                    if let image = selectedImage {
+                                                        handleSelectedImage(image)
+                                                    }
                                                 }
-                                            }
-                                    }
-                                    .sheet(isPresented: $isPhotosPickerPresented) {
-                                        PhotosPickerView(
-                                            selectedImage: $selectedImage,
-                                            selectedImageUrl: $selectedImageUrl,
-                                            isPresented: $isPhotosPickerPresented,
-                                            onImageSelected: { image, url in
-                                                handleSelectedImage(image)
-                                                // Store the URL if needed
-                                                selectedImageUrl = url
-                                            }
-                                        )
-                                        .presentationDetents([.medium, .large])
+                                        } else {
+                                            PhotosPickerView(
+                                                selectedImage: $selectedImage,
+                                                selectedImageUrl: $selectedImageUrl,
+                                                isPresented: $isShowingMediaPicker,
+                                                onImageSelected: { image, url in
+                                                    handleSelectedImage(image)
+                                                    selectedImageUrl = url
+                                                }
+                                            )
+                                            .presentationDetents([.medium, .large])
+                                        }
                                     }
                                     .alert(isPresented: $showPermissionAlert) {
                                         Alert(
@@ -366,44 +366,5 @@ struct ChatView: View {
 struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
         ChatView()
-    }
-}
-
-// Keep the ImagePicker implementation
-struct ImagePicker: UIViewControllerRepresentable {
-    @Binding var selectedImage: UIImage?
-    @Environment(\.presentationMode) var presentationMode
-    var sourceType: UIImagePickerController.SourceType
-    
-    func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
-        picker.delegate = context.coordinator
-        picker.sourceType = sourceType
-        return picker
-    }
-    
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let parent: ImagePicker
-        
-        init(_ parent: ImagePicker) {
-            self.parent = parent
-        }
-        
-        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-            if let image = info[.originalImage] as? UIImage {
-                parent.selectedImage = image
-            }
-            parent.presentationMode.wrappedValue.dismiss()
-        }
-        
-        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.presentationMode.wrappedValue.dismiss()
-        }
     }
 }
