@@ -230,7 +230,7 @@ class ChatViewModel: ObservableObject {
     private func getInitialMessage(for mode: FirebaseManager.ChatMode) -> String {
         switch mode {
         case .yin:
-            return "why are you here?"
+            return "what's on your mind?"
         case .yang:
             return "what's good?"
         }
