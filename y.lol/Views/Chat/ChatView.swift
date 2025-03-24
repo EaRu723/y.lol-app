@@ -108,26 +108,33 @@ struct ChatView: View {
                                                             ))
                                                     }
                                                     
-                                                    // Add typing indicator
+                                                    // Modify the typing indicator section
                                                     if viewModel.isTyping {
                                                         HStack {
                                                             TypingIndicatorView()
                                                             Spacer()
                                                         }
                                                         .padding(.horizontal)
-                                                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                                                        .id("typingIndicator")
+                                                        .transition(.opacity)
+                                                        .onAppear {
+                                                            // Force scroll when the indicator appears
+                                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                                                proxy.scrollTo("typingIndicator", anchor: .bottom)
+                                                            }
+                                                        }
                                                     }
                                                 }
                                                 .padding(.vertical)
                                             }
-                                            .onChange(of: viewModel.messages.count) { oldCount, newCount in
-                                                if newCount > oldCount {
-                                                    scrollToLatest(proxy: proxy)
-                                                }
+                                            .onChange(of: viewModel.messages.count) { _, _ in
+                                                scrollToLatest(proxy: proxy)
                                             }
-                                            // Also scroll when typing indicator appears
-                                            .onChange(of: viewModel.isTyping) { _, isTyping in
-                                                if isTyping {
+                                            .onChange(of: viewModel.isTyping) { _, _ in
+                                                scrollToLatest(proxy: proxy)
+                                            }
+                                            .onReceive(Timer.publish(every: 0.3, on: .main, in: .common).autoconnect()) { _ in
+                                                if viewModel.isTyping {
                                                     scrollToLatest(proxy: proxy)
                                                 }
                                             }
@@ -326,11 +333,16 @@ struct ChatView: View {
     }
     
     private func scrollToLatest(proxy: ScrollViewProxy) {
-        guard let lastMessage = viewModel.messages.last else { return }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation {
-                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+        // Create a consistent delay to allow layout updates to complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.spring(response: 0.2)) {
+                if viewModel.isTyping {
+                    // Scroll to typing indicator when typing
+                    proxy.scrollTo("typingIndicator", anchor: .bottom)
+                } else if let lastMessage = viewModel.messages.last {
+                    // Scroll to last message otherwise
+                    proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                }
             }
         }
     }
