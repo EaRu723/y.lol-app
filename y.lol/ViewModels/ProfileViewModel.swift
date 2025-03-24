@@ -123,16 +123,17 @@ class ProfileViewModel: ObservableObject {
                 
                 // Only update email through Firebase Auth if it changed
                 if editedEmail != currentUser.email {
-                    do {
-                        try await Auth.auth().currentUser?.updateEmail(to: editedEmail)
-                        updateData["email"] = editedEmail
-                    } catch {
+                    // Validate email format first
+                    guard isValidEmail(editedEmail) else {
                         await MainActor.run {
-                            saveError = "Failed to update email: \(error.localizedDescription)"
+                            saveError = "Please enter a valid email address"
                             isSaving = false
                         }
                         return
                     }
+                    
+                    // Simply update the email in Firestore without verification
+                    updateData["email"] = editedEmail
                 }
                 
                 // Add date of birth if provided
@@ -164,6 +165,14 @@ class ProfileViewModel: ObservableObject {
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
         return formatter.string(from: date)
+    }
+    
+    // Basic email validation function
+    func isValidEmail(_ email: String) -> Bool {
+        // Check for basic email format: text@text.text
+        let emailRegex = "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
     }
     
 }
