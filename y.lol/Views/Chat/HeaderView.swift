@@ -69,11 +69,11 @@ struct HeaderView: View {
                             lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
                             darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
                         )
-                        .background(
-                            Circle()
-                                .fill(Color.clear)
-                                .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                        )
+                        .background(Circle().fill(colors.background))
+                        .modifier(ColoredShadowModifier(
+                            mode: currentMode,
+                            colors: colors
+                        ))
                         .rotationEffect(Angle(degrees: 90))
                     } else if showButtons && !isSearching {
                         YinYangLogoView(
@@ -82,21 +82,21 @@ struct HeaderView: View {
                             lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
                             darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
                         )
-                        .background(
-                            Circle()
-                                .fill(Color.clear)
-                                .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                        )
+                        .background(Circle().fill(colors.background))
+                        .modifier(ColoredShadowModifier(
+                            mode: currentMode,
+                            colors: colors
+                        ))
                         .rotationEffect(Angle(degrees: 90))
                     } else {
                         Text(currentMode == .yin ? "😇" : "😈")
                             .font(.system(size: 25))
                             .frame(width: 40, height: 40)
-                            .background(
-                                Circle()
-                                    .fill(Color.gray.opacity(0.1))
-                                    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                            )
+                            .background(Circle().fill(colors.background))
+                            .modifier(ColoredShadowModifier(
+                                mode: currentMode,
+                                colors: colors
+                            ))
                     }
                 }
                 .opacity(isSearching ? 0 : 1)
@@ -255,5 +255,21 @@ struct HeaderView_Previews: PreviewProvider {
                 .preferredColorScheme(.dark)
                 .previewDisplayName("Dark Mode (Loading)")
         }
+    }
+}
+
+// Add this new modifier at the bottom of the file
+struct ColoredShadowModifier: ViewModifier {
+    let mode: FirebaseManager.ChatMode
+    let colors: YTheme.Colors.Dynamic
+    
+    func body(content: Content) -> some View {
+        content
+            .shadow(
+                color: mode == .yin ? colors.yinShadow.opacity(0.4) : colors.yangShadow.opacity(0.4),
+                radius: 8,
+                x: 0,
+                y: 0
+            )
     }
 }
