@@ -24,14 +24,23 @@ final class AuthenticationManager: ObservableObject {
     init() {
         // Start token refresh cycle when initialized
         refreshTokenPeriodically()
+        // Get initial token
+        Task {
+            try? await refreshIdToken()
+        }
     }
     
     func refreshTokenPeriodically() {
         tokenRefreshTask?.cancel()
         tokenRefreshTask = Task { [weak self] in
             while !Task.isCancelled {
-                try? await self?.refreshIdToken()
-                try? await Task.sleep(nanoseconds: 45 * 60 * 1_000_000_000) // Refresh every 45 minutes
+                do {
+                    try await self?.refreshIdToken()
+                    try await Task.sleep(nanoseconds: 30 * 60 * 1_000_000_000) // Refresh every 30 minutes
+                } catch {
+                    print("Periodic token refresh failed: \(error.localizedDescription)")
+                    try? await Task.sleep(nanoseconds: 1 * 60 * 1_000_000_000) // Wait 1 minute before retry
+                }
             }
         }
     }
@@ -40,6 +49,14 @@ final class AuthenticationManager: ObservableObject {
         // Reset attempts if this is a new validation cycle
         if !isRefreshing {
             refreshAttempts = 0
+            isRefreshing = true
+        }
+        
+        defer {
+            if refreshAttempts >= maxRefreshAttempts {
+                isRefreshing = false
+                refreshAttempts = 0
+            }
         }
         
         guard refreshAttempts < maxRefreshAttempts else {
@@ -51,47 +68,36 @@ final class AuthenticationManager: ObservableObject {
         do {
             guard let user = Auth.auth().currentUser else {
                 print("No authenticated user")
-                await MainActor.run { self.hasTokenError = true }
+                await MainActor.run { 
+                    self.hasTokenError = true
+                    self.idToken = nil
+                }
                 return false
             }
             
-            // First try without forcing refresh
-            if refreshAttempts == 0 {
-                do {
-                    _ = try await user.getIDToken(forcingRefresh: false)
-                    // If successful, token is valid
-                    await MainActor.run { self.hasTokenError = false }
-                    return true
-                } catch {
-                    // First attempt failed, try with forced refresh
-                    refreshAttempts += 1
-                    isRefreshing = true
-                    return await validateToken() // Recursive call with attempt count increased
-                }
-            } else {
-                // This is already a refresh attempt, force refresh
-                isRefreshing = true
-                do {
-                    _ = try await user.getIDToken(forcingRefresh: true)
-                    // Refresh successful
-                    isRefreshing = false
-                    await MainActor.run { self.hasTokenError = false }
-                    return true
-                } catch let error {
-                    print("Token refresh failed: \(error.localizedDescription)")
-                    refreshAttempts += 1
-                    
-                    // If we've already tried forced refresh and it failed, give up
-                    if refreshAttempts >= maxRefreshAttempts {
-                        isRefreshing = false
-                        await MainActor.run { self.hasTokenError = true }
-                        return false
-                    }
-                    
-                    // Otherwise try again with forced refresh
-                    return await validateToken()
-                }
+            let token = try await user.getIDToken(forcingRefresh: refreshAttempts > 0)
+            await MainActor.run {
+                self.idToken = token
+                self.hasTokenError = false
+                self.tokenError = nil
             }
+            isRefreshing = false
+            return true
+            
+        } catch {
+            print("Token validation failed (attempt \(refreshAttempts + 1)): \(error.localizedDescription)")
+            refreshAttempts += 1
+            
+            if refreshAttempts >= maxRefreshAttempts {
+                await MainActor.run { 
+                    self.hasTokenError = true
+                    self.idToken = nil
+                }
+                return false
+            }
+            
+            // Try again with forced refresh
+            return await validateToken()
         }
     }
     
@@ -102,21 +108,25 @@ final class AuthenticationManager: ObservableObject {
             await MainActor.run {
                 self.idToken = nil
                 self.tokenError = URLError(.userAuthenticationRequired)
+                self.hasTokenError = true
             }
             throw URLError(.userAuthenticationRequired)
         }
         
         do {
-            let token = try await currentUser.getIDToken()
+            let token = try await currentUser.getIDToken(forcingRefresh: true)
             await MainActor.run {
                 self.idToken = token
                 self.tokenError = nil
-                print("Debug - Successfully got new token: \(String(describing: token))")
+                self.hasTokenError = false
+                print("Debug - Successfully got new token")
             }
         } catch {
+            print("Debug - Token refresh failed: \(error.localizedDescription)")
             await MainActor.run {
                 self.idToken = nil
                 self.tokenError = error
+                self.hasTokenError = true
             }
             throw error
         }
@@ -182,14 +192,16 @@ final class AuthenticationManager: ObservableObject {
     }
 
     func refreshTokenAndRetry<T>(retryBlock: @escaping () async throws -> T) async throws -> T {
+        print("Debug - Starting token refresh and retry")
         // Try to refresh the token
-        let refreshSucceeded = await validateToken()
-        guard refreshSucceeded else {
+        do {
+            try await refreshIdToken()
+            print("Debug - Token refresh successful, retrying request")
+            return try await retryBlock()
+        } catch {
+            print("Debug - Token refresh failed in retry: \(error.localizedDescription)")
             throw NSError(domain: "AuthError", code: 401, 
-                         userInfo: [NSLocalizedDescriptionKey: "Failed to refresh authentication token"])
+                         userInfo: [NSLocalizedDescriptionKey: "Failed to refresh authentication token: \(error.localizedDescription)"])
         }
-        
-        // If refresh succeeded, retry the original request
-        return try await retryBlock()
     }
 }
