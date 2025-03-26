@@ -39,8 +39,12 @@ struct EditProfileView: View {
                     
                     // Save button
                     Button(action: {
-                        viewModel.saveProfile()
-                        presentationMode.wrappedValue.dismiss()
+                        Task {
+                            await viewModel.saveProfile()
+                            await MainActor.run {
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                        }
                     }) {
                         Text("Save")
                             .font(YTheme.Typography.body)
@@ -84,19 +88,21 @@ struct EditProfileView: View {
                         Divider()
                             .padding(.vertical, 8)
                         
-                        // Existing emoji picker and form fields
-                        Text("Or choose an emoji")
-                            .font(YTheme.Typography.caption)
-                            .foregroundColor(colors.text(opacity: 0.7))
-                        
-                        EmojiPicker(selectedEmoji: $viewModel.editedEmoji)
-                            .padding(.horizontal)
                         
                         // Form fields
                         FormField(
                             title: "Name",
                             placeholder: "Name",
                             text: $viewModel.editedName
+                        )
+                        
+                        FormField(
+                            title: "Handle",
+                            placeholder: "@username",
+                            text: $viewModel.editedHandle,
+                            keyboardType: .default,
+                            autocapitalization: .none,
+                            disableAutocorrection: true
                         )
                         
                         FormField(

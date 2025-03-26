@@ -126,62 +126,61 @@ class ProfileViewModel: ObservableObject {
         isEditMode = false
     }
     
-    func saveProfile() {
+    func saveProfile() async {
         guard let currentUser = user else { return }
         
-        isSaving = true
-        saveError = ""
+        await MainActor.run {
+            isSaving = true
+            saveError = ""
+        }
         
-        Task {
-            do {
-                let db = Firestore.firestore()
-                let userRef = db.collection("users").document(currentUser.id)
-                
-                var updateData: [String: Any] = [
-                    "name": editedName,
-                    "handle": editedHandle,
-                    "vibe": editedVibe,
-                    "emoji": editedEmoji
-                ]
-                
-                if let profilePictureUrl = profilePictureUrl {
-                    updateData["profilePictureUrl"] = profilePictureUrl
-                }
-                
-                // Only update email through Firebase Auth if it changed
-                if editedEmail != currentUser.email {
-                    // Validate email format first
-                    guard isValidEmail(editedEmail) else {
-                        await MainActor.run {
-                            saveError = "Please enter a valid email address"
-                            isSaving = false
-                        }
-                        return
+        do {
+            let db = Firestore.firestore()
+            let userRef = db.collection("users").document(currentUser.id)
+            
+            var updateData: [String: Any] = [
+                "name": editedName,
+                "handle": editedHandle,
+                "vibe": editedVibe,
+                "emoji": editedEmoji
+            ]
+            
+            if let profilePictureUrl = profilePictureUrl {
+                updateData["profilePictureUrl"] = profilePictureUrl
+            }
+            
+            // Only update email through Firebase Auth if it changed
+            if editedEmail != currentUser.email {
+                // Validate email format first
+                guard isValidEmail(editedEmail) else {
+                    await MainActor.run {
+                        saveError = "Please enter a valid email address"
+                        isSaving = false
                     }
-                    
-                    // Simply update the email in Firestore without verification
-                    updateData["email"] = editedEmail
+                    return
                 }
                 
-                // Add date of birth if provided
-                if let dob = editedDateOfBirth {
-                    updateData["dateOfBirth"] = dob.timeIntervalSince1970
-                }
-                
-                try await userRef.updateData(updateData)
-                
-                // Refresh user data after update
-                fetchUserData()
-                
-                await MainActor.run {
-                    isEditMode = false
-                    isSaving = false
-                }
-            } catch {
-                await MainActor.run {
-                    saveError = "Failed to save profile: \(error.localizedDescription)"
-                    isSaving = false
-                }
+                updateData["email"] = editedEmail
+            }
+            
+            // Add date of birth if provided
+            if let dob = editedDateOfBirth {
+                updateData["dateOfBirth"] = dob.timeIntervalSince1970
+            }
+            
+            try await userRef.updateData(updateData)
+            
+            // Refresh user data after update
+            await fetchUserData()
+            
+            await MainActor.run {
+                isEditMode = false
+                isSaving = false
+            }
+        } catch {
+            await MainActor.run {
+                saveError = "Failed to save profile: \(error.localizedDescription)"
+                isSaving = false
             }
         }
     }
