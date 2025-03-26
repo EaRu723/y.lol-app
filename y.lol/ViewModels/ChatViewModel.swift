@@ -140,23 +140,39 @@ class ChatViewModel: ObservableObject {
             let huxleyPrompt = trimmedMessage.replacingOccurrences(of: "@huxley", with: "", options: [.caseInsensitive])
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             
+            await MainActor.run {
+                // Add user message immediately
+                messages.append(ChatMessage(
+                    content: trimmedMessage,
+                    isUser: true,
+                    timestamp: Date(),
+                    image: nil
+                ))
+                isThinking = true
+            }
+            
             // Use Huxley's ViewModel to generate response
             if let response = await huxleyViewModel.generateResponse(prompt: huxleyPrompt) {
-                // Add both the user message and response to the main chat
                 await MainActor.run {
-                    messages.append(ChatMessage(
-                        content: trimmedMessage,
-                        isUser: true,
-                        timestamp: Date(),
-                        imageUrl: nil
-                    ))
-                    
+                    // Add the response
                     messages.append(ChatMessage(
                         content: response,
                         isUser: false,
                         timestamp: Date(),
                         image: nil
                     ))
+                    isThinking = false
+                }
+            } else {
+                await MainActor.run {
+                    // Handle error case
+                    messages.append(ChatMessage(
+                        content: "Sorry, I encountered an error processing your request.",
+                        isUser: false,
+                        timestamp: Date(),
+                        image: nil
+                    ))
+                    isThinking = false
                 }
             }
             return
