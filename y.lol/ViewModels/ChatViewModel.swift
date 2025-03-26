@@ -38,6 +38,7 @@ class ChatViewModel: ObservableObject {
     private let hapticService = HapticService()
     private var cancellables = Set<AnyCancellable>()
     private var conversationId = UUID().uuidString
+    private let huxleyViewModel = HuxleyViewModel()
     
     init() {
         fetchPreviousConversations()
@@ -132,6 +133,34 @@ class ChatViewModel: ObservableObject {
     func sendMessage(with image: UIImage? = nil) async {
         let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedMessage.isEmpty || image != nil else { return }
+        
+        // Check if message starts with @huxley
+        if trimmedMessage.lowercased().hasPrefix("@huxley") {
+            // Remove @huxley from the message
+            let huxleyPrompt = trimmedMessage.replacingOccurrences(of: "@huxley", with: "", options: [.caseInsensitive])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Use Huxley's ViewModel to generate response
+            if let response = await huxleyViewModel.generateResponse(prompt: huxleyPrompt) {
+                // Add both the user message and response to the main chat
+                await MainActor.run {
+                    messages.append(ChatMessage(
+                        content: trimmedMessage,
+                        isUser: true,
+                        timestamp: Date(),
+                        imageUrl: nil
+                    ))
+                    
+                    messages.append(ChatMessage(
+                        content: response,
+                        isUser: false,
+                        timestamp: Date(),
+                        image: nil
+                    ))
+                }
+            }
+            return
+        }
         
         hapticService.playSendFeedback()
         
