@@ -55,7 +55,7 @@ struct EditProfileView: View {
                 ScrollView {
                     VStack(spacing: 30) {
                         // Profile Picture Section
-                        VStack(spacing: 12) {
+                        ZStack(alignment: .bottom) {
                             if let image = viewModel.selectedProfileImage {
                                 Image(uiImage: image)
                                     .resizable()
@@ -72,19 +72,23 @@ struct EditProfileView: View {
                                 } placeholder: {
                                     Text(viewModel.editedEmoji)
                                         .font(.system(size: 80))
+                                        .frame(width: 120, height: 120)
                                 }
                             } else {
                                 Text(viewModel.editedEmoji)
                                     .font(.system(size: 80))
+                                    .frame(width: 120, height: 120)
                             }
                             
+                            // Overlay the camera button at the bottom
                             PhotosPickerView(
                                 selectedImage: $viewModel.selectedProfileImage,
                                 selectedImageUrl: $viewModel.profilePictureUrl,
                                 isPresented: .constant(false)
                             )
-                            .padding(.top, 8)
+                            .offset(y: 20)
                         }
+                        .padding(.bottom, 20) // Accommodate the button offset
                         
                         // Divider between photo and emoji sections
                         Divider()
