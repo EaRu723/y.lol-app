@@ -32,7 +32,6 @@ struct MessageView: View {
     
     var body: some View {
         VStack(alignment: message.isUser ? .trailing : .leading, spacing: 2) {
-            // Message content
             HStack {
                 if !message.isUser {
                     // AI avatar if needed
@@ -52,33 +51,40 @@ struct MessageView: View {
                                 .stroke(getBubbleBorderColor(), lineWidth: 1)
                         )
                     
-                    // Image content if available - from URL or direct image
-                    if let imageUrl = message.imageUrl {
-                        AsyncImage(url: URL(string: imageUrl)) { phase in
-                            switch phase {
-                            case .empty:
-                                ProgressView()
-                                    .frame(width: 200, height: 150)
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(maxWidth: 200, maxHeight: 200)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                            case .failure:
-                                Image(systemName: "photo.fill")
-                                    .foregroundColor(.gray)
-                                    .frame(width: 200, height: 150)
-                            @unknown default:
-                                EmptyView()
+                    // Display media content if available
+                    if let mediaItems = message.media {
+                        ForEach(mediaItems) { mediaItem in
+                            switch mediaItem.type {
+                            case .image:
+                                AsyncImage(url: URL(string: mediaItem.url)) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ProgressView()
+                                            .frame(width: 200, height: 150)
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(maxWidth: 200, maxHeight: 200)
+                                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    case .failure:
+                                        Image(systemName: "photo.fill")
+                                            .foregroundColor(.gray)
+                                            .frame(width: 200, height: 150)
+                                    @unknown default:
+                                        EmptyView()
+                                    }
+                                }
+                            case .link:
+                                // Link preview will be implemented later
+                                Text(mediaItem.url)
+                                    .foregroundColor(.blue)
+                                    .underline()
+                            case .video:
+                                // Video preview will be implemented later
+                                Text("Video content")
                             }
                         }
-                    } else if let image = message.image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 200, maxHeight: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                 }
                 
@@ -106,7 +112,7 @@ struct MessageView_Previews: PreviewProvider {
                     content: "Hello, how are you?",
                     isUser: true,
                     timestamp: Date(),
-                    image: nil
+                    imageUrl: "https://example.com/image.jpg"
                 ),
                 index: 0,
                 totalCount: 2
@@ -114,10 +120,10 @@ struct MessageView_Previews: PreviewProvider {
             
             MessageView(
                 message: ChatMessage(
-                    content: "I'm doing well, thank you for asking. How can I help you today?",
+                    content: "I'm doing well, thank you for asking!",
                     isUser: false,
                     timestamp: Date(),
-                    image: nil
+                    imageUrl: nil
                 ),
                 index: 1,
                 totalCount: 2

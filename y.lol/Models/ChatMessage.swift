@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import SwiftUI
+import LinkPresentation
 
 // Message model
 struct ChatMessage: Identifiable, Codable {
@@ -15,30 +16,50 @@ struct ChatMessage: Identifiable, Codable {
     let content: String
     let isUser: Bool
     let timestamp: Date
-    var imageUrl: String? = nil
+    var media: [MediaContent]? = nil
     
     // Non-persistent UI state (won't be stored)
-    var image: UIImage? = nil
+    var loadedMetadata: [String: LPLinkMetadata]? = nil
     
     // Coding keys for proper serialization
     enum CodingKeys: String, CodingKey {
-        case id, content, isUser, timestamp, imageUrl
+        case id, content, isUser, timestamp, media
     }
     
-    // Initializer for messages with an image
+    // Basic initializer
+    init(content: String, isUser: Bool, timestamp: Date, media: [MediaContent]? = nil) {
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = timestamp
+        self.media = media
+    }
+    
+    // Convenience initializer for messages with a single image
     init(content: String, isUser: Bool, timestamp: Date, image: UIImage?) {
         self.content = content
         self.isUser = isUser
         self.timestamp = timestamp
-        self.image = image
+        self.media = nil // We don't store the UIImage directly anymore
     }
     
-    // Initializer for messages with an image URL
+    // Convenience initializer for messages with a single image URL
     init(content: String, isUser: Bool, timestamp: Date, imageUrl: String?) {
         self.content = content
         self.isUser = isUser
         self.timestamp = timestamp
-        self.imageUrl = imageUrl
+        if let url = imageUrl {
+            self.media = [
+                MediaContent(
+                    id: UUID().uuidString,
+                    type: .image,
+                    url: url,
+                    metadata: nil,
+                    timestamp: Date().timeIntervalSince1970
+                )
+            ]
+        } else {
+            self.media = nil
+        }
     }
 }
 

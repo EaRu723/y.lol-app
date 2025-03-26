@@ -21,6 +21,7 @@ class ProfileViewModel: ObservableObject {
     @Published var editedDateOfBirth: Date?
     @Published var editedVibe = ""
     @Published var editedEmoji = "☯️" // Default to yin-yang since that's what we show initially
+    @Published var editedHandle = ""
     
     // Save status
     @Published var isSaving = false
@@ -61,15 +62,19 @@ class ProfileViewModel: ObservableObject {
                     // Get emoji if available
                     let emoji = data["emoji"] as? String
                     
+                    // Get handle if available
+                    let handle = data["handle"] as? String ?? "@\(currentUser.name.lowercased().replacingOccurrences(of: " ", with: ""))"
+                    
                     // Create user with data from Firestore
                     let user = User(
                         id: currentUser.id,
                         name: data["name"] as? String ?? currentUser.name,
                         email: data["email"] as? String ?? currentUser.email,
                         joined: data["joined"] as? TimeInterval ?? Date().timeIntervalSince1970,
+                        handle: handle,
                         dateOfBirth: dateOfBirth,
-                        vibe: vibe,
                         streak: streak,
+                        vibe: vibe,
                         emoji: emoji
                     )
                     
@@ -93,6 +98,7 @@ class ProfileViewModel: ObservableObject {
     private func setupEditableFields(from user: User) {
         editedName = user.name
         editedEmail = user.email
+        editedHandle = user.handle
         editedVibe = user.vibe ?? ""
         editedEmoji = user.emoji ?? "☯️"
         if let dobTimestamp = user.dateOfBirth {
@@ -124,6 +130,7 @@ class ProfileViewModel: ObservableObject {
                 
                 var updateData: [String: Any] = [
                     "name": editedName,
+                    "handle": editedHandle,
                     "vibe": editedVibe,
                     "emoji": editedEmoji
                 ]
@@ -182,4 +189,11 @@ class ProfileViewModel: ObservableObject {
         return emailPredicate.evaluate(with: email)
     }
     
+    // Add handle validation function
+    func isValidHandle(_ handle: String) -> Bool {
+        // Handle should start with @ and contain only letters, numbers, and underscores
+        let handleRegex = "^@[A-Za-z0-9_]{1,15}$"
+        let handlePredicate = NSPredicate(format: "SELF MATCHES %@", handleRegex)
+        return handlePredicate.evaluate(with: handle)
+    }
 }

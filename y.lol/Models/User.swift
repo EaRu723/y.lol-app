@@ -13,32 +13,34 @@ struct User: Codable {
     let name: String
     let email: String
     let joined: TimeInterval
+    var handle: String
     var dateOfBirth: TimeInterval?
-    var vibe: String?
+    
+    // New fields
     var streak: Int = 0
+    var score: Int = 0  // Percentage score
+    var vibe: String?
+    var vibeSummary: String?
     var emoji: String?
+    var media: [MediaContent] = []
     
-    
-    func asDictionary(includeScores: Bool = false) -> [String: Any] {
+    func asDictionary() -> [String: Any] {
         var dict: [String: Any] = [
             "id": id,
             "name": name,
             "email": email,
             "joined": joined,
-            "streak": streak
+            "handle": handle,
+            "streak": streak,
+            "score": score
         ]
         
-        if let dob = dateOfBirth {
-            dict["dateOfBirth"] = dob
-        }
-        
-        if let vibe = vibe {
-            dict["vibe"] = vibe
-        }
-        
-        if let emoji = emoji {
-            dict["emoji"] = emoji
-        }
+        // Optional fields
+        if let dob = dateOfBirth { dict["dateOfBirth"] = dob }
+        if let vibe = vibe { dict["vibe"] = vibe }
+        if let vibeSummary = vibeSummary { dict["vibeSummary"] = vibeSummary }
+        if let emoji = emoji { dict["emoji"] = emoji }
+        if !media.isEmpty { dict["media"] = media }
         
         return dict
     }
@@ -48,8 +50,13 @@ struct User: Codable {
 extension User {
     init(from firebaseUser: FirebaseAuth.User) {
         self.id = firebaseUser.uid
-        self.name = firebaseUser.displayName ?? "Unknown" // Adjust based on your needs
+        self.name = firebaseUser.displayName ?? "Unknown"
         self.email = firebaseUser.email ?? "No email"
-        self.joined = Date().timeIntervalSince1970 // Example placeholder
+        self.joined = Date().timeIntervalSince1970
+        // Initialize new required properties
+        self.handle = "@" + (firebaseUser.displayName?.lowercased().replacingOccurrences(of: " ", with: "") ?? "user")
+        self.streak = 0
+        self.score = 0
+        self.media = []
     }
 }
