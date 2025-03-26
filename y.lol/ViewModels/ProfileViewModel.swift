@@ -142,12 +142,10 @@ class ProfileViewModel: ObservableObject {
                 "name": editedName,
                 "handle": editedHandle,
                 "vibe": editedVibe,
-                "emoji": editedEmoji
+                "emoji": editedEmoji,
+                // Always include profilePictureUrl in the update, even if nil
+                "profilePictureUrl": profilePictureUrl as Any
             ]
-            
-            if let profilePictureUrl = profilePictureUrl {
-                updateData["profilePictureUrl"] = profilePictureUrl
-            }
             
             // Only update email through Firebase Auth if it changed
             if editedEmail != currentUser.email {
