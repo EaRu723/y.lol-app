@@ -8,6 +8,7 @@
 import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
+import UIKit
 
 struct ProfileView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -147,6 +148,23 @@ struct ProfileView: View {
                             
                             Spacer()
                             
+                            // Share button
+                            Button(action: {
+                                shareProfile(user: user)
+                            }) {
+                                HStack {
+                                    Image(systemName: "square.and.arrow.up")
+                                    Text("Share Profile")
+                                        .font(YTheme.Typography.body)
+                                }
+                                .foregroundColor(Color.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(colors.accent)
+                                .cornerRadius(10)
+                            }
+                            .padding(.horizontal, 40)
+                            
                             // Logout button (only show in non-edit mode)
                             if !viewModel.isEditMode {
                                 Button(action: {
@@ -222,6 +240,91 @@ struct ProfileView: View {
             NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         } catch {
             viewModel.errorMessage = "Error signing out: \(error.localizedDescription)"
+        }
+    }
+    
+    private func shareProfile(user: User) {
+        // Create a view to render for sharing
+        let shareView = VStack(spacing: 20) {
+            // Profile picture or emoji
+            if let url = user.profilePictureUrl {
+                CachedAsyncImage(url: URL(string: url))
+                    .frame(width: 120, height: 120)
+                    .clipShape(Circle())
+            } else {
+                Text(user.emoji ?? "☯️")
+                    .font(.system(size: 80))
+            }
+            
+            // Name and handle
+            VStack(spacing: 4) {
+                Text(user.name)
+                    .font(YTheme.Typography.title)
+                    .foregroundColor(colors.text)
+                Text(user.handle)
+                    .font(YTheme.Typography.caption)
+                    .foregroundColor(colors.text.opacity(0.7))
+            }
+            
+            // Streak
+            HStack {
+                Text("🔥")
+                    .font(.system(size: 24))
+                Text("\(user.streak)")
+                    .font(YTheme.Typography.title)
+                    .foregroundColor(colors.text)
+            }
+            
+            // Scores
+            HStack(spacing: 20) {
+                HStack {
+                    Text("😇")
+                        .font(.system(size: 24))
+                    Text("\(user.score)%")
+                        .font(YTheme.Typography.title)
+                        .foregroundColor(colors.text)
+                }
+                HStack {
+                    Text("😈")
+                        .font(.system(size: 24))
+                    Text("\(100 - user.score)%")
+                        .font(YTheme.Typography.title)
+                        .foregroundColor(colors.text)
+                }
+            }
+            
+            // Vibe if available
+            if let vibe = user.vibe, !vibe.isEmpty {
+                VibeView(vibe: vibe)
+                    .frame(maxWidth: 300) // Limit width to force text wrapping
+            }
+        }
+        .frame(width: 390, height: 844) // iPhone 14 dimensions
+        .padding(.horizontal, 20)
+        .padding(.vertical, 40)
+        .background(colors.backgroundWithNoise)
+        
+        // Convert view to UIImage
+        let renderer = ImageRenderer(content: shareView)
+        renderer.scale = 3.0 // Higher resolution
+        
+        // Ensure we're on the main thread
+        DispatchQueue.main.async {
+            if let uiImage = renderer.uiImage {
+                // Share the image
+                let activityVC = UIActivityViewController(
+                    activityItems: [uiImage],
+                    applicationActivities: nil
+                )
+                
+                // Present the share sheet
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let window = windowScene.windows.first,
+                   let rootVC = window.rootViewController {
+                    activityVC.popoverPresentationController?.sourceView = window
+                    rootVC.present(activityVC, animated: true)
+                }
+            }
         }
     }
 }
