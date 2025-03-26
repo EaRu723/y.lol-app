@@ -16,6 +16,7 @@ struct User: Codable {
     var dateOfBirth: TimeInterval?
     var vibe: String?
     var streak: Int = 0
+    var emoji: String?
     
     
     func asDictionary(includeScores: Bool = false) -> [String: Any] {
@@ -33,6 +34,10 @@ struct User: Codable {
         
         if let vibe = vibe {
             dict["vibe"] = vibe
+        }
+        
+        if let emoji = emoji {
+            dict["emoji"] = emoji
         }
         
         return dict

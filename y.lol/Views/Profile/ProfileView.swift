@@ -76,13 +76,14 @@ struct ProfileView: View {
                 } else if let user = viewModel.user {
                     ScrollView {
                         VStack(spacing: 30) {
-                            // Profile icon
-                            YinYangLogoView(
-                                size: 80,
-                                isLoading: false,
-                                lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
-                                darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
-                            )
+                            // Replace YinYangLogoView with emoji
+                            if viewModel.isEditMode {
+                                Text(viewModel.editedEmoji)
+                                    .font(.system(size: 80))
+                            } else {
+                                Text(user.emoji ?? "☯️")
+                                    .font(.system(size: 80))
+                            }
                             
                             // User details
                             VStack(spacing: 12) {
