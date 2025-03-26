@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import FirebaseAuth
+import UIKit
 
 class ProfileViewModel: ObservableObject {
     @Published var user: User?
@@ -26,6 +27,9 @@ class ProfileViewModel: ObservableObject {
     // Save status
     @Published var isSaving = false
     @Published var saveError = ""
+    
+    @Published var selectedProfileImage: UIImage?
+    @Published var profilePictureUrl: String?
     
     private let authManager: AuthenticationManager
     
@@ -65,6 +69,9 @@ class ProfileViewModel: ObservableObject {
                     // Get handle if available
                     let handle = data["handle"] as? String ?? "@\(currentUser.name.lowercased().replacingOccurrences(of: " ", with: ""))"
                     
+                    // Get profile picture URL if available
+                    let profilePictureUrl = data["profilePictureUrl"] as? String
+                    
                     // Create user with data from Firestore
                     let user = User(
                         id: currentUser.id,
@@ -75,7 +82,8 @@ class ProfileViewModel: ObservableObject {
                         dateOfBirth: dateOfBirth,
                         streak: streak,
                         vibe: vibe,
-                        emoji: emoji
+                        emoji: emoji,
+                        profilePictureUrl: profilePictureUrl
                     )
                     
                     // All this code now runs on the main actor
@@ -104,6 +112,7 @@ class ProfileViewModel: ObservableObject {
         if let dobTimestamp = user.dateOfBirth {
             editedDateOfBirth = Date(timeIntervalSince1970: dobTimestamp)
         }
+        profilePictureUrl = user.profilePictureUrl
     }
     
     func enterEditMode() {
@@ -134,6 +143,10 @@ class ProfileViewModel: ObservableObject {
                     "vibe": editedVibe,
                     "emoji": editedEmoji
                 ]
+                
+                if let profilePictureUrl = profilePictureUrl {
+                    updateData["profilePictureUrl"] = profilePictureUrl
+                }
                 
                 // Only update email through Firebase Auth if it changed
                 if editedEmail != currentUser.email {
