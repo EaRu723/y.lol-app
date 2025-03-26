@@ -86,16 +86,7 @@ struct ProfileView: View {
                                             .frame(width: 120, height: 120)
                                             .clipShape(Circle())
                                     } else if let url = viewModel.profilePictureUrl {
-                                        AsyncImage(url: URL(string: url)) { image in
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 120, height: 120)
-                                                .clipShape(Circle())
-                                        } placeholder: {
-                                            Text(viewModel.editedEmoji)
-                                                .font(.system(size: 80))
-                                        }
+                                        CachedAsyncImage(url: URL(string: url))
                                     } else {
                                         Text(viewModel.editedEmoji)
                                             .font(.system(size: 80))
@@ -110,16 +101,7 @@ struct ProfileView: View {
                                 }
                             } else {
                                 if let url = user.profilePictureUrl {
-                                    AsyncImage(url: URL(string: url)) { image in
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 120, height: 120)
-                                            .clipShape(Circle())
-                                    } placeholder: {
-                                        Text(user.emoji ?? "☯️")
-                                            .font(.system(size: 80))
-                                    }
+                                    CachedAsyncImage(url: URL(string: url))
                                 } else {
                                     Text(user.emoji ?? "☯️")
                                         .font(.system(size: 80))
