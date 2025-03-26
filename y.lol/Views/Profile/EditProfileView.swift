@@ -54,7 +54,47 @@ struct EditProfileView: View {
                 // Edit form content
                 ScrollView {
                     VStack(spacing: 30) {
-                        // Add emoji picker at the top
+                        // Profile Picture Section
+                        VStack(spacing: 12) {
+                            if let image = viewModel.selectedProfileImage {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 120, height: 120)
+                                    .clipShape(Circle())
+                            } else if let url = viewModel.profilePictureUrl {
+                                AsyncImage(url: URL(string: url)) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 120, height: 120)
+                                        .clipShape(Circle())
+                                } placeholder: {
+                                    Text(viewModel.editedEmoji)
+                                        .font(.system(size: 80))
+                                }
+                            } else {
+                                Text(viewModel.editedEmoji)
+                                    .font(.system(size: 80))
+                            }
+                            
+                            PhotosPickerView(
+                                selectedImage: $viewModel.selectedProfileImage,
+                                selectedImageUrl: $viewModel.profilePictureUrl,
+                                isPresented: .constant(false)
+                            )
+                            .padding(.top, 8)
+                        }
+                        
+                        // Divider between photo and emoji sections
+                        Divider()
+                            .padding(.vertical, 8)
+                        
+                        // Existing emoji picker and form fields
+                        Text("Or choose an emoji")
+                            .font(YTheme.Typography.caption)
+                            .foregroundColor(colors.text(opacity: 0.7))
+                        
                         EmojiPicker(selectedEmoji: $viewModel.editedEmoji)
                             .padding(.horizontal)
                         

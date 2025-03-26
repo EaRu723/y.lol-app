@@ -17,7 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		18EDAC752D6E948400636D75 /* y.lol.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = y.lol.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		18EDAC752D6E948400636D75 /* Y.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Y.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -57,7 +57,7 @@
 		18EDAC762D6E948400636D75 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				18EDAC752D6E948400636D75 /* y.lol.app */,
+				18EDAC752D6E948400636D75 /* Y.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -91,7 +91,7 @@
 				C351F4402D86190400D8C349 /* FirebaseFunctions */,
 			);
 			productName = y.lol;
-			productReference = 18EDAC752D6E948400636D75 /* y.lol.app */;
+			productReference = 18EDAC752D6E948400636D75 /* Y.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -280,6 +280,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Y;
 				INFOPLIST_KEY_NSCameraUsageDescription = "need camera to send photos to y";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "need photo access to send photos to y";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -298,7 +299,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "y.y-lol.y";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Y;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -322,6 +323,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Y;
 				INFOPLIST_KEY_NSCameraUsageDescription = "need camera to send photos to y";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "need photo access to send photos to y";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -340,7 +342,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "y.y-lol.y";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Y;
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphonesimulator iphoneos";
 				SWIFT_EMIT_LOC_STRINGS = YES;

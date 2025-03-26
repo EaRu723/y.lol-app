@@ -23,6 +23,7 @@ struct User: Codable {
     var vibeSummary: String?
     var emoji: String?
     var media: [MediaContent] = []
+    var profilePictureUrl: String?
     
     func asDictionary() -> [String: Any] {
         var dict: [String: Any] = [
@@ -41,6 +42,7 @@ struct User: Codable {
         if let vibeSummary = vibeSummary { dict["vibeSummary"] = vibeSummary }
         if let emoji = emoji { dict["emoji"] = emoji }
         if !media.isEmpty { dict["media"] = media }
+        if let profilePictureUrl = profilePictureUrl { dict["profilePictureUrl"] = profilePictureUrl }
         
         return dict
     }

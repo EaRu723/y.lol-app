@@ -77,13 +77,53 @@ struct ProfileView: View {
                 } else if let user = viewModel.user {
                     ScrollView {
                         VStack(spacing: 30) {
-                            // Replace YinYangLogoView with emoji
                             if viewModel.isEditMode {
-                                Text(viewModel.editedEmoji)
-                                    .font(.system(size: 80))
+                                VStack {
+                                    if let image = viewModel.selectedProfileImage {
+                                        Image(uiImage: image)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 120, height: 120)
+                                            .clipShape(Circle())
+                                    } else if let url = viewModel.profilePictureUrl {
+                                        AsyncImage(url: URL(string: url)) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 120, height: 120)
+                                                .clipShape(Circle())
+                                        } placeholder: {
+                                            Text(viewModel.editedEmoji)
+                                                .font(.system(size: 80))
+                                        }
+                                    } else {
+                                        Text(viewModel.editedEmoji)
+                                            .font(.system(size: 80))
+                                    }
+                                    
+                                    PhotosPickerView(
+                                        selectedImage: $viewModel.selectedProfileImage,
+                                        selectedImageUrl: $viewModel.profilePictureUrl,
+                                        isPresented: .constant(false)
+                                    )
+                                    .padding(.top, 8)
+                                }
                             } else {
-                                Text(user.emoji ?? "☯️")
-                                    .font(.system(size: 80))
+                                if let url = user.profilePictureUrl {
+                                    AsyncImage(url: URL(string: url)) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 120, height: 120)
+                                            .clipShape(Circle())
+                                    } placeholder: {
+                                        Text(user.emoji ?? "☯️")
+                                            .font(.system(size: 80))
+                                    }
+                                } else {
+                                    Text(user.emoji ?? "☯️")
+                                        .font(.system(size: 80))
+                                }
                             }
                             
                             // User details
