@@ -21,7 +21,7 @@ struct VibeView: View {
             .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: 10)
-                    .fill(colors.accent.opacity(0.1))
+                    .fill(colors.accent.opacity(0.01))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
