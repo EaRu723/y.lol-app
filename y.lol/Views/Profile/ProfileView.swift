@@ -16,6 +16,7 @@ struct ProfileView: View {
     @EnvironmentObject private var authManager: AuthenticationManager
     @StateObject private var viewModel: ProfileViewModel
     @State private var showingLogoutAlert = false
+    @State private var showEditProfile = false
     
     init() {
         _viewModel = StateObject(wrappedValue: ProfileViewModel(authManager: AuthenticationManager.shared))
@@ -50,7 +51,7 @@ struct ProfileView: View {
                     // Edit button
                     if !viewModel.isEditMode && viewModel.user != nil && !viewModel.isLoading {
                         Button(action: {
-                            viewModel.enterEditMode()
+                            showEditProfile = true
                         }) {
                             Image(systemName: "pencil")
                                 .font(.system(size: 20))
@@ -90,51 +91,41 @@ struct ProfileView: View {
                                 if viewModel.isEditMode {
                                     EditProfileView(viewModel: viewModel)
                                 } else {
-                                    // Read-only name and email
+                                    // Read-only name
                                     Text(user.name)
                                         .font(YTheme.Typography.title)
                                         .foregroundColor(colors.text)
                                     
-                                    Text(user.email)
-                                        .font(YTheme.Typography.body)
-                                        .foregroundColor(colors.text(opacity: 0.7))
-                                    
                                     // Streak and Score boxes
-                                    HStack(spacing: 20) {
+                                    VStack(spacing: 12) {
                                         // Streak Box
-                                        VStack {
+                                        HStack {
                                             Text("🔥")
                                                 .font(.system(size: 24))
-                                            Text("\(user.streak ?? 0)")
+                                            Text("\(user.streak)")
                                                 .font(YTheme.Typography.title)
                                                 .foregroundColor(colors.text)
                                         }
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(colors.text.opacity(0.1))
-                                        .cornerRadius(12)
-                                        
-                                        // Score Box
-                                        VStack {
+                                        HStack {
                                             HStack {
                                             Text("😇")
                                                 .font(.system(size: 24))
-                                            Text("\(user.score ?? 0)")
+                                                Text("\(user.score)")
                                                 .font(YTheme.Typography.title)
                                                 .foregroundColor(colors.text)
                                             }
                                              HStack {
                                             Text("😈")
                                                 .font(.system(size: 24))
-                                            Text("\(100 - (user.score ?? 0))")
+                                                 Text("\(100 - (user.score))")
                                                 .font(YTheme.Typography.title)
                                                 .foregroundColor(colors.text)
                                             }
                                         }
                                         .frame(maxWidth: .infinity)
                                         .padding()
-                                        .background(colors.text.opacity(0.1))
                                         .cornerRadius(12)
+                                        
                                     }
                                     .padding(.top, 16)
                                     
@@ -207,6 +198,10 @@ struct ProfileView: View {
             }
         }
         .withYTheme()
+        .navigationDestination(isPresented: $showEditProfile) {
+            EditProfileView(viewModel: viewModel)
+                .navigationBarHidden(true)
+        }
         .onAppear {
             viewModel.fetchUserData()
         }
