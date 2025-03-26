@@ -99,23 +99,50 @@ struct ProfileView: View {
                                         .font(YTheme.Typography.body)
                                         .foregroundColor(colors.text(opacity: 0.7))
                                     
+                                    // Streak and Score boxes
+                                    HStack(spacing: 20) {
+                                        // Streak Box
+                                        VStack {
+                                            Text("🔥")
+                                                .font(.system(size: 24))
+                                            Text("\(user.streak ?? 0)")
+                                                .font(YTheme.Typography.title)
+                                                .foregroundColor(colors.text)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(colors.text.opacity(0.1))
+                                        .cornerRadius(12)
+                                        
+                                        // Score Box
+                                        VStack {
+                                            HStack {
+                                            Text("😇")
+                                                .font(.system(size: 24))
+                                            Text("\(user.score ?? 0)")
+                                                .font(YTheme.Typography.title)
+                                                .foregroundColor(colors.text)
+                                            }
+                                             HStack {
+                                            Text("😈")
+                                                .font(.system(size: 24))
+                                            Text("\(100 - (user.score ?? 0))")
+                                                .font(YTheme.Typography.title)
+                                                .foregroundColor(colors.text)
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(colors.text.opacity(0.1))
+                                        .cornerRadius(12)
+                                    }
+                                    .padding(.top, 16)
+                                    
                                     // Display vibe if available
                                     if let vibe = user.vibe, !vibe.isEmpty {
                                         VibeView(vibe: vibe)
-                                            .padding(.top, 4)
+                                            .padding(.top, 12)
                                     }
-                                    
-                                    // Display date of birth if available
-                                    if let dob = user.dateOfBirth {
-                                        Text("Born: \(viewModel.formatDate(timestamp: dob))")
-                                            .font(YTheme.Typography.caption)
-                                            .foregroundColor(colors.text(opacity: 0.7))
-                                    }
-                                    
-                                    Text("Joined \(viewModel.formatDate(timestamp: user.joined))")
-                                        .font(YTheme.Typography.caption)
-                                        .foregroundColor(colors.text(opacity: 0.5))
-                                        .padding(.top, 8)
                                 }
                             }
                             .padding(.vertical, 20)
