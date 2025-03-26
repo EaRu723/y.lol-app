@@ -15,6 +15,10 @@ struct EditProfileView: View {
     
     var body: some View {
         VStack(spacing: 30) {
+            // Add emoji picker at the top
+            EmojiPicker(selectedEmoji: $viewModel.editedEmoji)
+                .padding(.horizontal)
+            
             // Editable name field
             FormField(
                 title: "Name",

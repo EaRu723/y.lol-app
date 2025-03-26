@@ -20,6 +20,7 @@ class ProfileViewModel: ObservableObject {
     @Published var editedEmail = ""
     @Published var editedDateOfBirth: Date?
     @Published var editedVibe = ""
+    @Published var editedEmoji = "☯️" // Default to yin-yang since that's what we show initially
     
     // Save status
     @Published var isSaving = false
@@ -57,6 +58,9 @@ class ProfileViewModel: ObservableObject {
                     // Get streak if available
                     let streak = data["streak"] as? Int ?? 0
                     
+                    // Get emoji if available
+                    let emoji = data["emoji"] as? String
+                    
                     // Create user with data from Firestore
                     let user = User(
                         id: currentUser.id,
@@ -65,7 +69,8 @@ class ProfileViewModel: ObservableObject {
                         joined: data["joined"] as? TimeInterval ?? Date().timeIntervalSince1970,
                         dateOfBirth: dateOfBirth,
                         vibe: vibe,
-                        streak: streak
+                        streak: streak,
+                        emoji: emoji
                     )
                     
                     // All this code now runs on the main actor
@@ -89,6 +94,7 @@ class ProfileViewModel: ObservableObject {
         editedName = user.name
         editedEmail = user.email
         editedVibe = user.vibe ?? ""
+        editedEmoji = user.emoji ?? "☯️"
         if let dobTimestamp = user.dateOfBirth {
             editedDateOfBirth = Date(timeIntervalSince1970: dobTimestamp)
         }
@@ -118,7 +124,8 @@ class ProfileViewModel: ObservableObject {
                 
                 var updateData: [String: Any] = [
                     "name": editedName,
-                    "vibe": editedVibe
+                    "vibe": editedVibe,
+                    "emoji": editedEmoji
                 ]
                 
                 // Only update email through Firebase Auth if it changed
