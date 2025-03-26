@@ -77,29 +77,6 @@ struct ProfileView: View {
                 } else if let user = viewModel.user {
                     ScrollView {
                         VStack(spacing: 12) {
-                            if viewModel.isEditMode {
-                                VStack {
-                                    if let image = viewModel.selectedProfileImage {
-                                        Image(uiImage: image)
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 120, height: 120)
-                                            .clipShape(Circle())
-                                    } else if let url = viewModel.profilePictureUrl {
-                                        CachedAsyncImage(url: URL(string: url))
-                                    } else {
-                                        Text(viewModel.editedEmoji)
-                                            .font(.system(size: 80))
-                                    }
-                                    
-                                    PhotosPickerView(
-                                        selectedImage: $viewModel.selectedProfileImage,
-                                        selectedImageUrl: $viewModel.profilePictureUrl,
-                                        isPresented: .constant(false)
-                                    )
-                                    .padding(.top, 8)
-                                }
-                            } else {
                                 if let url = user.profilePictureUrl {
                                     CachedAsyncImage(url: URL(string: url))
                                 } else {
@@ -139,14 +116,14 @@ struct ProfileView: View {
                                             HStack {
                                             Text("😇")
                                                 .font(.system(size: 24))
-                                                Text("\(user.score)")
+                                                Text("\(user.score) %")
                                                 .font(YTheme.Typography.title)
                                                 .foregroundColor(colors.text)
                                             }
                                              HStack {
                                             Text("😈")
                                                 .font(.system(size: 24))
-                                                 Text("\(100 - (user.score))")
+                                                 Text("\(100 - (user.score)) %")
                                                 .font(YTheme.Typography.title)
                                                 .foregroundColor(colors.text)
                                             }
@@ -201,8 +178,7 @@ struct ProfileView: View {
                             }
                         }
                         .padding()
-                    }
-                } else {
+                    } else {
                     // Error or no user state
                     VStack {
                         Spacer()
