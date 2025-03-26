@@ -127,10 +127,11 @@ extension AuthenticationViewModel {
             
             // Update user object in the main thread
             DispatchQueue.main.async {
-                self?.user = User(id: data["id"] as? String ?? "",
-                                  name: data["name"] as? String ?? "",
-                                  email: data["email"] as? String ?? "",
-                                  joined: data["joined"] as? TimeInterval ?? 0
+                self?.user = User(
+                    id: data["id"] as? String ?? "",
+                    name: data["name"] as? String ?? "",
+                    email: data["email"] as? String ?? "",
+                    joined: data["joined"] as? TimeInterval ?? 0, handle: data["handle"] as? String ?? "@\((data["name"] as? String ?? "").lowercased().replacingOccurrences(of: " ", with: ""))"
                 )
             }
         }
@@ -218,10 +219,12 @@ extension AuthenticationViewModel {
                         await self.updateDisplayName(for: authResult.user, with: appleIDCredential)
                         
                         // Prepare the user model for Firestore update
-                        let newUser = User(id: authResult.user.uid,
-                                           name: self.displayName,
-                                           email: authResult.user.email ?? "No Email",
-                                           joined: Date().timeIntervalSince1970)
+                        let newUser = User(
+                            id: authResult.user.uid,
+                            name: self.displayName,
+                            email: authResult.user.email ?? "No Email",
+                            joined: Date().timeIntervalSince1970, handle: "@\(self.displayName.lowercased().replacingOccurrences(of: " ", with: ""))"
+                        )
                         
                         self.updateUserInFirestore(user: newUser)
                     } catch {

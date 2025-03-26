@@ -54,10 +54,13 @@ class FirebaseManager: ObservableObject {
             
             // First, add any previous images from the conversation
             for message in newMessages where message.isUser {
-                if let imageUrl = message.imageUrl,
-                   let image = await loadImageFromURL(imageUrl),
-                   let imageData = image.jpegData(compressionQuality: 0.7) {
-                    allImageData.append(imageData)
+                if let mediaItems = message.media {
+                    for mediaItem in mediaItems where mediaItem.type == .image {
+                        if let image = await loadImageFromURL(mediaItem.url),
+                           let imageData = image.jpegData(compressionQuality: 0.7) {
+                            allImageData.append(imageData)
+                        }
+                    }
                 }
             }
             
@@ -89,7 +92,7 @@ class FirebaseManager: ObservableObject {
                     content: responseText,
                     isUser: false,
                     timestamp: Date(),
-                    image: nil  // Explicitly pass nil if no image is available
+                    media: nil  // No media for assistant messages initially
                 )
                 updateConversationCache(conversationId: conversationId, messages: [assistantMessage])
             }
@@ -163,8 +166,9 @@ class FirebaseManager: ObservableObject {
             var parts: [[String: Any]] = [["text": message.content]]
             
             // For user messages that had images, add an inline text reference
-            // This helps the LLM associate the binary image data we'll send separately
-            if message.isUser, message.imageUrl != nil {
+            if message.isUser, 
+               let mediaItems = message.media,
+               mediaItems.contains(where: { $0.type == .image }) {
                 parts.append(["text": "[Image]"])
             }
             
@@ -431,4 +435,6 @@ class FirebaseManager: ObservableObject {
             }
         }
     }
+
+    
 }
