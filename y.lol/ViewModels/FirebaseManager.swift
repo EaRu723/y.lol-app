@@ -438,3 +438,84 @@ class FirebaseManager: ObservableObject {
 
     
 }
+
+class ImageCache {
+    static let shared = ImageCache()
+    private let cache = NSCache<NSString, UIImage>()
+    
+    private init() {
+        // Set cache limits if needed
+        cache.countLimit = 100 // Maximum number of images
+        cache.totalCostLimit = 1024 * 1024 * 100 // 100 MB
+    }
+    
+    func set(_ image: UIImage, forKey key: String) {
+        cache.setObject(image, forKey: key as NSString)
+    }
+    
+    func get(forKey key: String) -> UIImage? {
+        return cache.object(forKey: key as NSString)
+    }
+    
+    func remove(forKey key: String) {
+        cache.removeObject(forKey: key as NSString)
+    }
+    
+    func clear() {
+        cache.removeAllObjects()
+    }
+}
+
+struct CachedAsyncImage: View {
+    let url: URL?
+    @State private var image: UIImage?
+    
+    var body: some View {
+        Group {
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 120, height: 120)
+                    .clipShape(Circle())
+            } else {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 120, height: 120)
+                            .clipShape(Circle())
+                            .task {
+                                // Cache the loaded image asynchronously
+                                if let url = url {
+                                    do {
+                                        let (data, _) = try await URLSession.shared.data(from: url)
+                                        if let uiImage = UIImage(data: data) {
+                                            ImageCache.shared.set(uiImage, forKey: url.absoluteString)
+                                        }
+                                    } catch {
+                                        print("Error caching image: \(error)")
+                                    }
+                                }
+                            }
+                    case .empty:
+                        ProgressView()
+                    case .failure(_):
+                        Text("Failed to load")
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+                .onAppear {
+                    // Check cache first
+                    if let url = url,
+                       let cachedImage = ImageCache.shared.get(forKey: url.absoluteString) {
+                        self.image = cachedImage
+                    }
+                }
+            }
+        }
+    }
+}

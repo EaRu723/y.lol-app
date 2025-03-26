@@ -63,17 +63,7 @@ struct EditProfileView: View {
                                     .frame(width: 120, height: 120)
                                     .clipShape(Circle())
                             } else if let url = viewModel.profilePictureUrl {
-                                AsyncImage(url: URL(string: url)) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 120, height: 120)
-                                        .clipShape(Circle())
-                                } placeholder: {
-                                    Text(viewModel.editedEmoji)
-                                        .font(.system(size: 80))
-                                        .frame(width: 120, height: 120)
-                                }
+                                CachedAsyncImage(url: URL(string: url))
                             } else {
                                 Text(viewModel.editedEmoji)
                                     .font(.system(size: 80))
