@@ -76,7 +76,7 @@ struct ProfileView: View {
                     Spacer()
                 } else if let user = viewModel.user {
                     ScrollView {
-                        VStack(spacing: 30) {
+                        VStack(spacing: 12) {
                             if viewModel.isEditMode {
                                 VStack {
                                     if let image = viewModel.selectedProfileImage {
@@ -114,9 +114,16 @@ struct ProfileView: View {
                                     EditProfileView(viewModel: viewModel)
                                 } else {
                                     // Read-only name
-                                    Text(user.name)
-                                        .font(YTheme.Typography.title)
-                                        .foregroundColor(colors.text)
+                                    VStack(spacing: 4) {
+                                        Text(user.name)
+                                            .font(YTheme.Typography.title)
+                                            .foregroundColor(colors.text)
+                                        
+                                        Text(user.handle)
+                                            .font(YTheme.Typography.caption)
+                                            .foregroundColor(colors.text.opacity(0.7))
+                                    }
+                                    .padding(.bottom, 8)
                                     
                                     // Streak and Score boxes
                                     VStack(spacing: 12) {
