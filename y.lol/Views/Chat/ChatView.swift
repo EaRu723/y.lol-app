@@ -123,9 +123,10 @@ struct ChatView: View {
                 .onChange(of: viewModel.isThinking) { oldValue, newValue in
                     handleThinkingStateChange(oldValue: oldValue, newValue: newValue)
                 }
-                .sheet(isPresented: $showProfile) {
+                .navigationDestination(isPresented: $showProfile) {
                     ProfileView()
                         .environmentObject(authManager)
+                        .navigationBarHidden(true)
                 }
                 .sheet(isPresented: $isShowingMediaPicker) {
                     mediaPicker()
