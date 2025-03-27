@@ -14,96 +14,32 @@ import AVFoundation
 struct ChatView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
+    @Environment(\.scenePhase) private var scenePhase
     
     @StateObject var viewModel = ChatViewModel()
-    @State private var showProfile = false
     @StateObject private var authManager = AuthenticationManager.shared
-    @State private var isAuthenticated = false
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @StateObject private var permissionManager = PermissionManager()
     
+    @State private var showProfile = false
     @State private var messageText: String = ""
     @FocusState private var isFocused: Bool
-    
-    // For message editing
     @State private var isEditing: Bool = false
-    private let hapticService = HapticService()
-    
-    // Add this state variable at the top with other @State properties
     @State private var isActionsExpanded: Bool = false
-    
-    // Add an auth state listener
-    @State private var authStateListener: AuthStateDidChangeListenerHandle?
-    
-    // Add these state variables to your view
     @State private var isShowingMediaPicker = false
     @State private var selectedImage: UIImage?
     @State private var sourceType: UIImagePickerController.SourceType = .camera
-    
-    // Add these for PhotosPicker
     @State private var selectedItem: PhotosPickerItem?
     @State private var isPhotosPickerPresented = false
-    
-    // Add this to your view
-    @StateObject private var permissionManager = PermissionManager()
     @State private var showPermissionAlert = false
     @State private var permissionAlertType = ""
-    
-    // Add this to your existing properties
-    @State private var hasTokenError: Bool = false
-    
-    // Add a state property for storing the image URL
     @State private var selectedImageUrl: String?
-    
-    // Add the scenePhase environment value
-    @Environment(\.scenePhase) private var scenePhase
-    
     @State private var isDrawerOpen = false
     @State private var isThinking = false
-    @State private var isSearching = false  // New state for search functionality
-
+    @State private var isSearching = false
+    
+    private let hapticService = HapticService()
+    
     var body: some View {
-        GeometryReader { geometry in
-            mainContentView(geometry: geometry)
-        }
-        .withYTheme()
-        .onAppear {
-            setupAuthListener()
-            checkAuthStatus()
-            performInitialTokenValidation()
-        }
-        .onDisappear {
-            removeAuthListener()
-        }
-        .onReceive(authManager.$hasTokenError) { hasError in
-            self.hasTokenError = hasError
-        }
-        .onChange(of: scenePhase) { newPhase in
-            handleScenePhaseChange(newPhase)
-        }
-    }
-    
-    // MARK: - View Components
-    
-    @ViewBuilder
-    private func mainContentView(geometry: GeometryProxy) -> some View {
-        NavigationView {
-            VStack {
-                if !hasCompletedOnboarding {
-                    OnboardingView()
-                        .environmentObject(authManager)
-                } else if !isAuthenticated || authManager.hasTokenError {
-                    LoginView()
-                        .environmentObject(authManager)
-                } else {
-                    authenticatedContentView()
-                }
-            }
-        }
-        .frame(width: geometry.size.width)
-    }
-    
-    @ViewBuilder
-    private func authenticatedContentView() -> some View {
         GeometryReader { geometry in
             ZStack {
                 // Background
@@ -113,15 +49,12 @@ struct ChatView: View {
                 VStack(spacing: 0) {
                     // Header
                     headerView()
-                                        
+                    
                     // Messages area
                     messagesArea()
                     
                     // Input area
                     inputArea()
-                }
-                .onChange(of: viewModel.isThinking) { oldValue, newValue in
-                    handleThinkingStateChange(oldValue: oldValue, newValue: newValue)
                 }
                 .navigationDestination(isPresented: $showProfile) {
                     ProfileView()
@@ -134,9 +67,25 @@ struct ChatView: View {
                 .alert(isPresented: $showPermissionAlert) {
                     permissionAlert()
                 }
+                .onChange(of: viewModel.isThinking) { oldValue, newValue in
+                    handleThinkingStateChange(oldValue: oldValue, newValue: newValue)
+                }
             }
         }
+        .withYTheme()
+        .onAppear {
+            // Initialize chat state if needed
+        }
+        .onDisappear {
+            // Save any needed state
+            viewModel.saveCurrentChatSession()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            handleScenePhaseChange(newPhase)
+        }
     }
+    
+    // MARK: - View Components
     
     @ViewBuilder
     private func headerView() -> some View {
@@ -297,26 +246,6 @@ struct ChatView: View {
     
     // MARK: - Helper Methods
     
-    private func performInitialTokenValidation() {
-        Task {
-            let isValid = await authManager.validateToken()
-            if isValid {
-                await MainActor.run {
-                    if Auth.auth().currentUser != nil {
-                        isAuthenticated = true
-                    }
-                }
-            }
-        }
-        print("Debug - ChatView appeared, auth status: \(isAuthenticated)")
-    }
-    
-    private func removeAuthListener() {
-        if let listener = authStateListener {
-            Auth.auth().removeStateDidChangeListener(listener)
-        }
-    }
-    
     private func handleScenePhaseChange(_ newPhase: ScenePhase) {
         if newPhase == .background {
             print("App is moving to the background. Saving chat session.")
@@ -379,30 +308,6 @@ struct ChatView: View {
         isActionsExpanded = false
     }
     
-    private func setupAuthListener() {
-        // Remove existing listener if any
-        if let listener = authStateListener {
-            Auth.auth().removeStateDidChangeListener(listener)
-        }
-        
-        // Set up a new listener
-        authStateListener = Auth.auth().addStateDidChangeListener { auth, user in
-            print("Debug - Auth state changed, user: \(user?.uid ?? "nil")")
-            isAuthenticated = user != nil
-        }
-    }
-    
-    private func checkAuthStatus() {
-        let wasAuthenticated = isAuthenticated
-        isAuthenticated = Auth.auth().currentUser != nil
-        
-        print("Debug - Manual auth check: \(isAuthenticated)")
-        
-        if !wasAuthenticated && isAuthenticated {
-            print("Debug - User just became authenticated")
-        }
-    }
-    
     private func sendMessage() {
         guard !messageText.isEmpty || selectedImage != nil else { return }
         
@@ -460,6 +365,20 @@ struct ChatView: View {
     private func hideKeyboard() {
         isFocused = false
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+struct CustomTransitionModifier: ViewModifier {
+    let offset: CGFloat
+    let opacity: Double
+    let scale: CGFloat
+    
+    func body(content: Content) -> some View {
+        content
+            .offset(y: offset)
+            .opacity(opacity)
+            .scaleEffect(scale)
+            .blur(radius: opacity == 0 ? 5 : 0)
     }
 }
 
