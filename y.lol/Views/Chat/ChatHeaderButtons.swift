@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ChatModeButtons: View {
+struct ChatHeaderButtons: View {
     @Environment(\.themeColors) private var colors
     @Environment(\.colorScheme) private var colorScheme
     var currentMode: FirebaseManager.ChatMode
@@ -38,7 +38,8 @@ struct ChatModeButtons: View {
                     )
                     .background(Circle().fill(Color.clear))
                     .rotationEffect(Angle(degrees: 90))
-                } else if showButtons {
+                    .shadow(color: getShadowColor(for: currentMode, isSelected: true), radius: 3, x: 0, y: 1)
+                } else {
                     YinYangLogoView(
                         size: 40,
                         isLoading: false,
@@ -47,14 +48,10 @@ struct ChatModeButtons: View {
                     )
                     .background(Circle().fill(Color.clear))
                     .rotationEffect(Angle(degrees: 90))
-                } else {
-                    Text(currentMode == .yin ? "😇" : "😈")
-                        .font(.system(size: 25))
-                        .frame(width: 40, height: 40)
-                        .background(Circle().fill(Color.gray.opacity(0.1)))
+                    .shadow(color: getShadowColor(for: currentMode, isSelected: true), radius: 3, x: 0, y: 1)
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 24)
             
             // Yang button
             Button(action: {
@@ -87,7 +84,7 @@ struct ChatModeButtons: View {
 #Preview("ActionPillsView") {
     VStack(spacing: 20) {
         // Preview Yin mode
-        ChatModeButtons(
+        ChatHeaderButtons(
             currentMode: .yin,
             onPillTapped: { mode in
                 print("Tapped mode: \(mode)")
@@ -100,7 +97,7 @@ struct ChatModeButtons: View {
         .background(Color.white)
         
         // Preview Yang mode
-        ChatModeButtons(
+        ChatHeaderButtons(
             currentMode: .yang,
             onPillTapped: { mode in
                 print("Tapped mode: \(mode)")
