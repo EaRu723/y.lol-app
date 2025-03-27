@@ -35,6 +35,9 @@ class ProfileViewModel: ObservableObject {
     @Published var editedHuxleyEmail = ""
     @Published var editedHuxleyApiKey = ""
     
+    @Published var isGeneratingVibe = false
+    @Published var vibeError = ""
+    
     private let authManager: AuthenticationManager
     
     init(authManager: AuthenticationManager) {
@@ -231,5 +234,59 @@ class ProfileViewModel: ObservableObject {
         let handleRegex = "^@[A-Za-z0-9_]{1,15}$"
         let handlePredicate = NSPredicate(format: "SELF MATCHES %@", handleRegex)
         return handlePredicate.evaluate(with: handle)
+    }
+    
+    // Add this function to generate a new vibe using an LLM
+    func generateNewVibe() {
+        Task { @MainActor in
+            isGeneratingVibe = true
+            vibeError = ""
+            
+            do {
+                // This would be your actual implementation calling an LLM API
+                // For now I'll simulate it with a simple array of sample vibes
+                let vibes = [
+                    "Peaceful wanderer seeking balance",
+                    "Energetic optimist with creative flair",
+                    "Calm and collected deep thinker",
+                    "Adventurous spirit with an old soul",
+                    "Thoughtful dreamer with practical goals",
+                    "Determined achiever with a gentle heart",
+                    "Curious explorer of both inner and outer worlds",
+                    "Playful innovator with serious ambitions"
+                ]
+                
+                // Simulate network delay
+                try await Task.sleep(for: .seconds(1))
+                
+                // Select a random vibe
+                let newVibe = vibes.randomElement() ?? "Mysterious and unpredictable"
+                
+                // Update the edited vibe
+                self.editedVibe = newVibe
+                
+                // If we're not in edit mode, save it immediately
+                if !isEditMode {
+                    // Save the new vibe to Firebase
+                    let db = Firestore.firestore()
+                    guard let userId = user?.id else { throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not found"]) }
+                    
+                    try await db.collection("users").document(userId).updateData([
+                        "vibe": newVibe
+                    ])
+                    
+                    // Update local user
+                    if var updatedUser = self.user {
+                        updatedUser.vibe = newVibe
+                        self.user = updatedUser
+                    }
+                }
+                
+                isGeneratingVibe = false
+            } catch {
+                vibeError = "Failed to generate vibe: \(error.localizedDescription)"
+                isGeneratingVibe = false
+            }
+        }
     }
 }
