@@ -14,44 +14,81 @@ struct PhotosPickerView: View {
     @Binding var isPresented: Bool
     var onImageSelected: ((UIImage, String) -> Void)?
     
-    @State private var selectedItem: PhotosPickerItem?
-    
     var body: some View {
-        PhotosPicker(
-            selection: $selectedItem,
-            matching: .images,
-            preferredItemEncoding: .current
-        ) {
-            Label("Change Photo", systemImage: "camera.fill")
-                .foregroundStyle(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(Color.black.opacity(0.6))
-                .clipShape(Capsule())
+        // Directly embed the PHPicker within your view
+        EmbeddedPhotoPicker(
+            selectedImage: $selectedImage,
+            selectedImageUrl: $selectedImageUrl,
+            isPresented: $isPresented,
+            onImageSelected: onImageSelected
+        )
+        .ignoresSafeArea()
+    }
+}
+
+struct EmbeddedPhotoPicker: UIViewControllerRepresentable {
+    @Binding var selectedImage: UIImage?
+    @Binding var selectedImageUrl: String?
+    @Binding var isPresented: Bool
+    var onImageSelected: ((UIImage, String) -> Void)?
+    
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.selectionLimit = 1
+        config.filter = .images
+        
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {
+        // Not needed
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        private let parent: EmbeddedPhotoPicker
+        
+        init(_ parent: EmbeddedPhotoPicker) {
+            self.parent = parent
         }
-        .onChange(of: selectedItem) { _, newItem in
-            if let newItem {
-                Task {
-                    if let data = try? await newItem.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        // Update UI immediately with selected image
-                        await MainActor.run {
-                            selectedImage = image
-                        }
-                        
-                        // Upload in background
-                        FirebaseManager.shared.uploadImage(image) { result in
-                            DispatchQueue.main.async {
-                                switch result {
-                                case .success(let downloadURL):
-                                    selectedImageUrl = downloadURL.absoluteString
-                                    onImageSelected?(image, downloadURL.absoluteString)
-                                case .failure(let error):
-                                    print("Debug - Error uploading image: \(error.localizedDescription)")
+        
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            if let result = results.first {
+                result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] reading, error in
+                    if let error = error {
+                        print("Error loading image: \(error.localizedDescription)")
+                        return
+                    }
+                    
+                    if let image = reading as? UIImage {
+                        DispatchQueue.main.async {
+                            self?.parent.selectedImage = image
+                            
+                            // Upload in background
+                            FirebaseManager.shared.uploadImage(image) { result in
+                                DispatchQueue.main.async {
+                                    switch result {
+                                    case .success(let downloadURL):
+                                        self?.parent.selectedImageUrl = downloadURL.absoluteString
+                                        self?.parent.onImageSelected?(image, downloadURL.absoluteString)
+                                    case .failure(let error):
+                                        print("Debug - Error uploading image: \(error.localizedDescription)")
+                                    }
+                                    self?.parent.isPresented = false
                                 }
                             }
                         }
                     }
+                }
+            } else {
+                // User cancelled
+                DispatchQueue.main.async {
+                    self.parent.isPresented = false
                 }
             }
         }
