@@ -17,10 +17,12 @@ struct RootView: View {
         Group {
             if !hasCompletedOnboarding {
                 OnboardingView()
-            } else if isAuthenticated {
-                ContentView()
-            } else {
+                    .environmentObject(authManager)
+            } else if !isAuthenticated {
                 LoginView()
+                    .environmentObject(authManager)
+            } else {
+                ChatView()
                     .environmentObject(authManager)
             }
         }

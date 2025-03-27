@@ -15,7 +15,7 @@ struct y_lolApp: App {
     var body: some Scene {
         WindowGroup {
             NavigationStack {
-                ChatView()
+                RootView()
                     .preferredColorScheme(.light)
             }
         }
