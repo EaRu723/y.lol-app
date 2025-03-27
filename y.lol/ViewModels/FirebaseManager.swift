@@ -158,7 +158,7 @@ class FirebaseManager: ObservableObject {
     private func createHistoryJSON(from messages: [ChatMessage]) -> String {
         var contents: [[String: Any]] = []
         for message in messages {
-            let role = message.isUser ? "user" : "model"
+            let role = message.isUser ? "user" : "assistant"
             var contentDict: [String: Any] = [
                 "role": role
             ]
