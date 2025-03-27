@@ -79,6 +79,10 @@ class ProfileViewModel: ObservableObject {
                     // Get profile picture URL if available
                     let profilePictureUrl = data["profilePictureUrl"] as? String
                     
+                    // Get scores if available
+                    let yinScore = data["yinScore"] as? Int ?? 50
+                    let yangScore = data["yangScore"] as? Int ?? 50
+                    
                     // Create user with data from Firestore
                     var user = User(
                         id: currentUser.id,
@@ -88,6 +92,8 @@ class ProfileViewModel: ObservableObject {
                         handle: handle,
                         dateOfBirth: dateOfBirth,
                         streak: streak,
+                        yinScore: yinScore,
+                        yangScore: yangScore,
                         vibe: vibe,
                         emoji: emoji,
                         profilePictureUrl: profilePictureUrl

@@ -16,9 +16,10 @@ struct User: Codable {
     var handle: String
     var dateOfBirth: TimeInterval?
     
-    // New fields
+    // Updated scores from backend
     var streak: Int = 0
-    var score: Int = 0  // Percentage score
+    var yinScore: Int = 50  // Default to 50%
+    var yangScore: Int = 50  // Default to 50%
     var vibe: String?
     var vibeSummary: String?
     var emoji: String?
@@ -28,6 +29,11 @@ struct User: Codable {
     // Huxley credentials (not stored in Firebase)
     var huxleyEmail: String?
     var huxleyApiKey: String?
+    
+    // Computed property for backward compatibility
+    var score: Int {
+        return yinScore
+    }
     
     func asDictionary() -> [String: Any] {
         var dict: [String: Any] = [
@@ -62,7 +68,8 @@ extension User {
         // Initialize new required properties
         self.handle = "@" + (firebaseUser.displayName?.lowercased().replacingOccurrences(of: " ", with: "") ?? "user")
         self.streak = 0
-        self.score = 0
+        self.yinScore = 50
+        self.yangScore = 50
         self.media = []
     }
 }
