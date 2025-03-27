@@ -39,7 +39,7 @@ struct HeaderView: View {
                 Spacer()
                 
                 // Chat mode buttons with YinYang
-                ChatModeButtons(
+                ChatHeaderButtons(
                     currentMode: currentMode,
                     onPillTapped: { mode in
                         onPillTapped(mode)
