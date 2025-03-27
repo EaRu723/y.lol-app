@@ -75,10 +75,9 @@ struct EditProfileView: View {
                             }
                             
                             // Overlay the camera button at the bottom
-                            PhotosPickerView(
+                            ProfilePhotoPicker(
                                 selectedImage: $viewModel.selectedProfileImage,
-                                selectedImageUrl: $viewModel.profilePictureUrl,
-                                isPresented: .constant(false)
+                                selectedImageUrl: $viewModel.profilePictureUrl
                             )
                             .offset(y: 20)
                         }

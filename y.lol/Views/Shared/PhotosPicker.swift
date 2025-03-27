@@ -94,3 +94,32 @@ struct EmbeddedPhotoPicker: UIViewControllerRepresentable {
         }
     }
 }
+
+// Add this new struct for profile photo selection
+struct ProfilePhotoPicker: View {
+    @Binding var selectedImage: UIImage?
+    @Binding var selectedImageUrl: String?
+    @State private var isPickerPresented = false
+    
+    var body: some View {
+        Button(action: {
+            isPickerPresented = true
+        }) {
+            Label("Change Photo", systemImage: "camera.fill")
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.black.opacity(0.6))
+                .clipShape(Capsule())
+        }
+        .sheet(isPresented: $isPickerPresented) {
+            EmbeddedPhotoPicker(
+                selectedImage: $selectedImage,
+                selectedImageUrl: $selectedImageUrl,
+                isPresented: $isPickerPresented,
+                onImageSelected: nil
+            )
+            .presentationDetents([.medium, .large])
+        }
+    }
+}
