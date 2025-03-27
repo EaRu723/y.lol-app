@@ -25,6 +25,10 @@ struct User: Codable {
     var media: [MediaContent] = []
     var profilePictureUrl: String?
     
+    // Huxley credentials (not stored in Firebase)
+    var huxleyEmail: String?
+    var huxleyApiKey: String?
+    
     func asDictionary() -> [String: Any] {
         var dict: [String: Any] = [
             "id": id,

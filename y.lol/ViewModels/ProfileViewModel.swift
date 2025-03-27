@@ -31,6 +31,10 @@ class ProfileViewModel: ObservableObject {
     @Published var selectedProfileImage: UIImage?
     @Published var profilePictureUrl: String?
     
+    // Add these properties
+    @Published var editedHuxleyEmail = ""
+    @Published var editedHuxleyApiKey = ""
+    
     private let authManager: AuthenticationManager
     
     init(authManager: AuthenticationManager) {
@@ -44,7 +48,7 @@ class ProfileViewModel: ObservableObject {
             errorMessage = ""
             
             do {
-                let currentUser = try authManager.getAuthenticatedUser()
+                let currentUser = try self.authManager.getAuthenticatedUser()
                 
                 // Access Firestore to get additional user data
                 let db = Firestore.firestore()
@@ -73,7 +77,7 @@ class ProfileViewModel: ObservableObject {
                     let profilePictureUrl = data["profilePictureUrl"] as? String
                     
                     // Create user with data from Firestore
-                    let user = User(
+                    var user = User(
                         id: currentUser.id,
                         name: data["name"] as? String ?? currentUser.name,
                         email: data["email"] as? String ?? currentUser.email,
@@ -86,14 +90,26 @@ class ProfileViewModel: ObservableObject {
                         profilePictureUrl: profilePictureUrl
                     )
                     
+                    // Load Huxley credentials from local storage
+                    let credentials = LocalCredentialStore.getHuxleyCredentials()
+                    user.huxleyEmail = credentials.email
+                    user.huxleyApiKey = credentials.apiKey
+                    
                     // All this code now runs on the main actor
                     self.user = user
                     self.setupEditableFields(from: user)
                     isLoading = false
                 } else {
                     // If document doesn't exist yet, use the basic user info
-                    self.user = currentUser
-                    self.setupEditableFields(from: currentUser)
+                    var currentUserCopy = currentUser
+                    
+                    // Load Huxley credentials for the empty user case
+                    let credentials = LocalCredentialStore.getHuxleyCredentials()
+                    currentUserCopy.huxleyEmail = credentials.email
+                    currentUserCopy.huxleyApiKey = credentials.apiKey
+                    
+                    self.user = currentUserCopy
+                    self.setupEditableFields(from: currentUserCopy)
                     isLoading = false
                 }
             } catch {
@@ -113,6 +129,10 @@ class ProfileViewModel: ObservableObject {
             editedDateOfBirth = Date(timeIntervalSince1970: dobTimestamp)
         }
         profilePictureUrl = user.profilePictureUrl
+        
+        // Set up Huxley credential fields
+        editedHuxleyEmail = user.huxleyEmail ?? ""
+        editedHuxleyApiKey = user.huxleyApiKey ?? ""
     }
     
     func enterEditMode() {
@@ -167,6 +187,12 @@ class ProfileViewModel: ObservableObject {
             }
             
             try await userRef.updateData(updateData)
+            
+            // Save Huxley credentials locally (not to Firebase)
+            LocalCredentialStore.saveHuxleyCredentials(
+                email: editedHuxleyEmail,
+                apiKey: editedHuxleyApiKey
+            )
             
             // Refresh user data after update
             await fetchUserData()
