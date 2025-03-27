@@ -38,86 +38,22 @@ struct HeaderView: View {
                 
                 Spacer()
                 
-                // Yin (😇) pill button
-                Button(action: {
-                    onPillTapped(.yin)
-                    onSaveChat()
-                }) {
-                    Text("😇")
-                        .font(.system(size: 20))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(currentMode == .yin ? Color.gray.opacity(0.2) : Color.clear))
-                        .foregroundColor(currentMode == .yin ? Color.primary : Color.primary.opacity(0.7))
-                }
-                .opacity(showButtons && !isSearching ? 1 : 0)
-                .animation(.easeInOut(duration: 0.2), value: showButtons)
-                .animation(.easeInOut(duration: 0.2), value: isSearching)
-                
-                Spacer(minLength: 8)
-                
-                // Center logo/emoji button
-                Button(action: {
-                    withAnimation {
-                        showButtons.toggle()
+                // Chat mode buttons with YinYang
+                ChatHeaderButtons(
+                    currentMode: currentMode,
+                    onPillTapped: { mode in
+                        onPillTapped(mode)
+                        onSaveChat()
+                    },
+                    showButtons: showButtons && !isSearching,
+                    isThinking: isThinking,
+                    onCenterTapped: {
+                        withAnimation {
+                            showButtons.toggle()
+                        }
                     }
-                }) {
-                    if isThinking {
-                        YinYangLogoView(
-                            size: 40,
-                            isLoading: true,
-                            lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
-                            darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
-                        )
-                        .background(
-                            Circle()
-                                .fill(Color.clear)
-                                .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                        )
-                        .rotationEffect(Angle(degrees: 90))
-                    } else if showButtons && !isSearching {
-                        YinYangLogoView(
-                            size: 40,
-                            isLoading: false,
-                            lightColor: colorScheme == .light ? .white : YTheme.Colors.parchmentDark,
-                            darkColor: colorScheme == .light ? YTheme.Colors.textLight : YTheme.Colors.textDark
-                        )
-                        .background(
-                            Circle()
-                                .fill(Color.clear)
-                                .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                        )
-                        .rotationEffect(Angle(degrees: 90))
-                    } else {
-                        Text(currentMode == .yin ? "😇" : "😈")
-                            .font(.system(size: 25))
-                            .frame(width: 40, height: 40)
-                            .background(
-                                Circle()
-                                    .fill(Color.gray.opacity(0.1))
-                                    .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                            )
-                    }
-                }
+                )
                 .opacity(isSearching ? 0 : 1)
-                .animation(.easeInOut(duration: 0.2), value: isSearching)
-                
-                Spacer(minLength: 8)
-                
-                // Yang (😈) pill button
-                Button(action: {
-                    onPillTapped(.yang)
-                    onSaveChat()
-                }) {
-                    Text("😈")
-                        .font(.system(size: 20))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(currentMode == .yang ? Color.gray.opacity(0.2) : Color.clear))
-                        .foregroundColor(currentMode == .yang ? Color.primary : Color.primary.opacity(0.7))
-                }
-                .opacity(showButtons && !isSearching ? 1 : 0)
-                .animation(.easeInOut(duration: 0.2), value: showButtons)
                 .animation(.easeInOut(duration: 0.2), value: isSearching)
                 
                 Spacer()
@@ -178,6 +114,14 @@ struct HeaderView: View {
             insertion: .move(edge: .leading).combined(with: .opacity),
             removal: .move(edge: .leading).combined(with: .opacity)
         ))
+    }
+    
+    private func getShadowColor(for mode: FirebaseManager.ChatMode, isSelected: Bool) -> Color {
+        guard isSelected else { return .clear }
+        switch mode {
+        case .yin: return Color.blue.opacity(0.5)
+        case .yang: return Color.red.opacity(0.5)
+        }
     }
 }
 
