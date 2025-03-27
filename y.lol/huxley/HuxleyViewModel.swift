@@ -34,9 +34,19 @@ class HuxleyViewModel: ObservableObject {
         isLoading = true
         error = nil
         
-        // Create the URL with query parameters
-        let userEmail = "andrea@lsd.so"
-        let apiKey = "PQ919lOnCu619fXKNovx"
+        // Get credentials from local storage instead of hardcoding
+        let credentials = LocalCredentialStore.getHuxleyCredentials()
+        let userEmail = credentials.email ?? ""
+        let apiKey = credentials.apiKey ?? ""
+        
+        // Check if credentials are available
+        if userEmail.isEmpty || apiKey.isEmpty {
+            await MainActor.run {
+                error = "API credentials not found. Please set them in your profile."
+                isLoading = false
+            }
+            return nil
+        }
         
         guard let encodedEmail = userEmail.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let encodedApiKey = apiKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
