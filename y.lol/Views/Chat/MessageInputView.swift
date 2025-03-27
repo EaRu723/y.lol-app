@@ -9,6 +9,7 @@ struct MessageInputView: View {
     @State private var textEditorHeight: CGFloat = 36
     @EnvironmentObject var firebaseManager: FirebaseManager
     @StateObject private var viewModel = ChatViewModel()
+    @StateObject private var voiceViewModel = VoiceTranscriptionViewModel()
     
     let onSend: () -> Void
     var onCameraButtonTapped: () -> Void
@@ -37,6 +38,16 @@ struct MessageInputView: View {
                     }
                 }
                 .padding(.horizontal)
+            }
+            
+            // Voice transcription view if recording
+            if voiceViewModel.isRecording {
+                VoiceRecordingView(
+                    voiceViewModel: voiceViewModel,
+                    onTranscriptComplete: { transcript in
+                        appendTranscriptToMessage(transcript)
+                    }
+                )
             }
             
             // Action buttons popup
@@ -98,15 +109,8 @@ struct MessageInputView: View {
                         self.textEditorHeight = height
                     }
                     
-                    // Send button with loading spinner
-                    if !messageText.isEmpty || selectedImage != nil {
-                        Button(action: onSend) {
-                            sendButtonContent
-                        }
-                        .padding(.trailing, 8)
-                        .padding(.bottom, 4)
-                        .transition(.opacity)
-                    }
+                    // Replace the complex Group with a function call
+                    actionButton
                 }
                 .padding(.vertical, 4)
                 .background(colorScheme == .dark ? Color.black : Color.white)
@@ -122,6 +126,7 @@ struct MessageInputView: View {
             .background(colorScheme == .dark ? Color.black : Color.white)
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedImage != nil)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: voiceViewModel.isRecording)
         .onChange(of: isFocused) { _, newValue in
             if newValue {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -129,6 +134,60 @@ struct MessageInputView: View {
                 }
             }
         }
+    }
+    
+    // Add this computed property to simplify the view
+    @ViewBuilder
+    private var actionButton: some View {
+        if messageText.isEmpty && selectedImage == nil && !voiceViewModel.isRecording {
+            // Mic button
+            micButton
+        } else if voiceViewModel.isRecording {
+            // Stop recording button
+            stopRecordingButton
+        } else if !messageText.isEmpty || selectedImage != nil {
+            // Send button
+            sendButton
+        }
+    }
+
+    @ViewBuilder
+    private var micButton: some View {
+        Button(action: { voiceViewModel.startRecording() }) {
+            Image(systemName: "mic")
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .frame(width: 28, height: 28)
+        }
+        .padding(.trailing, 8)
+        .padding(.bottom, 4)
+        .transition(.opacity)
+    }
+
+    @ViewBuilder
+    private var stopRecordingButton: some View {
+        Button(action: {
+            voiceViewModel.stopRecording()
+            if !voiceViewModel.transcript.isEmpty {
+                appendTranscriptToMessage()
+            }
+        }) {
+            Image(systemName: "stop.fill")
+                .foregroundColor(.red)
+                .frame(width: 28, height: 28)
+        }
+        .padding(.trailing, 8)
+        .padding(.bottom, 4)
+        .transition(.opacity)
+    }
+
+    @ViewBuilder
+    private var sendButton: some View {
+        Button(action: onSend) {
+            sendButtonContent
+        }
+        .padding(.trailing, 8)
+        .padding(.bottom, 4)
+        .transition(.opacity)
     }
     
     // Computed property for the send button content
@@ -151,6 +210,22 @@ struct MessageInputView: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(colorScheme == .dark ? Color.black : Color.white)
             }
+        }
+    }
+
+    // Updated helper function to accept transcript as parameter
+    private func appendTranscriptToMessage(_ transcript: String = "") {
+        let textToAppend = transcript.isEmpty ? voiceViewModel.transcript : transcript
+        
+        // Only proceed if there's something to append
+        if !textToAppend.isEmpty {
+            // Check if we need to add a space first
+            if !messageText.isEmpty && !messageText.hasSuffix(" ") {
+                messageText += " "
+            }
+            
+            // Append the transcript
+            messageText += textToAppend
         }
     }
 }

@@ -280,9 +280,12 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "y-lol-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Y;
 				INFOPLIST_KEY_NSCameraUsageDescription = "need camera to send photos to y";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone is used to record your voice for speech-to-text conversion.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "need photo access to send photos to y";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "$Speech recognition is used to convert your voice to text for chat messages.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -323,9 +326,12 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "y-lol-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Y;
 				INFOPLIST_KEY_NSCameraUsageDescription = "need camera to send photos to y";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone is used to record your voice for speech-to-text conversion.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "need photo access to send photos to y";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "$Speech recognition is used to convert your voice to text for chat messages.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
