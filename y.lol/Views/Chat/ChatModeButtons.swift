@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct ActionPillsView: View {
+struct ChatModeButtons: View {
     @Environment(\.themeColors) private var colors
     var currentMode: FirebaseManager.ChatMode
     var onPillTapped: (FirebaseManager.ChatMode) -> Void
