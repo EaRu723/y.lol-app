@@ -20,22 +20,28 @@ struct ChatView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @StateObject private var permissionManager = PermissionManager()
     
+    // UI State
     @State private var showProfile = false
+    @State private var isSearching = false
+    @State private var isThinking = false
+    
+    // Input State
     @State private var messageText: String = ""
     @FocusState private var isFocused: Bool
     @State private var isEditing: Bool = false
     @State private var isActionsExpanded: Bool = false
+    
+    // Media Selection State
     @State private var isShowingMediaPicker = false
     @State private var selectedImage: UIImage?
     @State private var sourceType: UIImagePickerController.SourceType = .camera
     @State private var selectedItem: PhotosPickerItem?
     @State private var isPhotosPickerPresented = false
+    @State private var selectedImageUrl: String?
+    
+    // Permission State
     @State private var showPermissionAlert = false
     @State private var permissionAlertType = ""
-    @State private var selectedImageUrl: String?
-    @State private var isDrawerOpen = false
-    @State private var isThinking = false
-    @State private var isSearching = false
     
     private let hapticService = HapticService()
     
