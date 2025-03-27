@@ -27,6 +27,13 @@ struct VoiceRecordingView: View {
                 
             }
             
+            Text(voiceViewModel.transcript.isEmpty ? "Listening..." : voiceViewModel.transcript)
+                .font(.callout)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 2)
+                .transition(.opacity)
+                .animation(.easeInOut, value: voiceViewModel.transcript)
         }
         .padding(.horizontal)
         .padding(.top, 4)
