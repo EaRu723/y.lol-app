@@ -14,14 +14,16 @@ struct ChatModeButtons: View {
                         onPillTapped(mode)
                     }) {
                         Text(getPillText(for: index))
-                            .font(.subheadline)
+                            .font(.headline)
                             .lineLimit(1)
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 8)
                             .padding(.vertical, 8)
-                            .background(Capsule().fill(currentMode == mode ? colors.accent.opacity(0.4) : colors.accent.opacity(0.1)))
+                            .background(Capsule().fill(currentMode == mode ? colors.accent.opacity(0.4) : colors.accent.opacity(0)))
                             .foregroundColor(
-                                currentMode == mode ? colors.text : colors.text(opacity: 0.7)
+                                currentMode == mode ? colors.text : colors.text(opacity: 0.9)
                             )
+                            .shadow(color: getShadowColor(for: mode, isSelected: currentMode == mode), 
+                                   radius: currentMode == mode ? 4 : 0)
                     }
                 }
             }
@@ -44,4 +46,37 @@ struct ChatModeButtons: View {
         default: return .yin
         }
     }
+    
+    private func getShadowColor(for mode: FirebaseManager.ChatMode, isSelected: Bool) -> Color {
+        guard isSelected else { return .clear }
+        switch mode {
+        case .yin: return Color.blue.opacity(0.5)
+        case .yang: return Color.red.opacity(0.5)
+        }
+    }
+}
+
+#Preview("ActionPillsView") {
+    VStack(spacing: 20) {
+        // Preview Yin mode
+        ChatModeButtons(
+            currentMode: .yin,
+            onPillTapped: { mode in
+                print("Tapped mode: \(mode)")
+            }
+        )
+        .padding()
+        .background(Color.white)
+        
+        // Preview Yang mode
+        ChatModeButtons(
+            currentMode: .yang,
+            onPillTapped: { mode in
+                print("Tapped mode: \(mode)")
+            }
+        )
+        .padding()
+        .background(Color.black)
+    }
+    .withYTheme() // Assuming this modifier exists for theming
 }
