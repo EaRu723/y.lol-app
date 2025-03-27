@@ -17,22 +17,10 @@ struct VibeView: View {
     
     var body: some View {
         VStack(spacing: YTheme.Spacing.small) {
-            HStack {
-                Text("Vibe")
-                    .font(YTheme.Typography.title)
-                    .foregroundColor(colors.text)
-                
-                if onShuffle != nil {
-                    Spacer()
-                    
-                    Button(action: {
-                        onShuffle?()
-                    }) {
-                        Image(systemName: "shuffle")
-                            .foregroundColor(colors.text)
-                    }
-                }
-            }
+            Text("Vibe")
+                .font(YTheme.Typography.title)
+                .foregroundColor(colors.text)
+            
             
             Text(vibe.isEmpty ? "No vibe set" : vibe)
                 .font(YTheme.Typography.body)
@@ -46,6 +34,16 @@ struct VibeView: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(colors.text, lineWidth: 1)
                 )
+            if onShuffle != nil {
+                Spacer()
+                
+                Button(action: {
+                    onShuffle?()
+                }) {
+                    Image(systemName: "shuffle")
+                        .foregroundColor(colors.text)
+                }
+            }
         }
     }
 }
