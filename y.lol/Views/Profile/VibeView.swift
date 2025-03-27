@@ -11,14 +11,28 @@ struct VibeView: View {
     let vibe: String
     var fontSize: CGFloat = 16
     var padding: CGFloat = 10
+    var onShuffle: (() -> Void)?
     
     @Environment(\.themeColors) private var colors
     
     var body: some View {
         VStack(spacing: YTheme.Spacing.small) {
-            Text("Vibe")
-                .font(YTheme.Typography.title)
-                .foregroundColor(colors.text)
+            HStack {
+                Text("Vibe")
+                    .font(YTheme.Typography.title)
+                    .foregroundColor(colors.text)
+                
+                if onShuffle != nil {
+                    Spacer()
+                    
+                    Button(action: {
+                        onShuffle?()
+                    }) {
+                        Image(systemName: "shuffle")
+                            .foregroundColor(colors.text)
+                    }
+                }
+            }
             
             Text(vibe.isEmpty ? "No vibe set" : vibe)
                 .font(YTheme.Typography.body)
