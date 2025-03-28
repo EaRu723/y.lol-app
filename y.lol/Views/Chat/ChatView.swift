@@ -150,38 +150,51 @@ struct ChatView: View {
     
     @ViewBuilder
     private func messagesContent(proxy: ScrollViewProxy) -> some View {
-        LazyVStack(spacing: 12) {
-            ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
-                MessageView(
-                    message: message,
-                    index: index,
-                    totalCount: viewModel.messages.count,
-                    previousMessage: index > 0 ? viewModel.messages[index - 1] : nil,
-                    nextMessage: index < viewModel.messages.count - 1 ? viewModel.messages[index + 1] : nil,
-                    mode: viewModel.currentMode
-                )
-                .id(message.id)
-                .transition(.asymmetric(
-                    insertion: .modifier(
-                        active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
-                        identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
-                    ),
-                    removal: .opacity.combined(with: .scale(scale: 0.9))
-                ))
+        if viewModel.isInitialLoading {
+            // Show loading spinner while fetching conversations
+            VStack {
+                Spacer()
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .padding()
+                Text("Loading conversations...")
+                    .foregroundColor(.secondary)
+                Spacer()
             }
-            
-            // Typing indicator
-            if viewModel.isTyping {
-                typingIndicator(proxy: proxy)
+        } else {
+            LazyVStack(spacing: 12) {
+                ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
+                    MessageView(
+                        message: message,
+                        index: index,
+                        totalCount: viewModel.messages.count,
+                        previousMessage: index > 0 ? viewModel.messages[index - 1] : nil,
+                        nextMessage: index < viewModel.messages.count - 1 ? viewModel.messages[index + 1] : nil,
+                        mode: viewModel.currentMode
+                    )
+                    .id(message.id)
+                    .transition(.asymmetric(
+                        insertion: .modifier(
+                            active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
+                            identity: CustomTransitionModifier(offset: 0, opacity: 1, scale: 1.0)
+                        ),
+                        removal: .opacity.combined(with: .scale(scale: 0.9))
+                    ))
+                }
+                
+                // Typing indicator
+                if viewModel.isTyping {
+                    typingIndicator(proxy: proxy)
+                }
+                
+                // Bottom spacer
+                Rectangle()
+                    .frame(height: 1)
+                    .foregroundColor(.clear)
+                    .id("bottomSpacer")
             }
-            
-            // Bottom spacer
-            Rectangle()
-                .frame(height: 1)
-                .foregroundColor(.clear)
-                .id("bottomSpacer")
+            .padding(.vertical)
         }
-        .padding(.vertical)
     }
     
     @ViewBuilder
@@ -323,6 +336,9 @@ struct ChatView: View {
     
     private func sendMessage() {
         guard !messageText.isEmpty || selectedImage != nil else { return }
+        
+        // If we're continuing a previous conversation, make sure we track the new messages
+        viewModel.continueConversation()
         
         // Store message content locally before clearing
         let messageToSend = messageText

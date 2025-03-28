@@ -22,10 +22,7 @@ class ChatViewModel: ObservableObject {
                 
                 // Generate new conversation with delay to ensure clean separation
                 DispatchQueue.main.async {
-                    self.conversationId = UUID().uuidString
-                    self.messages = [
-                        ChatMessage(content: self.getInitialMessage(for: self.currentMode), isUser: false, timestamp: Date(), image: nil)
-                    ]
+                    self.startNewConversation()
                 }
             }
         }
@@ -33,6 +30,7 @@ class ChatViewModel: ObservableObject {
     @Published var selectedImage: UIImage?
     @Published var isUploadingImage: Bool = false
     @Published var previousConversations: [ChatSession] = []
+    @Published var isInitialLoading: Bool = true  // Add loading state
     
     private let firebaseManager = FirebaseManager.shared
     private let hapticService = HapticService()
@@ -40,10 +38,22 @@ class ChatViewModel: ObservableObject {
     private var conversationId = UUID().uuidString
     private let huxleyViewModel = HuxleyViewModel()
     
+    // Track messages added in the current session
+    private var newSessionMessages: [ChatMessage] = []
+    // Track if we're viewing a previous conversation
+    private var isViewingPreviousConversation = false
+    
     init() {
-        fetchPreviousConversations()
+        // Set up event listeners
+        setupObservers()
         
-        // Subscribe to Firebase manager's state changes.
+        // Start by loading previous conversations
+        // Don't show any messages until we determine what to display
+        fetchPreviousConversations()
+    }
+    
+    private func setupObservers() {
+        // Subscribe to Firebase manager's state changes
         firebaseManager.$isProcessingMessage
             .receive(on: RunLoop.main)
             .sink { [weak self] isProcessing in
@@ -57,39 +67,63 @@ class ChatViewModel: ObservableObject {
                 self?.errorMessage = error
             }
             .store(in: &cancellables)
-        
-        // Add the initial message if none exist.
-        if messages.isEmpty {
-            let initialMessage = ChatMessage(
+    }
+    
+    // Helper to start a fresh conversation
+    private func startNewConversation() {
+        conversationId = UUID().uuidString
+        messages = [
+            ChatMessage(
                 content: getInitialMessage(for: currentMode),
                 isUser: false,
                 timestamp: Date(),
                 image: nil
             )
-            messages.append(initialMessage)
-        }
+        ]
+        newSessionMessages = messages
+        isViewingPreviousConversation = false
     }
     
     private func fetchPreviousConversations() {
-        FirebaseManager.shared.fetchChatSessions { result in
-            switch result {
-            case .success(let sessions):
-                DispatchQueue.main.async {
-                    print("Successfully fetched previous conversations: \(sessions.count) sessions") // Debugging print
-                    if sessions.isEmpty {
-                        print("No sessions were returned from Firebase")
-                    } else {
-                        print("First session has \(sessions[0].messages.count) messages")
-                    }
+        isInitialLoading = true
+        
+        FirebaseManager.shared.fetchChatSessions { [weak self] result in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let sessions):
+                    print("Successfully fetched previous conversations: \(sessions.count) sessions")
                     self.previousConversations = sessions
+                    
+                    // Check if we have any previous conversations
+                    if !sessions.isEmpty {
+                        // Sort conversations by timestamp (newest first)
+                        let sortedSessions = sessions.sorted(by: { $0.timestamp > $1.timestamp })
+                        
+                        if let mostRecent = sortedSessions.first, !mostRecent.messages.isEmpty {
+                            print("Loading most recent conversation with ID: \(mostRecent.id), containing \(mostRecent.messages.count) messages")
+                            self.conversationId = mostRecent.id
+                            self.messages = mostRecent.messages
+                            self.newSessionMessages = []
+                            self.isViewingPreviousConversation = true
+                        } else {
+                            // If no previous messages, start a new conversation
+                            self.startNewConversation()
+                        }
+                    } else {
+                        // If no previous conversations, start a new conversation
+                        self.startNewConversation()
+                    }
+                    
+                case .failure(let error):
+                    print("Error fetching previous conversations: \(error.localizedDescription)")
+                    // In case of error, start a new conversation
+                    self.startNewConversation()
                 }
-            case .failure(let error):
-                print("Error fetching previous conversations: \(error.localizedDescription)")
-                // Add more detailed error logging
-                if let nsError = error as NSError? {
-                    print("Error code: \(nsError.code), domain: \(nsError.domain)")
-                    print("Error details: \(nsError.userInfo)")
-                }
+                
+                // End the loading state
+                self.isInitialLoading = false
             }
         }
     }
@@ -120,12 +154,15 @@ class ChatViewModel: ObservableObject {
         
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
-                messages.append(ChatMessage(
+                let aiMessage = ChatMessage(
                     content: message,
                     isUser: false,
                     timestamp: Date(),
                     image: nil
-                ))
+                )
+                messages.append(aiMessage)
+                // Add to current session messages
+                newSessionMessages.append(aiMessage)
                 hapticService.playReceiveFeedback()
             }
         }
@@ -234,14 +271,16 @@ class ChatViewModel: ObservableObject {
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 messages.append(newMessage)
+                // Add to current session messages
+                newSessionMessages.append(newMessage)
                 isThinking = true
             }
         }
         
-        // Generate AI response with all conversation images
+        // Generate AI response with all conversation messages for context
         if let llmResponse = await firebaseManager.generateResponse(
             conversationId: conversationId,
-            newMessages: messages,
+            newMessages: messages,  // Send all messages for context
             currentImageData: currentImageData,
             mode: currentMode
         ) {
@@ -293,17 +332,19 @@ class ChatViewModel: ObservableObject {
     }
     
     func saveCurrentChatSession() {
-        guard messages.contains(where: { $0.isUser }) else {
-            print("No user messages to save.")
+        // Only save if there are new user messages in the current session
+        guard newSessionMessages.contains(where: { $0.isUser }) else {
+            print("No new user messages to save.")
             return
         }
         
-        let chatSession = ChatSession(id: conversationId, messages: messages, timestamp: Date())
+        // Create a chat session with ONLY the messages from this session
+        let chatSession = ChatSession(id: conversationId, messages: newSessionMessages, timestamp: Date())
         
         firebaseManager.saveChatSession(chatSession: chatSession) { result in
             switch result {
             case .success():
-                print("Chat session saved successfully.")
+                print("Chat session saved successfully with \(self.newSessionMessages.count) messages.")
             case .failure(let error):
                 print("Error saving chat session: \(error.localizedDescription)")
             }
@@ -315,17 +356,36 @@ class ChatViewModel: ObservableObject {
             print("Loading conversation with ID: \(lastSession.id), containing \(lastSession.messages.count) messages")
             conversationId = lastSession.id
             messages = lastSession.messages
+            // Clear new session messages as we're loading an existing conversation
+            newSessionMessages = []
+            isViewingPreviousConversation = true
         } else {
             print("No previous conversations available to load")
         }
     }
     
-    // Add a method to load a specific conversation by ID
     func loadConversation(withId id: String) {
         if let session = previousConversations.first(where: { $0.id == id }) {
             print("Loading selected conversation with ID: \(session.id)")
             conversationId = session.id
             messages = session.messages
+            // Clear new session messages as we're loading an existing conversation
+            newSessionMessages = []
+            isViewingPreviousConversation = true
+        }
+    }
+    
+    // Add a method to continue the conversation with new messages
+    func continueConversation() {
+        // If we're viewing a previous conversation and add new content,
+        // we should start tracking new messages
+        if isViewingPreviousConversation {
+            print("Continuing previous conversation with new messages")
+            // Generate a new ID for the continuation
+            conversationId = UUID().uuidString
+            // We'll keep the messages displayed, but start tracking new ones
+            newSessionMessages = []
+            isViewingPreviousConversation = false
         }
     }
 }
