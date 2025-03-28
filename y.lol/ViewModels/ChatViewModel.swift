@@ -96,29 +96,39 @@ class ChatViewModel: ObservableObject {
                     
                     // Check if we have any previous conversations
                     if !sessions.isEmpty {
-                        // Sort conversations by timestamp (oldest first, so we maintain chronological order)
-                        let sortedSessions = sessions.sorted(by: { $0.timestamp < $1.timestamp })
+                        // Sort conversations by timestamp (newest first)
+                        let sortedSessions = sessions.sorted(by: { $0.timestamp > $1.timestamp })
                         
-                        // Take the last 2 sessions
-                        let sessionsToLoad = sortedSessions.suffix(2).filter { !$0.messages.isEmpty }
+                        // Target message count to load
+                        let targetMessageCount = 25
+                        var combinedMessages: [ChatMessage] = []
+                        var sessionsToLoad: [ChatSession] = []
+                        
+                        // Load sessions until we reach or exceed the target message count
+                        for session in sortedSessions {
+                            if !session.messages.isEmpty {
+                                sessionsToLoad.append(session)
+                                combinedMessages.append(contentsOf: session.messages)
+                                
+                                // Stop if we've reached our target
+                                if combinedMessages.count >= targetMessageCount {
+                                    break
+                                }
+                            }
+                        }
                         
                         // If we have sessions to load
                         if !sessionsToLoad.isEmpty {
-                            // Combine all messages from the sessions chronologically
-                            var combinedMessages: [ChatMessage] = []
-                            
-                            // Add messages from oldest to newest for chronological order
-                            for session in sessionsToLoad {
-                                combinedMessages.append(contentsOf: session.messages)
-                            }
-                            
                             // Sort messages by timestamp to maintain chronological order
                             combinedMessages.sort(by: { $0.timestamp < $1.timestamp })
                             
                             // Use the most recent session's ID for continuation
-                            if let mostRecentId = sortedSessions.last?.id {
+                            if let mostRecentId = sortedSessions.first?.id {
                                 self.conversationId = mostRecentId
                             }
+                            
+                            // Check for duplicates in loaded messages
+                            self.checkForDuplicates(in: combinedMessages)
                             
                             self.messages = combinedMessages
                             self.newSessionMessages = []
@@ -142,6 +152,27 @@ class ChatViewModel: ObservableObject {
                 // End the loading state
                 self.isInitialLoading = false
             }
+        }
+    }
+    
+    // Helper function to check for duplicates in loaded messages
+    private func checkForDuplicates(in messages: [ChatMessage]) {
+        var messageMap = [String: Int]()
+        
+        for message in messages {
+            let key = "\(message.isUser ? "user" : "assistant"):\(message.content)"
+            messageMap[key, default: 0] += 1
+        }
+        
+        // Log any duplicates found
+        let duplicates = messageMap.filter { $0.value > 1 }
+        if !duplicates.isEmpty {
+            print("DUPLICATE WARNING: Found \(duplicates.count) duplicated messages:")
+            for (message, count) in duplicates {
+                print("  - '\(message)' appears \(count) times")
+            }
+        } else {
+            print("No duplicates found in messages")
         }
     }
     
@@ -288,35 +319,49 @@ class ChatViewModel: ObservableObject {
         await MainActor.run {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 messages.append(newMessage)
-                // Add to current session messages
                 newSessionMessages.append(newMessage)
                 isThinking = true
             }
         }
         
-        // Create a clean, deduplicated message history for the API request
-        let cleanMessageHistory = createCleanMessageHistory(from: messages)
+        // Use ALL existing messages for context, but ensure no duplicates
+        var contextMessages = createCleanMessageHistory(from: messages.dropLast()) // Remove the message we just added
         
-        // Generate AI response with the clean message history
+        // Add the current message separately to ensure it's always included
+        contextMessages.append(newMessage)
+        
+        // Log what we're sending
+        print("Sending \(contextMessages.count) messages to API:")
+        for (i, msg) in contextMessages.enumerated() {
+            print("  \(i): \(msg.isUser ? "USER" : "ASSISTANT"): \(msg.content.prefix(30))...")
+        }
+        
+        // Generate AI response with complete history
         if let llmResponse = await firebaseManager.generateResponse(
             conversationId: conversationId,
-            newMessages: cleanMessageHistory,  // Use clean messages
+            newMessages: contextMessages,
             currentImageData: currentImageData,
             mode: currentMode
         ) {
-            let bubbles = llmResponse.components(separatedBy: "\n\n")
-                .filter { !$0.isEmpty }
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            
-            // Show typing indicator.
-            await MainActor.run { isTyping = true }
-            
-            // Deliver each bubble with a delay.
-            for (index, bubble) in bubbles.enumerated() {
-                await deliverMessageWithDelay(bubble, isLastMessage: index == bubbles.count - 1)
+            // Check if we got a non-empty response
+            if !llmResponse.isEmpty {
+                let bubbles = llmResponse.components(separatedBy: "\n\n")
+                    .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                
+                // Only proceed if we have actual content
+                if !bubbles.isEmpty {
+                    // Show typing indicator.
+                    await MainActor.run { isTyping = true }
+                    
+                    // Deliver each bubble with a delay.
+                    for (index, bubble) in bubbles.enumerated() {
+                        await deliverMessageWithDelay(bubble, isLastMessage: index == bubbles.count - 1)
+                    }
+                }
             }
             
-            // Final cleanup.
+            // Always clean up regardless of content
             await MainActor.run {
                 isTyping = false
                 isThinking = false
@@ -341,25 +386,49 @@ class ChatViewModel: ObservableObject {
         }
     }
     
-    // Add this new method to create a clean message history without duplications
+    // Updated createCleanMessageHistory to handle full conversation history
     private func createCleanMessageHistory(from messages: [ChatMessage]) -> [ChatMessage] {
-        // Create a new array to store the deduplicated messages
-        var cleanHistory: [ChatMessage] = []
-        var lastContent: String?
-        var lastIsUser: Bool?
+        // First ensure messages are in chronological order
+        let sortedMessages = messages.sorted(by: { $0.timestamp < $1.timestamp })
         
-        for message in messages {
-            // Skip if this message has the same content and sender as the previous one
-            if message.content == lastContent && message.isUser == lastIsUser {
-                continue
+        // Keep track of seen messages to avoid duplicates
+        var seenMessages = Set<String>()
+        var cleanHistory: [ChatMessage] = []
+        
+        for message in sortedMessages {
+            // Create a unique identifier for this message
+            let identifier = "\(message.isUser ? "user" : "assistant"):\(message.content)"
+            
+            // Only add if we haven't seen this exact message before
+            if !seenMessages.contains(identifier) {
+                seenMessages.insert(identifier)
+                cleanHistory.append(message)
+            }
+        }
+        
+        // Check if we have a reasonable message count
+        print("Clean history contains \(cleanHistory.count) messages out of \(messages.count) original messages")
+        
+        // If history is very long, we might want to trim it to avoid token limits
+        // Typically, LLM APIs have a token limit (e.g., 4096 tokens for some models)
+        // A reasonable estimate is ~100 tokens per message on average
+        let maxMessages = 25 // This allows for ~2500 tokens of history
+        
+        if cleanHistory.count > maxMessages {
+            print("Trimming history from \(cleanHistory.count) to \(maxMessages) messages")
+            // Keep first message (often a greeting) and most recent messages
+            var trimmedHistory: [ChatMessage] = []
+            
+            // Always include the first message if it's an assistant greeting
+            if !cleanHistory.isEmpty && !cleanHistory[0].isUser {
+                trimmedHistory.append(cleanHistory[0])
             }
             
-            // Add this message to the clean history
-            cleanHistory.append(message)
+            // Add the most recent messages up to the limit
+            let recentMessages = Array(cleanHistory.suffix(maxMessages - trimmedHistory.count))
+            trimmedHistory.append(contentsOf: recentMessages)
             
-            // Update tracking variables
-            lastContent = message.content
-            lastIsUser = message.isUser
+            return trimmedHistory
         }
         
         return cleanHistory
@@ -418,6 +487,9 @@ class ChatViewModel: ObservableObject {
     func loadConversation(withId id: String) {
         if let session = previousConversations.first(where: { $0.id == id }) {
             print("Loading selected conversation with ID: \(session.id)")
+            // Check for duplicates first
+            checkForDuplicates(in: session.messages)
+            
             conversationId = session.id
             messages = session.messages
             // Clear new session messages as we're loading an existing conversation

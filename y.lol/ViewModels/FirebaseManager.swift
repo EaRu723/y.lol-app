@@ -35,7 +35,18 @@ class FirebaseManager: ObservableObject {
     // MARK: - Public API
     
     /// Generates a response given the conversationId, a new message, and optional images.
-    func generateResponse(conversationId: String, newMessages: [ChatMessage], currentImageData: [Data], mode: ChatMode) async -> String? {
+    func generateResponse(
+        conversationId: String,
+        newMessages: [ChatMessage],  // This is now the cleaned history
+        currentImageData: [Data],
+        mode: ChatMode
+    ) async -> String? {
+        // Log the received message history
+        print("FirebaseManager received \(newMessages.count) messages")
+        
+        // IMPORTANT: Don't fetch additional history from anywhere else
+        // Use ONLY the provided newMessages
+        
         // Update on main thread
         await MainActor.run {
             self.isProcessingMessage = true
@@ -61,15 +72,19 @@ class FirebaseManager: ObservableObject {
             // Add the current message's image data
             allImageData.append(contentsOf: currentImageData)
             
-            // Update the conversation cache with the new messages.
-            updateConversationCache(conversationId: conversationId, messages: newMessages)
-            
-            // Separate out the new user prompt and prior history.
-            guard let (prompt, historyMessages) = getHistoryAndPrompt(conversationId: conversationId) else {
-                throw NSError(domain: "FirebaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "No new user message found"])
+            // Extract the last user message as the prompt
+            guard let lastUserMessage = newMessages.last(where: { $0.isUser }) else {
+                throw NSError(domain: "FirebaseManager", code: 0, 
+                              userInfo: [NSLocalizedDescriptionKey: "No user message found"])
             }
             
-            // Convert conversation history (without the new prompt) to JSON
+            // Get the content directly since it's non-optional
+            let prompt = lastUserMessage.content
+            
+            // Use messages excluding the last user message as history
+            let historyMessages = newMessages.filter { $0.id != lastUserMessage.id }
+            
+            // Convert conversation history to JSON
             let historyJSON = createHistoryJSON(from: historyMessages)
             
             // Call the Firebase function with ALL image data
@@ -257,17 +272,54 @@ class FirebaseManager: ObservableObject {
         // Try to parse the JSON response.
         if let responseDict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             // Prefer "bubbles" field if present.
-            if let bubbles = responseDict["bubbles"] as? [String], !bubbles.isEmpty {
-                return bubbles.joined(separator: "\n\n")
+            if let bubbles = responseDict["bubbles"] as? [String] {
+                if bubbles.isEmpty {
+                    // Return empty string for empty bubbles array
+                    return ""
+                }
+                
+                // Filter out any empty bubbles or whitespace-only bubbles
+                let filteredBubbles = bubbles.filter { 
+                    let trimmed = $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return !trimmed.isEmpty
+                }
+                
+                // If all bubbles were empty/whitespace, return empty string
+                if filteredBubbles.isEmpty {
+                    return ""
+                }
+                
+                return filteredBubbles.joined(separator: "\n\n")
             } else if let result = responseDict["result"] as? String {
-                return result
+                let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? "" : trimmed
             } else if let text = responseDict["text"] as? String {
-                return text
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? "" : trimmed
             } else {
-                return String(data: data, encoding: .utf8) ?? "No readable response"
+                // Try to parse the raw response
+                let rawResponse = String(data: data, encoding: .utf8) ?? ""
+                let trimmed = rawResponse.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                // Check if the response is just whitespace/control characters
+                let nonWhitespace = trimmed.components(separatedBy: .whitespacesAndNewlines).joined()
+                if nonWhitespace.isEmpty || nonWhitespace == "{\"bubbles\":[]}" {
+                    return ""
+                }
+                
+                return trimmed
             }
         } else {
-            return String(data: data, encoding: .utf8) ?? "No readable response"
+            // Handle the case where the response isn't valid JSON at all
+            let rawResponse = String(data: data, encoding: .utf8) ?? ""
+            let trimmed = rawResponse.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Check if it's just whitespace
+            if trimmed.isEmpty {
+                return ""
+            }
+            
+            return trimmed
         }
     }
     
@@ -341,8 +393,8 @@ class FirebaseManager: ObservableObject {
     
     /// Returns the appropriate Firebase function endpoint based on the chat mode.
     private func getFunctionEndpoint(for mode: ChatMode) -> String {
-        let baseUrl = "https://us-central1-ylol-011235.cloudfunctions.net"
-//        let baseUrl = "http://127.0.0.1:5001/ylol-011235/us-central1"
+//        let baseUrl = "https://us-central1-ylol-011235.cloudfunctions.net"
+        let baseUrl = "http://127.0.0.1:5001/ylol-011235/us-central1"
         switch mode {
         case .yin:
             return "\(baseUrl)/yin"
