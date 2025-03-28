@@ -294,10 +294,13 @@ class ChatViewModel: ObservableObject {
             }
         }
         
-        // Generate AI response with all conversation messages for context
+        // Create a clean, deduplicated message history for the API request
+        let cleanMessageHistory = createCleanMessageHistory(from: messages)
+        
+        // Generate AI response with the clean message history
         if let llmResponse = await firebaseManager.generateResponse(
             conversationId: conversationId,
-            newMessages: messages,  // Send all messages for context
+            newMessages: cleanMessageHistory,  // Use clean messages
             currentImageData: currentImageData,
             mode: currentMode
         ) {
@@ -336,6 +339,30 @@ class ChatViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    // Add this new method to create a clean message history without duplications
+    private func createCleanMessageHistory(from messages: [ChatMessage]) -> [ChatMessage] {
+        // Create a new array to store the deduplicated messages
+        var cleanHistory: [ChatMessage] = []
+        var lastContent: String?
+        var lastIsUser: Bool?
+        
+        for message in messages {
+            // Skip if this message has the same content and sender as the previous one
+            if message.content == lastContent && message.isUser == lastIsUser {
+                continue
+            }
+            
+            // Add this message to the clean history
+            cleanHistory.append(message)
+            
+            // Update tracking variables
+            lastContent = message.content
+            lastIsUser = message.isUser
+        }
+        
+        return cleanHistory
     }
     
     /// Returns the initial message for the given chat mode.
