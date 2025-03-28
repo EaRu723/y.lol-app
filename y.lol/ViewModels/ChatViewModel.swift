@@ -75,6 +75,7 @@ class ChatViewModel: ObservableObject {
             switch result {
             case .success(let sessions):
                 DispatchQueue.main.async {
+                    print("Successfully fetched previous conversations: \(sessions.count) sessions") // Debugging print
                     self.previousConversations = sessions
                 }
             case .failure(let error):
@@ -296,6 +297,12 @@ class ChatViewModel: ObservableObject {
             case .failure(let error):
                 print("Error saving chat session: \(error.localizedDescription)")
             }
+        }
+    }
+    
+    func loadLastConversation() {
+        if let lastSession = previousConversations.last {
+            messages = lastSession.messages
         }
     }
 }
