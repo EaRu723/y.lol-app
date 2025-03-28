@@ -44,7 +44,7 @@ struct ProfileView: View {
                     Spacer()
                     
                     Text("Profile")
-                        .font(YTheme.Typography.subtitle)
+                        .font(YTheme.Typography.title)
                         .foregroundColor(colors.text)
                     
                     Spacer()
@@ -173,13 +173,19 @@ struct ProfileView: View {
                                     Text("Share Profile")
                                         .font(YTheme.Typography.body)
                                 }
-                                .foregroundColor(Color.white)
+                                .foregroundColor(colors.text)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(colors.accent)
-                                .cornerRadius(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(colors.accent.opacity(0.01))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(colors.text, lineWidth: 1)
+                                )
                             }
-                            .padding(.horizontal, 40)
+                            .padding(.horizontal, YTheme.Spacing.large)
                             
                             // Logout button (only show in non-edit mode)
                             if !viewModel.isEditMode {
@@ -191,14 +197,20 @@ struct ProfileView: View {
                                         Text("Sign Out")
                                             .font(YTheme.Typography.body)
                                     }
-                                    .foregroundColor(Color.white)
+                                    .foregroundColor(colors.text)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .background(Color.red.opacity(0.8))
-                                    .cornerRadius(10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(Color.red.opacity(0.1))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(Color.red, lineWidth: 1)
+                                    )
                                 }
-                                .padding(.horizontal, 40)
-                                .padding(.bottom, 20)
+                                .padding(.horizontal, YTheme.Spacing.large)
+                                .padding(.bottom, YTheme.Spacing.large)
                                 .alert(isPresented: $showingLogoutAlert) {
                                     Alert(
                                         title: Text("Sign Out"),
