@@ -12,12 +12,6 @@ import FirebaseStorage
 import FirebaseFirestore
 
 
-struct ChatSession: Identifiable, Codable {
-    var id: String
-    var messages: [ChatMessage]
-    var timestamp: Date
-}
-
 /// FirebaseManager that sends messages to Firebase functions.
 class FirebaseManager: ObservableObject {
     enum ChatMode {
