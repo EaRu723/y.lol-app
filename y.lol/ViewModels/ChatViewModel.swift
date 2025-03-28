@@ -20,10 +20,8 @@ class ChatViewModel: ObservableObject {
                 // Force cancel any pending requests before switching modes
                 firebaseManager.cancelPendingRequests()
                 
-                // Generate new conversation with delay to ensure clean separation
-                DispatchQueue.main.async {
-                    self.startNewConversation()
-                }
+                // We're not starting a new conversation anymore
+                // Just keep the current conversation and messages
             }
         }
     }
@@ -98,15 +96,34 @@ class ChatViewModel: ObservableObject {
                     
                     // Check if we have any previous conversations
                     if !sessions.isEmpty {
-                        // Sort conversations by timestamp (newest first)
-                        let sortedSessions = sessions.sorted(by: { $0.timestamp > $1.timestamp })
+                        // Sort conversations by timestamp (oldest first, so we maintain chronological order)
+                        let sortedSessions = sessions.sorted(by: { $0.timestamp < $1.timestamp })
                         
-                        if let mostRecent = sortedSessions.first, !mostRecent.messages.isEmpty {
-                            print("Loading most recent conversation with ID: \(mostRecent.id), containing \(mostRecent.messages.count) messages")
-                            self.conversationId = mostRecent.id
-                            self.messages = mostRecent.messages
+                        // Take the last 2 sessions
+                        let sessionsToLoad = sortedSessions.suffix(2).filter { !$0.messages.isEmpty }
+                        
+                        // If we have sessions to load
+                        if !sessionsToLoad.isEmpty {
+                            // Combine all messages from the sessions chronologically
+                            var combinedMessages: [ChatMessage] = []
+                            
+                            // Add messages from oldest to newest for chronological order
+                            for session in sessionsToLoad {
+                                combinedMessages.append(contentsOf: session.messages)
+                            }
+                            
+                            // Sort messages by timestamp to maintain chronological order
+                            combinedMessages.sort(by: { $0.timestamp < $1.timestamp })
+                            
+                            // Use the most recent session's ID for continuation
+                            if let mostRecentId = sortedSessions.last?.id {
+                                self.conversationId = mostRecentId
+                            }
+                            
+                            self.messages = combinedMessages
                             self.newSessionMessages = []
                             self.isViewingPreviousConversation = true
+                            print("Loaded \(sessionsToLoad.count) previous sessions with \(combinedMessages.count) total messages")
                         } else {
                             // If no previous messages, start a new conversation
                             self.startNewConversation()
@@ -333,7 +350,14 @@ class ChatViewModel: ObservableObject {
     
     func saveCurrentChatSession() {
         // Only save if there are new user messages in the current session
-        guard newSessionMessages.contains(where: { $0.isUser }) else {
+        if isViewingPreviousConversation {
+            // Don't save if we're just viewing a previous conversation
+            print("Not saving: just viewing previous conversation")
+            return
+        }
+        
+        // Check if we have new messages to save
+        guard !newSessionMessages.isEmpty && newSessionMessages.contains(where: { $0.isUser }) else {
             print("No new user messages to save.")
             return
         }
@@ -377,13 +401,12 @@ class ChatViewModel: ObservableObject {
     
     // Add a method to continue the conversation with new messages
     func continueConversation() {
-        // If we're viewing a previous conversation and add new content,
-        // we should start tracking new messages
+        // If we're viewing a previous conversation and add new content
         if isViewingPreviousConversation {
             print("Continuing previous conversation with new messages")
             // Generate a new ID for the continuation
             conversationId = UUID().uuidString
-            // We'll keep the messages displayed, but start tracking new ones
+            // We'll track new messages from this point forward
             newSessionMessages = []
             isViewingPreviousConversation = false
         }
