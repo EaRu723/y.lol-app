@@ -76,10 +76,20 @@ class ChatViewModel: ObservableObject {
             case .success(let sessions):
                 DispatchQueue.main.async {
                     print("Successfully fetched previous conversations: \(sessions.count) sessions") // Debugging print
+                    if sessions.isEmpty {
+                        print("No sessions were returned from Firebase")
+                    } else {
+                        print("First session has \(sessions[0].messages.count) messages")
+                    }
                     self.previousConversations = sessions
                 }
             case .failure(let error):
                 print("Error fetching previous conversations: \(error.localizedDescription)")
+                // Add more detailed error logging
+                if let nsError = error as NSError? {
+                    print("Error code: \(nsError.code), domain: \(nsError.domain)")
+                    print("Error details: \(nsError.userInfo)")
+                }
             }
         }
     }
@@ -302,7 +312,20 @@ class ChatViewModel: ObservableObject {
     
     func loadLastConversation() {
         if let lastSession = previousConversations.last {
+            print("Loading conversation with ID: \(lastSession.id), containing \(lastSession.messages.count) messages")
+            conversationId = lastSession.id
             messages = lastSession.messages
+        } else {
+            print("No previous conversations available to load")
+        }
+    }
+    
+    // Add a method to load a specific conversation by ID
+    func loadConversation(withId id: String) {
+        if let session = previousConversations.first(where: { $0.id == id }) {
+            print("Loading selected conversation with ID: \(session.id)")
+            conversationId = session.id
+            messages = session.messages
         }
     }
 }
