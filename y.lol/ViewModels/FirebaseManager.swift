@@ -123,11 +123,6 @@ class FirebaseManager: ObservableObject {
                 conversationCache[conversationId]?.append(message)
             }
         }
-        
-        // Trim history if it exceeds twice the max context messages.
-        if let cachedMessages = conversationCache[conversationId] {
-            conversationCache[conversationId] = Array(cachedMessages)
-        }
     }
     
     /// Separates the most recent user message (to be sent as prompt) from the conversation history.
