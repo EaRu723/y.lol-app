@@ -138,15 +138,12 @@ struct ProfileView: View {
                                     
                                     // Display vibe if available
                                     if let vibe = user.vibe, !vibe.isEmpty {
-                                        VibeView(vibe: vibe, onShuffle: {
-                                            viewModel.generateNewVibe()
-                                        })
+                                        VibeView(vibe: vibe, 
+                                                 onShuffle: {
+                                                     viewModel.generateNewVibe()
+                                                 },
+                                                 isLoading: viewModel.isGeneratingVibe)
                                         .padding(.top, 12)
-                                        
-                                        if viewModel.isGeneratingVibe {
-                                            ProgressView()
-                                                .padding(.top, 4)
-                                        }
                                         
                                         if !viewModel.vibeError.isEmpty {
                                             Text(viewModel.vibeError)
@@ -159,11 +156,6 @@ struct ProfileView: View {
                                             viewModel.generateNewVibe()
                                         })
                                         .padding(.top, 12)
-                                        
-                                        if viewModel.isGeneratingVibe {
-                                            ProgressView()
-                                                .padding(.top, 4)
-                                        }
                                     }
                                 }
                             }

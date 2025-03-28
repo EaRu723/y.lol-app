@@ -12,6 +12,7 @@ struct VibeView: View {
     var fontSize: CGFloat = 16
     var padding: CGFloat = 10
     var onShuffle: (() -> Void)?
+    var isLoading: Bool = false
     
     @Environment(\.themeColors) private var colors
     
@@ -21,27 +22,36 @@ struct VibeView: View {
                 .font(YTheme.Typography.title)
                 .foregroundColor(colors.text)
             
-            
-            Text(vibe.isEmpty ? "No vibe set" : vibe)
-                .font(YTheme.Typography.body)
-                .foregroundColor(colors.text)
-                .padding(YTheme.Spacing.medium)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(colors.accent.opacity(0.01))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(colors.text, lineWidth: 1)
-                )
-            if onShuffle != nil {
-                Spacer()
+            ZStack {
+                Text(vibe.isEmpty ? "No vibe set" : vibe)
+                    .font(YTheme.Typography.body)
+                    .foregroundColor(colors.text)
+                    .padding(YTheme.Spacing.medium)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(colors.accent.opacity(0.01))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(colors.text, lineWidth: 1)
+                    )
                 
-                Button(action: {
-                    onShuffle?()
-                }) {
-                    Image(systemName: "shuffle")
-                        .foregroundColor(colors.text)
+                if isLoading {
+                    ProgressView()
+                }
+            }
+            
+            if onShuffle != nil {
+                HStack {
+                    Spacer()
+                    
+                    Button(action: {
+                        onShuffle?()
+                    }) {
+                        Image(systemName: "shuffle")
+                            .foregroundColor(colors.text)
+                            .padding(.trailing, YTheme.Spacing.medium)
+                    }
                 }
             }
         }
