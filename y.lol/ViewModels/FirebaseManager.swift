@@ -417,10 +417,102 @@ class FirebaseManager: ObservableObject {
             if let error = error {
                 completion(.failure(error))
             } else if let snapshot = snapshot {
-                let chatSessions = snapshot.documents.compactMap { document -> ChatSession? in
-                    try? document.data(as: ChatSession.self)
+                do {
+                    var chatSessions: [ChatSession] = []
+                    
+                    for document in snapshot.documents {
+                        do {
+                            // Try using Firestore's built-in deserialization
+                            if let chatSession = try? document.data(as: ChatSession.self) {
+                                print("Successfully decoded chat session with ID: \(chatSession.id)")
+                                chatSessions.append(chatSession)
+                            } else {
+                                // Manual fallback if automatic decoding fails
+                                print("Fallback to manual decoding for document: \(document.documentID)")
+                                let data = document.data()
+                                let id = document.documentID
+                                
+                                // Extract timestamp
+                                var timestamp = Date()
+                                if let timestampValue = data["timestamp"] as? TimeInterval {
+                                    timestamp = Date(timeIntervalSince1970: timestampValue)
+                                } else if let firestoreTimestamp = data["timestamp"] as? Timestamp {
+                                    timestamp = firestoreTimestamp.dateValue()
+                                }
+                                
+                                // Extract and convert messages
+                                var messages: [ChatMessage] = []
+                                if let messagesData = data["messages"] as? [[String: Any]] {
+                                    for messageData in messagesData {
+                                        // Extract basic message fields
+                                        let content = messageData["content"] as? String ?? ""
+                                        let isUser = messageData["isUser"] as? Bool ?? false
+                                        
+                                        // Handle timestamp
+                                        var messageTimestamp = Date()
+                                        if let timestampDouble = messageData["timestamp"] as? TimeInterval {
+                                            messageTimestamp = Date(timeIntervalSince1970: timestampDouble)
+                                        } else if let firestoreTimestamp = messageData["timestamp"] as? Timestamp {
+                                            messageTimestamp = firestoreTimestamp.dateValue()
+                                        }
+                                        
+                                        // Handle media if present
+                                        var media: [MediaContent]? = nil
+                                        if let mediaData = messageData["media"] as? [[String: Any]], !mediaData.isEmpty {
+                                            media = mediaData.compactMap { mediaItem -> MediaContent? in
+                                                guard 
+                                                    let id = mediaItem["id"] as? String,
+                                                    let url = mediaItem["url"] as? String,
+                                                    let timestampValue = mediaItem["timestamp"] as? TimeInterval
+                                                else { return nil }
+                                                
+                                                // Assume image type as default
+                                                return MediaContent(
+                                                    id: id,
+                                                    type: .image,
+                                                    url: url,
+                                                    metadata: nil,
+                                                    timestamp: timestampValue
+                                                )
+                                            }
+                                        }
+                                        
+                                        // Create the message with proper ID
+                                        var message = ChatMessage(
+                                            content: content, 
+                                            isUser: isUser, 
+                                            timestamp: messageTimestamp,
+                                            media: media
+                                        )
+                                        
+                                        // Set the ID if present
+                                        if let idString = messageData["id"] as? String, 
+                                           let uuid = UUID(uuidString: idString) {
+                                            message.id = uuid
+                                        }
+                                        
+                                        messages.append(message)
+                                    }
+                                }
+                                
+                                print("Manually decoded \(messages.count) messages for session \(id)")
+                                let chatSession = ChatSession(id: id, messages: messages, timestamp: timestamp)
+                                chatSessions.append(chatSession)
+                            }
+                        } catch {
+                            print("Error decoding chat session from document \(document.documentID): \(error)")
+                        }
+                    }
+                    
+                    // Sort sessions by timestamp, newest first
+                    chatSessions.sort { $0.timestamp > $1.timestamp }
+                    
+                    print("Successfully retrieved \(chatSessions.count) chat sessions")
+                    completion(.success(chatSessions))
+                } catch {
+                    print("Error parsing chat sessions: \(error.localizedDescription)")
+                    completion(.failure(error))
                 }
-                completion(.success(chatSessions))
             }
         }
     }
