@@ -41,6 +41,9 @@ struct OnboardingView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     private let signInAppleHelper = SignInAppleHelper()
     
+    // Add this property to track if registration is complete
+    @State private var registrationComplete = false
+    
     private let pages = [
         OnboardingPage(text: "hi", hapticStyle: .light),
         OnboardingPage(text: "you could be anywhere right now \n\n but you're here", hapticStyle: .medium),
@@ -97,6 +100,7 @@ struct OnboardingView: View {
                                     try await authManager.signInWithApple(tokens: tokens)
                                     withAnimation {
                                         hasCompletedOnboarding = true
+                                        registrationComplete = true
                                         isPresented = false
                                     }
                                 } catch {
@@ -140,6 +144,8 @@ struct OnboardingView: View {
             }
             #endif
         }
+        // Add this modifier to the root view
+        .interactiveDismissDisabled(!registrationComplete)
     }
 }
 
