@@ -18,7 +18,7 @@ struct VibeView: View {
     
     var body: some View {
         VStack(spacing: YTheme.Spacing.small) {
-            Text("Vibe")
+            Text("My Vibe")
                 .font(YTheme.Typography.title)
                 .foregroundColor(colors.text)
             

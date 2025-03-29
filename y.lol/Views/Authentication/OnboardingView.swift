@@ -13,10 +13,10 @@ import SwiftUI
 class OnboardingStateManager: ObservableObject {
     static let shared = OnboardingStateManager()
     
-    @AppStorage("hasCompletedOnboarding") var hasCompletedOnboarding = false
+    @AppStorage("welcomeShown") var hasCompletedOnboarding = true
     
     func resetOnboarding() {
-        hasCompletedOnboarding = false
+        hasCompletedOnboarding = true
     }
 }
 #endif
@@ -27,9 +27,11 @@ struct OnboardingPage {
 }
 
 struct OnboardingView: View {
+    @Binding var isPresented: Bool
+    
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("welcomeShown") private var hasCompletedOnboarding = true
     @State private var currentPage = 0
     @State private var displayedText = ""
     @State private var isTyping = false
@@ -199,5 +201,5 @@ struct OnboardingView: View {
 }
 
 #Preview {
-    OnboardingView()
+    OnboardingView(isPresented: .constant(true))
 }
