@@ -12,15 +12,12 @@ struct RootView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @StateObject private var streakViewModel = StreakViewModel()
     @State private var isAuthenticated = false
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+//    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var hasUpdatedStreakThisSession = false
     
     var body: some View {
         Group {
-            if !hasCompletedOnboarding {
-                OnboardingView()
-                    .environmentObject(authManager)
-            } else if !isAuthenticated {
+            if !isAuthenticated {
                 LoginView()
                     .environmentObject(authManager)
             } else {

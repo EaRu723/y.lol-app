@@ -11,12 +11,14 @@ import Firebase
 @main
 struct y_lolApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @AppStorage("welcomeShown") var welcomeShown: Bool = true
     
     var body: some Scene {
         WindowGroup {
             NavigationStack {
                 RootView()
                     .preferredColorScheme(.light)
+                    .sheet(isPresented: $welcomeShown, content: { OnboardingView(isPresented: $welcomeShown) })
             }
         }
     }
