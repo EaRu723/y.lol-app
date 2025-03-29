@@ -20,15 +20,15 @@ class ChatViewModel: ObservableObject {
                 // Force cancel any pending requests before switching modes
                 firebaseManager.cancelPendingRequests()
                 
-                // We're not starting a new conversation anymore
-                // Just keep the current conversation and messages
+                // Filter messages to show only the current mode's messages
+                filterMessagesByCurrentMode()
             }
         }
     }
     @Published var selectedImage: UIImage?
     @Published var isUploadingImage: Bool = false
     @Published var previousConversations: [ChatSession] = []
-    @Published var isInitialLoading: Bool = true  // Add loading state
+    @Published var isInitialLoading: Bool = false
     
     private let firebaseManager = FirebaseManager.shared
     private let hapticService = HapticService()
@@ -40,6 +40,11 @@ class ChatViewModel: ObservableObject {
     private var newSessionMessages: [ChatMessage] = []
     // Track if we're viewing a previous conversation
     private var isViewingPreviousConversation = false
+    
+    // Track messages by mode
+    private var allMessages: [ChatMessage] = []
+    private var yinMessages: [ChatMessage] = []
+    private var yangMessages: [ChatMessage] = []
     
     init() {
         // Set up event listeners
@@ -70,15 +75,24 @@ class ChatViewModel: ObservableObject {
     // Helper to start a fresh conversation
     private func startNewConversation() {
         conversationId = UUID().uuidString
-        messages = [
-            ChatMessage(
-                content: getInitialMessage(for: currentMode),
-                isUser: false,
-                timestamp: Date(),
-                image: nil
-            )
-        ]
-        newSessionMessages = messages
+        let initialMessage = ChatMessage(
+            content: getInitialMessage(for: currentMode),
+            isUser: false,
+            timestamp: Date(),
+            image: nil
+        )
+        
+        // Add to appropriate arrays
+        messages = [initialMessage]
+        
+        switch currentMode {
+        case .yin:
+            yinMessages = [initialMessage]
+        case .yang:
+            yangMessages = [initialMessage]
+        }
+        
+        newSessionMessages = [initialMessage]
         isViewingPreviousConversation = false
     }
     
@@ -94,63 +108,63 @@ class ChatViewModel: ObservableObject {
                     print("Successfully fetched previous conversations: \(sessions.count) sessions")
                     self.previousConversations = sessions
                     
-                    // Check if we have any previous conversations
+                    // Separate conversations by mode
+                    self.yinMessages = []
+                    self.yangMessages = []
+                    
+                    // Process sessions to populate mode-specific message arrays
                     if !sessions.isEmpty {
                         // Sort conversations by timestamp (newest first)
                         let sortedSessions = sessions.sorted(by: { $0.timestamp > $1.timestamp })
                         
-                        // Target message count to load
-                        let targetMessageCount = 25
-                        var combinedMessages: [ChatMessage] = []
-                        var sessionsToLoad: [ChatSession] = []
-                        
-                        // Load sessions until we reach or exceed the target message count
+                        // Populate Yin and Yang messages
                         for session in sortedSessions {
-                            if !session.messages.isEmpty {
-                                sessionsToLoad.append(session)
-                                combinedMessages.append(contentsOf: session.messages)
-                                
-                                // Stop if we've reached our target
-                                if combinedMessages.count >= targetMessageCount {
-                                    break
-                                }
+                            if session.chatMode == .yin {
+                                self.yinMessages.append(contentsOf: session.messages)
+                            } else {
+                                self.yangMessages.append(contentsOf: session.messages)
                             }
                         }
                         
-                        // If we have sessions to load
-                        if !sessionsToLoad.isEmpty {
-                            // Sort messages by timestamp to maintain chronological order
-                            combinedMessages.sort(by: { $0.timestamp < $1.timestamp })
-                            
-                            // Use the most recent session's ID for continuation
-                            if let mostRecentId = sortedSessions.first?.id {
-                                self.conversationId = mostRecentId
-                            }
-                            
-                            // Check for duplicates in loaded messages
-                            self.checkForDuplicates(in: combinedMessages)
-                            
-                            self.messages = combinedMessages
-                            self.newSessionMessages = []
-                            self.isViewingPreviousConversation = true
-                            print("Loaded \(sessionsToLoad.count) previous sessions with \(combinedMessages.count) total messages")
-                        } else {
-                            // If no previous messages, start a new conversation
-                            self.startNewConversation()
+                        // Sort messages by timestamp
+                        self.yinMessages.sort(by: { $0.timestamp < $1.timestamp })
+                        self.yangMessages.sort(by: { $0.timestamp < $1.timestamp })
+                        
+                        // If we have no messages for either mode, initialize them
+                        if self.yinMessages.isEmpty {
+                            let initialYinMessage = ChatMessage(
+                                content: self.getInitialMessage(for: .yin),
+                                isUser: false,
+                                timestamp: Date(),
+                                image: nil
+                            )
+                            self.yinMessages = [initialYinMessage]
                         }
+                        
+                        if self.yangMessages.isEmpty {
+                            let initialYangMessage = ChatMessage(
+                                content: self.getInitialMessage(for: .yang),
+                                isUser: false,
+                                timestamp: Date(),
+                                image: nil
+                            )
+                            self.yangMessages = [initialYangMessage]
+                        }
+                        
+                        // Initialize with the current mode's messages
+                        self.filterMessagesByCurrentMode()
                     } else {
-                        // If no previous conversations, start a new conversation
+                        // No previous conversations, start new
                         self.startNewConversation()
                     }
                     
+                    self.isInitialLoading = false
                 case .failure(let error):
                     print("Error fetching previous conversations: \(error.localizedDescription)")
-                    // In case of error, start a new conversation
+                    // Start a new conversation on error
                     self.startNewConversation()
+                    self.isInitialLoading = false
                 }
-                
-                // End the loading state
-                self.isInitialLoading = false
             }
         }
     }
@@ -438,9 +452,9 @@ class ChatViewModel: ObservableObject {
     private func getInitialMessage(for mode: FirebaseManager.ChatMode) -> String {
         switch mode {
         case .yin:
-            return "what's on your mind?"
+            return "What's on your mind?"
         case .yang:
-            return "what's good?"
+            return "What's good?"
         }
     }
     
@@ -458,13 +472,18 @@ class ChatViewModel: ObservableObject {
             return
         }
         
-        // Create a chat session with ONLY the messages from this session
-        let chatSession = ChatSession(id: conversationId, messages: newSessionMessages, timestamp: Date())
+        // Create a chat session with ONLY the messages from this session and include the current mode
+        let chatSession = ChatSession(
+            id: conversationId, 
+            messages: newSessionMessages, 
+            timestamp: Date(),
+            chatMode: currentMode
+        )
         
         firebaseManager.saveChatSession(chatSession: chatSession) { result in
             switch result {
             case .success():
-                print("Chat session saved successfully with \(self.newSessionMessages.count) messages.")
+                print("Chat session saved successfully with \(self.newSessionMessages.count) messages for mode: \(self.currentMode).")
             case .failure(let error):
                 print("Error saving chat session: \(error.localizedDescription)")
             }
@@ -500,14 +519,42 @@ class ChatViewModel: ObservableObject {
     
     // Add a method to continue the conversation with new messages
     func continueConversation() {
-        // If we're viewing a previous conversation and add new content
+        // If we were viewing a previous conversation, switch to active mode
         if isViewingPreviousConversation {
-            print("Continuing previous conversation with new messages")
-            // Generate a new ID for the continuation
-            conversationId = UUID().uuidString
-            // We'll track new messages from this point forward
-            newSessionMessages = []
+            print("Continuing from previous conversation")
             isViewingPreviousConversation = false
+            // Clear newSessionMessages to start tracking from here
+            newSessionMessages = []
+        }
+    }
+    
+    private func filterMessagesByCurrentMode() {
+        // Update the displayed messages based on the current mode
+        switch currentMode {
+        case .yin:
+            // If yin messages are empty but we're switching to yin mode, initialize with greeting
+            if yinMessages.isEmpty {
+                let initialMessage = ChatMessage(
+                    content: getInitialMessage(for: .yin),
+                    isUser: false,
+                    timestamp: Date(),
+                    image: nil
+                )
+                yinMessages = [initialMessage]
+            }
+            messages = yinMessages
+        case .yang:
+            // If yang messages are empty but we're switching to yang mode, initialize with greeting
+            if yangMessages.isEmpty {
+                let initialMessage = ChatMessage(
+                    content: getInitialMessage(for: .yang),
+                    isUser: false,
+                    timestamp: Date(),
+                    image: nil
+                )
+                yangMessages = [initialMessage]
+            }
+            messages = yangMessages
         }
     }
 }

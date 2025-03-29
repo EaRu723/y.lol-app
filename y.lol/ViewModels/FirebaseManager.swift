@@ -547,8 +547,17 @@ class FirebaseManager: ObservableObject {
                                     }
                                 }
                                 
+                                // Extract the chat mode if available, default to .yin if not present
+                                let modeString = data["chatMode"] as? String ?? "yin"
+                                let chatMode: FirebaseManager.ChatMode = modeString == "yang" ? .yang : .yin
+                                
                                 print("Manually decoded \(messages.count) messages for session \(id)")
-                                let chatSession = ChatSession(id: id, messages: messages, timestamp: timestamp)
+                                let chatSession = ChatSession(
+                                    id: id, 
+                                    messages: messages, 
+                                    timestamp: timestamp,
+                                    chatMode: chatMode
+                                )
                                 chatSessions.append(chatSession)
                             }
                         } catch {
