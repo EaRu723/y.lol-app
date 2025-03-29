@@ -23,6 +23,7 @@ class OnboardingStateManager: ObservableObject {
 
 struct OnboardingPage {
     let text: String
+    let buttonText: String
     let hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle
 }
 
@@ -44,10 +45,12 @@ struct OnboardingView: View {
     // Add this property to track if registration is complete
     @State private var registrationComplete = false
     
+    @State private var currentPage = 0
+    
     private let pages = [
-        OnboardingPage(text: "hi", hapticStyle: .light),
-        OnboardingPage(text: "you could be anywhere right now \n\n but you're here", hapticStyle: .medium),
-        OnboardingPage(text: "Y", hapticStyle: .heavy)
+        OnboardingPage(text: "hi", buttonText: "Continue", hapticStyle: .light),
+        OnboardingPage(text: "you could be anywhere right now \n\n but you're here", buttonText: "Next", hapticStyle: .medium),
+        OnboardingPage(text: "Y", buttonText: "Sign in with Apple", hapticStyle: .heavy)
     ]
     
     var body: some View {
@@ -68,31 +71,44 @@ struct OnboardingView: View {
                 }
                 #endif
                 
-                TabView {
+                TabView(selection: $currentPage) {
                     // First page
                     OnboardingPageView(
                         text: pages[0].text,
+                        buttonText: pages[0].buttonText,
                         hapticStyle: pages[0].hapticStyle,
                         isLastPage: false,
-                        onContinue: {} as (() -> Void)?,
-                        onSignIn: {} as (() -> Void)?
+                        onContinue: {
+                            withAnimation {
+                                currentPage = 1
+                            }
+                        },
+                        onSignIn: nil
                     )
+                    .tag(0)
                     
                     // Second page
                     OnboardingPageView(
                         text: pages[1].text,
+                        buttonText: pages[1].buttonText,
                         hapticStyle: pages[1].hapticStyle,
                         isLastPage: false,
-                        onContinue: {} as (() -> Void)?,
-                        onSignIn: {} as (() -> Void)?
+                        onContinue: {
+                            withAnimation {
+                                currentPage = 2
+                            }
+                        },
+                        onSignIn: nil
                     )
+                    .tag(1)
                     
                     // Last page
                     OnboardingPageView(
                         text: pages[2].text,
+                        buttonText: pages[2].buttonText,
                         hapticStyle: pages[2].hapticStyle,
                         isLastPage: true,
-                        onContinue: {} as (() -> Void)?,
+                        onContinue: nil,
                         onSignIn: {
                             Task {
                                 do {
@@ -109,8 +125,11 @@ struct OnboardingView: View {
                             }
                         }
                     )
+                    .tag(2)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
+                .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
+                .gesture(DragGesture())
             }
             
             #if DEBUG
@@ -144,13 +163,13 @@ struct OnboardingView: View {
             }
             #endif
         }
-        // Add this modifier to the root view
         .interactiveDismissDisabled(!registrationComplete)
     }
 }
 
 struct OnboardingPageView: View {
     let text: String
+    let buttonText: String
     let hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle
     let isLastPage: Bool
     let onContinue: (() -> Void)?
@@ -184,24 +203,44 @@ struct OnboardingPageView: View {
             Spacer()
             
             if isLastPage {
+                // Use SignInWithAppleButtonView for the last page
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: hapticStyle)
                     generator.impactOccurred()
                     onSignIn?()
                 }) {
-                    HStack {
-                        Image(systemName: "apple.logo")
-                            .font(.system(size: 20))
-                        Text("Sign in with Apple")
-                            .font(YTheme.Typography.regular(size: 18, weight: .medium))
-                    }
-                    .foregroundColor(colorScheme == .dark ? .black : .white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(colorScheme == .dark ? Color.white : Color.black)
-                    .cornerRadius(10)
+                    SignInWithAppleButtonView(
+                        type: .signIn,
+                        style: colorScheme == .dark ? .white : .black,
+                        cornerRadius: 10
+                    )
+                    .frame(height: 50)
                 }
-                .padding(.horizontal, 40)
+                .frame(width: 250)
+                .padding(.horizontal, YTheme.Spacing.large)
+            } else {
+                // Regular button for other pages
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: hapticStyle)
+                    generator.impactOccurred()
+                    onContinue?()
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 20))
+                        
+                        Text(buttonText)
+                            .font(YTheme.Typography.body)
+                    }
+                    .foregroundColor(colors.text)
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 12)
+                    .background(buttonBackground)
+                    .overlay(buttonBorder)
+                }
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(maxWidth: 250)
+                .padding(.horizontal, YTheme.Spacing.large)
             }
             
             Spacer().frame(height: 40)
@@ -212,6 +251,35 @@ struct OnboardingPageView: View {
         .onChange(of: text) { _ in
             startTypingAnimation()
         }
+    }
+    
+    @ViewBuilder
+    private var buttonBackground: some View {
+        if isLastPage {
+            ZStack {
+                if colorScheme == .dark {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.white)
+                } else {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.black)
+                }
+            }
+        } else {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(colors.accent.opacity(0.01))
+        }
+    }
+    
+    @ViewBuilder
+    private var buttonBorder: some View {
+        RoundedRectangle(cornerRadius: 10)
+            .stroke(
+                isLastPage ? 
+                    (colorScheme == .dark ? Color.white : Color.black) : 
+                    colors.text, 
+                lineWidth: 1
+            )
     }
     
     private func startTypingAnimation() {
