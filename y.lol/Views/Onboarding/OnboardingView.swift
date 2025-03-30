@@ -44,7 +44,7 @@ struct OnboardingView: View {
             // Page 2: Handle Claim
             OnboardingPage(
                 messages: [ // Use the 'messages' parameter
-                    .init(sender: .yang, text: "ok now that boring sh*t out of the way"),
+                    .init(sender: .yang, text: "ok now that boring sh*ts out of the way"),
                     .init(sender: .yang, text: "u got a name?"),
                     .init(sender: .yin, text: "pick a handle that represents you"),
                 ],
@@ -55,8 +55,8 @@ struct OnboardingView: View {
             OnboardingPage(
                 messages: [ // Use the 'messages' parameter
                     .init(sender: .yang, text: "yooo (name)"),
-                    .init(sender: .yang, text: "that's a vibe"),
                     .init(sender: .yin, text: "namaste (name)"),
+                    .init(sender: .yang, text: "that's a vibe"),
                     .init(sender: .yin, text: "let's begin")
                 ],
                 buttonText: "Get Started",
