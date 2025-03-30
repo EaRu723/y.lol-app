@@ -39,6 +39,15 @@ class ChatViewModel: ObservableObject {
                             )
                         }
                     }
+                    
+                    // Update the correct message array before clearing
+                    switch tempCurrentMode {
+                    case .yin:
+                        yinMessages = messages
+                    case .yang:
+                        yangMessages = messages
+                    }
+                    
                     newSessionMessages = []
                     conversationId = UUID().uuidString
                 }
