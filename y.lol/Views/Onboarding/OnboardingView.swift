@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import FirebaseAuth
 
 struct OnboardingView: View {
     @Binding var isPresented: Bool
@@ -21,6 +22,9 @@ struct OnboardingView: View {
     @State private var registrationComplete = false
     @State private var isSignedIn = false
     @State private var currentPage = 0
+    @State private var handle: String = ""
+    @State private var isClaimingHandle: Bool = false
+    @State private var claimError: String? = nil
     
     // Update onboardingPages data structure to use the 'messages' array
     private var onboardingPages: [OnboardingPage] {
@@ -103,13 +107,17 @@ struct OnboardingView: View {
             showSignInButton: showSignInButton,
             showHandleInput: showHandleInput,
             onContinue: {
-                withAnimation {
-                    if isLastPage {
-                        hasCompletedOnboarding = true
-                        registrationComplete = true
-                        isPresented = false
-                    } else {
-                        currentPage = index + 1
+                if showHandleInput {
+                    claimHandle()
+                } else {
+                    withAnimation {
+                        if isLastPage {
+                            hasCompletedOnboarding = true
+                            registrationComplete = true
+                            isPresented = false
+                        } else {
+                            currentPage = index + 1
+                        }
                     }
                 }
             },
@@ -117,10 +125,23 @@ struct OnboardingView: View {
             onBack: index > 0 ? {
                 withAnimation {
                     currentPage = index - 1
+                    claimError = nil
                 }
-            } : nil
+            } : nil,
+            handle: $handle
         )
         .tag(index)
+        .overlay(alignment: .bottom) {
+             if isClaimingHandle && showHandleInput {
+                 ProgressView()
+                     .padding(.bottom, 120)
+             } else if let error = claimError, showHandleInput {
+                 Text(error)
+                     .foregroundColor(.red)
+                     .font(.caption)
+                     .padding(.bottom, 120)
+             }
+        }
     }
     
     // MARK: - Actions
@@ -137,6 +158,42 @@ struct OnboardingView: View {
                 }
             } catch {
                 print("Failed to sign in with Apple: \(error)")
+            }
+        }
+    }
+    
+    private func claimHandle() {
+        guard !handle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            claimError = "Handle cannot be empty."
+            return
+        }
+        let allowedCharacters = CharacterSet.alphanumerics
+        if handle.rangeOfCharacter(from: allowedCharacters.inverted) != nil {
+            claimError = "Handle can only contain letters and numbers."
+            return
+        }
+
+        isClaimingHandle = true
+        claimError = nil
+
+        Task {
+            do {
+                guard let userId = Auth.auth().currentUser?.uid else {
+                    throw URLError(.userAuthenticationRequired)
+                }
+                try await authManager.updateUserHandle(userId: userId, handle: handle)
+
+                await MainActor.run {
+                    withAnimation {
+                        currentPage = 2
+                        isClaimingHandle = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    claimError = "Failed to claim handle. \(error.localizedDescription)"
+                    isClaimingHandle = false
+                }
             }
         }
     }
