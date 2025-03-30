@@ -40,25 +40,37 @@ struct OnboardingView: View {
     @State private var isSignedIn = false
     @State private var currentPage = 0
     
-    // Move content creation to a separate function
+    // Update onboardingPages data structure to use the 'messages' array
     private var onboardingPages: [OnboardingPage] {
         return [
+            // Page 1: Sign In
             OnboardingPage(
-                yinText: "hi, welcome to Y. so glad you're here.",
-                yangText: "yooooo sup, good to meet you",
-                buttonText: "Sign in with Apple", 
+                messages: [ // Use the 'messages' parameter
+                    .init(sender: .yin, text: "hi, welcome to Y. so glad you're here."), // Create OnboardingMessage instances
+                    .init(sender: .yang, text: "yooooo sup, good to meet you"),
+                    .init(sender: .yin, text: "let's get you signed in.")
+                ],
+                buttonText: "Sign in with Apple",
                 hapticStyle: .light
             ),
+            // Page 2: Handle Claim
             OnboardingPage(
-                yinText: "what should we call you?",
-                yangText: "pick a handle that represents you",
-                buttonText: "Claim Handle", 
+                messages: [ // Use the 'messages' parameter
+                    .init(sender: .yin, text: "what should we call you?"),
+                    .init(sender: .yang, text: "pick a handle that represents you")
+                    // You can add more messages here if desired, e.g.:
+                    // .init(sender: .yang, text: "make it cool.")
+                ],
+                buttonText: "Claim Handle",
                 hapticStyle: .medium
             ),
+            // Page 3: Get Started
             OnboardingPage(
-                yinText: "embrace the duality",
-                yangText: "let's begin",
-                buttonText: "Get Started", 
+                messages: [ // Use the 'messages' parameter
+                    .init(sender: .yin, text: "embrace the duality"),
+                    .init(sender: .yang, text: "let's begin")
+                ],
+                buttonText: "Get Started",
                 hapticStyle: .heavy
             )
         ]
@@ -111,8 +123,7 @@ struct OnboardingView: View {
         let showHandleInput = index == 1
         
         return OnboardingPageView(
-            yinText: page.yinText,
-            yangText: page.yangText,
+            messages: page.messages,
             buttonText: page.buttonText,
             hapticStyle: page.hapticStyle,
             isLastPage: isLastPage,
