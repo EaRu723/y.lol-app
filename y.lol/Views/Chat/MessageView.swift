@@ -267,3 +267,59 @@ struct MessageView_Previews: PreviewProvider {
         .previewLayout(.sizeThatFits)
     }
 }
+
+struct YinYangMessageView: View {
+    let message: ChatMessage
+    let mode: FirebaseManager.ChatMode
+    
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.themeColors) private var colors
+    
+    var body: some View {
+        HStack(alignment: .top) {
+            if !message.isUser {
+                // For AI messages, use the yin-yang style
+                OnboardingYinYangTextView(
+                    yinText: message.content.contains("😇") ? message.content : "",
+                    yangText: message.content.contains("😈") ? message.content : "",
+                    textSize: 16,
+                    spacing: 12,
+                    emojiSize: 32
+                )
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(colors.aiMessageBubble)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(getBorderColor(), lineWidth: 1)
+                        )
+                )
+                .padding(.trailing, 40)
+            } else {
+                // For user messages, use regular bubbles
+                Spacer()
+                
+                Text(message.content)
+                    .font(.body)
+                    .foregroundColor(colors.userMessageText)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(colors.userMessageBubble)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.leading, 40)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+    }
+    
+    private func getBorderColor() -> Color {
+        switch mode {
+        case .yin:
+            return Color.blue.opacity(0.1)
+        case .yang:
+            return Color.red.opacity(0.1)
+        }
+    }
+}
