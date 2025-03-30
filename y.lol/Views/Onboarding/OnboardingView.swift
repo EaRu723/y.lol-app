@@ -29,7 +29,7 @@ struct OnboardingView: View {
             OnboardingPage(
                 messages: [ // Use the 'messages' parameter
                     .init(sender: .yin, text: "hi, welcome to Y. so glad you're here."), // Create OnboardingMessage instances
-                    .init(sender: .yang, text: "yooooo sup, good to meet you"),
+                    .init(sender: .yang, text: "yooooo sup, nice to meet u fr"),
                     .init(sender: .yin, text: "let's get you signed in.")
                 ],
                 buttonText: "Sign in with Apple",
