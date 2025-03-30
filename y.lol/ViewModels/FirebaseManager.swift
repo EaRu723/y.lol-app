@@ -37,7 +37,7 @@ class FirebaseManager: ObservableObject {
     /// Generates a response given the conversationId, a new message, and optional images.
     func generateResponse(
         conversationId: String,
-        newMessages: [ChatMessage],  // This is now the cleaned history
+        newMessages: [ChatMessage],
         currentImageData: [Data],
         mode: ChatMode
     ) async -> String? {
@@ -54,23 +54,9 @@ class FirebaseManager: ObservableObject {
         }
         
         do {
-            // Collect all image data from the conversation history
-            var allImageData: [Data] = []
-            
-            // First, add any previous images from the conversation
-            for message in newMessages where message.isUser {
-                if let mediaItems = message.media {
-                    for mediaItem in mediaItems where mediaItem.type == .image {
-                        if let image = await loadImageFromURL(mediaItem.url),
-                           let imageData = image.jpegData(compressionQuality: 0.7) {
-                            allImageData.append(imageData)
-                        }
-                    }
-                }
-            }
-            
-            // Add the current message's image data
-            allImageData.append(contentsOf: currentImageData)
+            // ONLY use the image data that was passed in
+            // No need to collect additional images from conversation history
+            let allImageData = currentImageData
             
             // Extract the last user message as the prompt
             guard let lastUserMessage = newMessages.last(where: { $0.isUser }) else {
@@ -87,7 +73,7 @@ class FirebaseManager: ObservableObject {
             // Convert conversation history to JSON
             let historyJSON = createHistoryJSON(from: historyMessages)
             
-            // Call the Firebase function with ALL image data
+            // Call the Firebase function with ONLY the current image data
             let response = try await callFirebaseFunction(
                 mode: mode,
                 images: allImageData,  // All images from the conversation
