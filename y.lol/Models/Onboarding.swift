@@ -28,11 +28,4 @@ struct OnboardingPage {
         self.buttonText = buttonText
         self.hapticStyle = hapticStyle
     }
-
-    // Keep or remove this initializer based on whether you still need backward compatibility
-    // init(text: String, buttonText: String, hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle) {
-    //     self.messages = [OnboardingMessage(sender: .yin, text: text)] // Example adaptation
-    //     self.buttonText = buttonText
-    //     self.hapticStyle = hapticStyle
-    // }
 } 
