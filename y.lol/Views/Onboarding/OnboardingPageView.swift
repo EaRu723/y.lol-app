@@ -7,6 +7,7 @@ struct OnboardingPageView: View {
     let hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle
     let isLastPage: Bool
     let showSignInButton: Bool
+    let showHandleInput: Bool
     let onContinue: (() -> Void)?
     let onSignIn: (() -> Void)?
     
@@ -18,6 +19,7 @@ struct OnboardingPageView: View {
     @State private var isYangTyping = false
     @State private var showYinMessage = false
     @State private var showYangMessage = false
+    @State private var handle: String = ""
     
     var body: some View {
         VStack(spacing: 40) {
@@ -42,6 +44,35 @@ struct OnboardingPageView: View {
                 showYangMessage: showYangMessage
             )
             .frame(height: 120)
+            
+            // Handle input field (only shown on second tab)
+            if showHandleInput {
+                VStack(spacing: 10) {
+                    Text("Choose your handle")
+                        .font(YTheme.Typography.serif(size: 16, weight: .medium))
+                        .foregroundColor(colors.text)
+                    
+                    HStack {
+                        Text("@y.")
+                            .font(YTheme.Typography.serif(size: 18, weight: .medium))
+                            .foregroundColor(colors.text.opacity(0.7))
+                        
+                        TextField("yourname", text: $handle)
+                            .font(YTheme.Typography.serif(size: 18, weight: .medium))
+                            .foregroundColor(colors.text)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 10)
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(colors.background)
+                    )
+                    .padding(.horizontal, 40)
+                }
+                .padding(.bottom, 10)
+            }
             
             Spacer()
             
@@ -91,6 +122,8 @@ struct OnboardingPageView: View {
                 .fixedSize(horizontal: true, vertical: false)
                 .frame(maxWidth: 250)
                 .padding(.horizontal, YTheme.Spacing.large)
+                .disabled(showHandleInput && handle.isEmpty)
+                .opacity(showHandleInput && handle.isEmpty ? 0.5 : 1.0)
             }
             
             Spacer().frame(height: 40)
@@ -165,6 +198,7 @@ struct OnboardingPageView: View {
         hapticStyle: .light,
         isLastPage: false,
         showSignInButton: false,
+        showHandleInput: false,
         onContinue: {},
         onSignIn: nil
     )
