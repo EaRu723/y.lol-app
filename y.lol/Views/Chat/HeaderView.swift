@@ -16,8 +16,7 @@ struct HeaderView: View {
     @Binding var isSearching: Bool
     var currentMode: FirebaseManager.ChatMode
     var onPillTapped: (FirebaseManager.ChatMode) -> Void
-    var onSaveChat: () -> Void
-    
+
     var body: some View {
         ZStack(alignment: .leading) {
             // Main header content
@@ -35,15 +34,14 @@ struct HeaderView: View {
                 .opacity(showButtons && !isSearching ? 1 : 0)
                 .animation(.easeInOut(duration: 0.2), value: showButtons)
                 .zIndex(2)
-                
+
                 Spacer()
-                
+
                 // Chat mode buttons with YinYang
                 ChatHeaderButtons(
                     currentMode: currentMode,
                     onPillTapped: { mode in
                         onPillTapped(mode)
-                        onSaveChat()
                     },
                     showButtons: showButtons && !isSearching,
                     isThinking: isThinking,
@@ -55,9 +53,9 @@ struct HeaderView: View {
                 )
                 .opacity(isSearching ? 0 : 1)
                 .animation(.easeInOut(duration: 0.2), value: isSearching)
-                
+
                 Spacer()
-                
+
                 // Profile button
                 Button(action: {
                     // Profile action - show profile sheet
@@ -75,7 +73,7 @@ struct HeaderView: View {
             .padding(.top, 12)
             .padding(.bottom, 8)
             .zIndex(1)
-            
+
             // Inline search component that spawns from the search icon
             if isSearching {
                 inlineSearchView()
@@ -84,7 +82,7 @@ struct HeaderView: View {
         }
         .background(colors.background)
     }
-    
+
     @ViewBuilder
     private func inlineSearchView() -> some View {
         HStack(spacing: 12) {
@@ -99,23 +97,24 @@ struct HeaderView: View {
                     .foregroundColor(.primary)
             }
             .padding(.leading, 20)
-            
+
             // Embedded compact search field
             InlineSearchField(isSearching: $isSearching) { searchText in
                 // Handle search here
                 print("Searching for: \(searchText)")
             }
-            
+
             Spacer()
         }
         .frame(height: 44)
         .background(colors.background)
-        .transition(.asymmetric(
-            insertion: .move(edge: .leading).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
-        ))
+        .transition(
+            .asymmetric(
+                insertion: .move(edge: .leading).combined(with: .opacity),
+                removal: .move(edge: .leading).combined(with: .opacity)
+            ))
     }
-    
+
     private func getShadowColor(for mode: FirebaseManager.ChatMode, isSelected: Bool) -> Color {
         guard isSelected else { return .clear }
         switch mode {
@@ -132,7 +131,7 @@ struct InlineSearchField: View {
     @State private var searchText: String = ""
     @FocusState private var isFocused: Bool
     var onSearch: (String) -> Void
-    
+
     var body: some View {
         HStack {
             // Text field
@@ -141,13 +140,15 @@ struct InlineSearchField: View {
                 .padding(.horizontal, 12)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(colorScheme == .dark ? Color.black.opacity(0.3) : Color.gray.opacity(0.1))
+                        .fill(
+                            colorScheme == .dark
+                                ? Color.black.opacity(0.3) : Color.gray.opacity(0.1))
                 )
                 .focused($isFocused)
                 .onSubmit {
                     onSearch(searchText)
                 }
-            
+
             // Cancel button
             Button("Cancel") {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -172,32 +173,30 @@ struct HeaderView_Previews: PreviewProvider {
         Group {
             // Light mode preview
             HeaderView(
-                isThinking: .constant(false), 
+                isThinking: .constant(false),
                 showProfile: .constant(false),
                 isSearching: .constant(false),
                 currentMode: .yin,
-                onPillTapped: { _ in },
-                onSaveChat: {}
+                onPillTapped: { _ in }
             )
-                .previewLayout(.sizeThatFits)
-                .padding()
-                .background(Color.white)
-                .previewDisplayName("Light Mode")
-            
+            .previewLayout(.sizeThatFits)
+            .padding()
+            .background(Color.white)
+            .previewDisplayName("Light Mode")
+
             // Dark mode preview
             HeaderView(
-                isThinking: .constant(true), 
+                isThinking: .constant(true),
                 showProfile: .constant(false),
                 isSearching: .constant(false),
                 currentMode: .yang,
-                onPillTapped: { _ in },
-                onSaveChat: {}
+                onPillTapped: { _ in }
             )
-                .previewLayout(.sizeThatFits)
-                .padding()
-                .background(Color.black)
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Dark Mode (Loading)")
+            .previewLayout(.sizeThatFits)
+            .padding()
+            .background(Color.black)
+            .preferredColorScheme(.dark)
+            .previewDisplayName("Dark Mode (Loading)")
         }
     }
 }

@@ -103,9 +103,6 @@ struct ChatView: View {
             onPillTapped: { mode in
                 viewModel.currentMode = mode
                 print("Switched to mode: \(mode)")
-            },
-            onSaveChat: {
-                viewModel.saveCurrentChatSession()
             }
         )
     }
