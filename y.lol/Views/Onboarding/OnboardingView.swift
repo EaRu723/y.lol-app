@@ -8,30 +8,12 @@
 import Foundation
 import SwiftUI
 
-#if DEBUG
-// Development helper to manage onboarding state
-class OnboardingStateManager: ObservableObject {
-    static let shared = OnboardingStateManager()
-    
-    @AppStorage("welcomeShown") var hasCompletedOnboarding = true
-    
-    func resetOnboarding() {
-        hasCompletedOnboarding = true
-    }
-}
-#endif
-
 struct OnboardingView: View {
     @Binding var isPresented: Bool
     
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
     @AppStorage("welcomeShown") private var hasCompletedOnboarding = true
-    
-    #if DEBUG
-    @StateObject private var stateManager = OnboardingStateManager.shared
-    @State private var showingDebugMenu = false
-    #endif
     
     @StateObject private var authManager = AuthenticationManager.shared
     private let signInAppleHelper = SignInAppleHelper()
@@ -82,19 +64,10 @@ struct OnboardingView: View {
                 .ignoresSafeArea()
             
             VStack {
-                #if DEBUG
-                debugControls
-                #endif
-                
                 onboardingTabView
             }
         }
         .interactiveDismissDisabled(!registrationComplete)
-        #if DEBUG
-        .sheet(isPresented: $showingDebugMenu) {
-            debugMenuView
-        }
-        #endif
     }
     
     // MARK: - Subviews
@@ -167,56 +140,6 @@ struct OnboardingView: View {
             }
         }
     }
-    
-    // MARK: - Debug UI
-    
-    #if DEBUG
-    @ViewBuilder
-    private var debugControls: some View {
-        HStack {
-            Spacer()
-            Button(action: { showingDebugMenu = true }) {
-                Image(systemName: "gear")
-                    .font(.system(size: 20))
-                    .foregroundColor(colors.text.opacity(0.5))
-            }
-            .padding()
-        }
-    }
-    
-    @ViewBuilder
-    private var debugMenuView: some View {
-        NavigationView {
-            List {
-                Section(header: Text("Onboarding Debug Controls")) {
-                    Button("Reset Onboarding") {
-                        stateManager.resetOnboarding()
-                        showingDebugMenu = false
-                    }
-                    
-                    Button("Skip to Page 1") {
-                        currentPage = 0
-                        showingDebugMenu = false
-                    }
-                    
-                    Button("Skip to Page 2") {
-                        currentPage = 1
-                        showingDebugMenu = false
-                    }
-                    
-                    Button("Skip to Final Page") {
-                        currentPage = 2
-                        showingDebugMenu = false
-                    }
-                }
-            }
-            .navigationTitle("Debug Menu")
-            .navigationBarItems(trailing: Button("Done") {
-                showingDebugMenu = false
-            })
-        }
-    }
-    #endif
 }
 
 #Preview {
