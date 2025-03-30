@@ -44,15 +44,15 @@ struct OnboardingView: View {
     private var onboardingPages: [OnboardingPage] {
         return [
             OnboardingPage(
-                yinText: "welcome to a space of balance",
-                yangText: "where opposites can coexist",
+                yinText: "hi, welcome to Y. so glad you're here.",
+                yangText: "yooooo sup, good to meet you",
                 buttonText: "Sign in with Apple", 
                 hapticStyle: .light
             ),
             OnboardingPage(
-                yinText: "you could be anywhere right now",
-                yangText: "but you chose to be here",
-                buttonText: "Next", 
+                yinText: "what should we call you?",
+                yangText: "pick a handle that represents you",
+                buttonText: "Claim Handle", 
                 hapticStyle: .medium
             ),
             OnboardingPage(
@@ -108,6 +108,7 @@ struct OnboardingView: View {
         let page = onboardingPages[index]
         let isLastPage = index == onboardingPages.count - 1
         let showSignInButton = index == 0
+        let showHandleInput = index == 1
         
         return OnboardingPageView(
             yinText: page.yinText,
@@ -116,6 +117,7 @@ struct OnboardingView: View {
             hapticStyle: page.hapticStyle,
             isLastPage: isLastPage,
             showSignInButton: showSignInButton,
+            showHandleInput: showHandleInput,
             onContinue: {
                 withAnimation {
                     if isLastPage {
