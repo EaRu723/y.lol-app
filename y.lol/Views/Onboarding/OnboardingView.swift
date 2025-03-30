@@ -33,8 +33,8 @@ struct OnboardingView: View {
             OnboardingPage(
                 messages: [ // Use the 'messages' parameter
                     .init(sender: .yang, text: "yooooo sup"),
-                    .init(sender: .yang, text: "nice to meet u fr"),
                     .init(sender: .yin, text: "welcome to Y"),
+                    .init(sender: .yang, text: "nice to meet u fr"),
                     .init(sender: .yin, text: "so glad you're here"),
                     .init(sender: .yang, text: "u gonna sign in or what?")
                 ],
@@ -92,7 +92,6 @@ struct OnboardingView: View {
             pageView(for: 2)
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
-        .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
         .highPriorityGesture(DragGesture())
     }
     
