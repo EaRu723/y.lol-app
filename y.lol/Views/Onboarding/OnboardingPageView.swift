@@ -6,6 +6,7 @@ struct OnboardingPageView: View {
     let buttonText: String
     let hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle
     let isLastPage: Bool
+    let showSignInButton: Bool
     let onContinue: (() -> Void)?
     let onSignIn: (() -> Void)?
     
@@ -45,8 +46,8 @@ struct OnboardingPageView: View {
             Spacer()
             
             // Action button
-            if isLastPage {
-                // Sign in button for the last page
+            if showSignInButton {
+                // Sign in button
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: hapticStyle)
                     generator.impactOccurred()
@@ -62,7 +63,7 @@ struct OnboardingPageView: View {
                 .frame(width: 250)
                 .padding(.horizontal, YTheme.Spacing.large)
             } else {
-                // Continue button for other pages
+                // Continue button
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: hapticStyle)
                     generator.impactOccurred()
@@ -163,6 +164,7 @@ struct OnboardingPageView: View {
         buttonText: "Continue", 
         hapticStyle: .light,
         isLastPage: false,
+        showSignInButton: false,
         onContinue: {},
         onSignIn: nil
     )

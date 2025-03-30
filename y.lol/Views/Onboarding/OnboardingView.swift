@@ -37,6 +37,7 @@ struct OnboardingView: View {
     private let signInAppleHelper = SignInAppleHelper()
     
     @State private var registrationComplete = false
+    @State private var isSignedIn = false
     @State private var currentPage = 0
     
     // Move content creation to a separate function
@@ -45,7 +46,7 @@ struct OnboardingView: View {
             OnboardingPage(
                 yinText: "welcome to a space of balance",
                 yangText: "where opposites can coexist",
-                buttonText: "Continue", 
+                buttonText: "Sign in with Apple", 
                 hapticStyle: .light
             ),
             OnboardingPage(
@@ -56,8 +57,8 @@ struct OnboardingView: View {
             ),
             OnboardingPage(
                 yinText: "embrace the duality",
-                yangText: "sign in to begin",
-                buttonText: "Sign in with Apple", 
+                yangText: "let's begin",
+                buttonText: "Get Started", 
                 hapticStyle: .heavy
             )
         ]
@@ -106,6 +107,7 @@ struct OnboardingView: View {
     private func pageView(for index: Int) -> some View {
         let page = onboardingPages[index]
         let isLastPage = index == onboardingPages.count - 1
+        let showSignInButton = index == 0
         
         return OnboardingPageView(
             yinText: page.yinText,
@@ -113,12 +115,19 @@ struct OnboardingView: View {
             buttonText: page.buttonText,
             hapticStyle: page.hapticStyle,
             isLastPage: isLastPage,
-            onContinue: isLastPage ? nil : {
+            showSignInButton: showSignInButton,
+            onContinue: {
                 withAnimation {
-                    currentPage = index + 1
+                    if isLastPage {
+                        hasCompletedOnboarding = true
+                        registrationComplete = true
+                        isPresented = false
+                    } else {
+                        currentPage = index + 1
+                    }
                 }
             },
-            onSignIn: isLastPage ? handleSignIn : nil
+            onSignIn: showSignInButton ? handleSignIn : nil
         )
         .tag(index)
     }
@@ -130,10 +139,10 @@ struct OnboardingView: View {
             do {
                 let tokens = try await signInAppleHelper.startSignInWithAppleFlow()
                 try await authManager.signInWithApple(tokens: tokens)
+                isSignedIn = true
+                // Move to the next page instead of dismissing
                 withAnimation {
-                    hasCompletedOnboarding = true
-                    registrationComplete = true
-                    isPresented = false
+                    currentPage = 1
                 }
             } catch {
                 print("Failed to sign in with Apple: \(error)")
