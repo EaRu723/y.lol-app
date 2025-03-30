@@ -9,6 +9,7 @@ struct OnboardingPageView: View {
     let showHandleInput: Bool
     let onContinue: (() -> Void)?
     let onSignIn: (() -> Void)?
+    let onBack: (() -> Void)?
     
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
@@ -18,6 +19,7 @@ struct OnboardingPageView: View {
     @State private var typingSender: Sender? = nil
     @State private var currentMessageIndex: Int = 0
     @State private var animationTask: Task<Void, Never>? = nil
+    @State private var isAnimationComplete = false
     
     @State private var handle: String = ""
     
@@ -38,14 +40,30 @@ struct OnboardingPageView: View {
                 .frame(minHeight: 150)
 
             if showHandleInput {
-                handleInputView
-                    .padding(.bottom, 10)
+                VStack {
+                    if isAnimationComplete {
+                        handleInputView
+                            .padding(.bottom, 10)
+                            .transition(.opacity.animation(.easeInOut(duration: 0.5)))
+                    } else {
+                        Spacer().frame(height: 80)
+                    }
+                }
+                .frame(minHeight: 80)
             }
             
             Spacer()
             
-            actionButtonView
-            
+            VStack {
+                 if isAnimationComplete {
+                     actionButtonsContainer
+                         .transition(.opacity.animation(.easeInOut(duration: 0.5)))
+                 } else {
+                     Spacer().frame(height: 50)
+                 }
+            }
+            .frame(height: 50)
+
             Spacer().frame(height: 40)
         }
         .onAppear {
@@ -117,53 +135,91 @@ struct OnboardingPageView: View {
     }
     
     @ViewBuilder
-    private var actionButtonView: some View {
+    private var actionButtonsContainer: some View {
          if showSignInButton {
-             Button(action: {
-                 let generator = UIImpactFeedbackGenerator(style: hapticStyle)
-                 generator.impactOccurred()
-                 onSignIn?()
-             }) {
-                 SignInWithAppleButtonView(
-                     type: .signIn,
-                     style: colorScheme == .dark ? .white : .black,
-                     cornerRadius: 10
-                 )
-                 .frame(height: 50)
-             }
-             .frame(width: 250)
-             .padding(.horizontal, YTheme.Spacing.large)
+             signInButtonView
          } else {
-             Button(action: {
-                 let generator = UIImpactFeedbackGenerator(style: hapticStyle)
-                 generator.impactOccurred()
-                 onContinue?()
-             }) {
-                 HStack {
-                     Image(systemName: "arrow.right")
-                         .font(.system(size: 20))
-                     
-                     Text(buttonText)
-                         .font(YTheme.Typography.body)
+             HStack(spacing: 15) {
+                 if let onBack = onBack {
+                     Button(action: {
+                         let generator = UIImpactFeedbackGenerator(style: .soft)
+                         generator.impactOccurred()
+                         onBack()
+                     }) {
+                         HStack {
+                             Image(systemName: "arrow.left")
+                                 .font(.system(size: 20))
+                             Text("Back")
+                                 .font(YTheme.Typography.body)
+                         }
+                         .foregroundColor(colors.text.opacity(0.7))
+                         .padding(.horizontal, 20)
+                         .padding(.vertical, 12)
+                         .background(
+                             RoundedRectangle(cornerRadius: 10)
+                                 .fill(colors.accent.opacity(0.01))
+                         )
+                         .overlay(
+                             RoundedRectangle(cornerRadius: 10)
+                                 .stroke(colors.text.opacity(0.5), lineWidth: 1)
+                         )
+                     }
+                     .fixedSize(horizontal: true, vertical: false)
                  }
-                 .foregroundColor(colors.text)
-                 .padding(.horizontal, 30)
-                 .padding(.vertical, 12)
-                 .background(
-                     RoundedRectangle(cornerRadius: 10)
-                         .fill(colors.accent.opacity(0.01))
-                 )
-                 .overlay(
-                     RoundedRectangle(cornerRadius: 10)
-                         .stroke(colors.text, lineWidth: 1)
-                 )
+
+                 continueButtonView
              }
-             .fixedSize(horizontal: true, vertical: false)
-             .frame(maxWidth: 250)
-             .padding(.horizontal, YTheme.Spacing.large)
-             .disabled(showHandleInput && handle.isEmpty)
-             .opacity(showHandleInput && handle.isEmpty ? 0.5 : 1.0)
+             .frame(maxWidth: 350)
          }
+    }
+    
+    @ViewBuilder
+    private var signInButtonView: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: hapticStyle)
+            generator.impactOccurred()
+            onSignIn?()
+        }) {
+            SignInWithAppleButtonView(
+                type: .signIn,
+                style: colorScheme == .dark ? .white : .black,
+                cornerRadius: 10
+            )
+            .frame(height: 50)
+        }
+        .frame(width: 250)
+        .padding(.horizontal, YTheme.Spacing.large)
+    }
+    
+    @ViewBuilder
+    private var continueButtonView: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: hapticStyle)
+            generator.impactOccurred()
+            onContinue?()
+        }) {
+            HStack {
+                Text(buttonText)
+                    .font(YTheme.Typography.body)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 20))
+            }
+            .foregroundColor(colors.text)
+            .padding(.horizontal, 30)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(colors.accent.opacity(0.01))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(colors.text, lineWidth: 1)
+            )
+        }
+        .fixedSize(horizontal: true, vertical: false)
+        .padding(.horizontal, YTheme.Spacing.large)
+        .disabled(showHandleInput && handle.isEmpty)
+        .opacity(showHandleInput && handle.isEmpty ? 0.5 : 1.0)
     }
     
     private func startTypingAnimation() {
@@ -173,6 +229,7 @@ struct OnboardingPageView: View {
         isTyping = false
         typingSender = nil
         currentMessageIndex = 0
+        isAnimationComplete = false
         
         animationTask = Task {
             await showNextMessageWithTyping()
@@ -187,6 +244,7 @@ struct OnboardingPageView: View {
             typingSender = nil
             let generator = UIImpactFeedbackGenerator(style: hapticStyle)
             generator.impactOccurred()
+            isAnimationComplete = true
             return
         }
 
@@ -243,7 +301,8 @@ struct OnboardingPageView: View {
         showSignInButton: false,
         showHandleInput: false,
         onContinue: {},
-        onSignIn: nil
+        onSignIn: nil,
+        onBack: nil
     )
     .padding()
     .background(Color(.systemGray5))

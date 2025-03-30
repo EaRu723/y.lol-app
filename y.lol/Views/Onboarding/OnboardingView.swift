@@ -113,7 +113,7 @@ struct OnboardingView: View {
         }
         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
         .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
-        .gesture(DragGesture())
+        .highPriorityGesture(DragGesture())
     }
     
     private func pageView(for index: Int) -> some View {
@@ -140,7 +140,12 @@ struct OnboardingView: View {
                     }
                 }
             },
-            onSignIn: showSignInButton ? handleSignIn : nil
+            onSignIn: showSignInButton ? handleSignIn : nil,
+            onBack: index > 0 ? {
+                withAnimation {
+                    currentPage = index - 1
+                }
+            } : nil
         )
         .tag(index)
     }
