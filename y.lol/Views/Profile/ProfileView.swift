@@ -110,7 +110,7 @@ struct ProfileView: View {
                                             Text("🔥")
                                                 .font(.system(size: 24))
                                             Text("\(user.streak)")
-                                                .font(YTheme.Typography.title)
+                                                .font(YTheme.Typography.subtitle)
                                                 .foregroundColor(colors.text)
                                         }
                                         HStack {
@@ -118,14 +118,14 @@ struct ProfileView: View {
                                             Text("😇")
                                                 .font(.system(size: 24))
                                                 Text("\(user.yinScore) %")
-                                                .font(YTheme.Typography.title)
+                                                .font(YTheme.Typography.subtitle)
                                                 .foregroundColor(colors.text)
                                             }
                                              HStack {
                                             Text("😈")
                                                 .font(.system(size: 24))
                                                  Text("\(user.yangScore) %")
-                                                .font(YTheme.Typography.title)
+                                                .font(YTheme.Typography.subtitle)
                                                 .foregroundColor(colors.text)
                                             }
                                         }
@@ -299,7 +299,7 @@ struct ProfileView: View {
                 Text("🔥")
                     .font(.system(size: 24))
                 Text("\(user.streak)")
-                    .font(YTheme.Typography.title)
+                    .font(YTheme.Typography.subtitle)
                     .foregroundColor(colors.text)
             }
             
@@ -309,14 +309,14 @@ struct ProfileView: View {
                     Text("😇")
                         .font(.system(size: 24))
                     Text("\(user.yinScore)%")
-                        .font(YTheme.Typography.title)
+                        .font(YTheme.Typography.subtitle)
                         .foregroundColor(colors.text)
                 }
                 HStack {
                     Text("😈")
                         .font(.system(size: 24))
                     Text("\(user.yangScore)%")
-                        .font(YTheme.Typography.title)
+                        .font(YTheme.Typography.subtitle)
                         .foregroundColor(colors.text)
                 }
             }

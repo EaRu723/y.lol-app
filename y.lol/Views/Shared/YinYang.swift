@@ -10,10 +10,18 @@ import SwiftUI
 struct SimplifiedYinYangView: View {
     var size: CGFloat
     var colors: (light: Color, dark: Color)
+    var borderWidth: CGFloat
+    var borderColor: Color
     
-    init(size: CGFloat = 200, lightColor: Color = .white, darkColor: Color = .black) {
+    init(size: CGFloat = 200, 
+         lightColor: Color = .white, 
+         darkColor: Color = .black, 
+         borderWidth: CGFloat = 2, 
+         borderColor: Color = .black) {
         self.size = size
         self.colors = (lightColor, darkColor)
+        self.borderWidth = borderWidth
+        self.borderColor = borderColor
     }
     
     var body: some View {
@@ -50,6 +58,10 @@ struct SimplifiedYinYangView: View {
                     .fill(colors.dark)
                     .frame(width: diameter / 6, height: diameter / 6)
                     .offset(y: diameter / 4)
+                
+                // Border
+                Circle()
+                    .stroke(borderColor, lineWidth: borderWidth)
             }
             .frame(width: diameter, height: diameter)
             .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
@@ -75,18 +87,32 @@ struct YinYangLogoView: View {
     var size: CGFloat
     var isLoading: Bool
     var colors: (light: Color, dark: Color)
+    var borderWidth: CGFloat
+    var borderColor: Color
     
     @State private var rotation: Double = 0
     
-    init(size: CGFloat = 40, isLoading: Bool = false,
-         lightColor: Color = .white, darkColor: Color = .black) {
+    init(size: CGFloat = 40, 
+         isLoading: Bool = false,
+         lightColor: Color = .white, 
+         darkColor: Color = .black,
+         borderWidth: CGFloat = 2,
+         borderColor: Color = .black) {
         self.size = size
         self.isLoading = isLoading
         self.colors = (lightColor, darkColor)
+        self.borderWidth = borderWidth
+        self.borderColor = borderColor
     }
     
     var body: some View {
-        SimplifiedYinYangView(size: size, lightColor: colors.light, darkColor: colors.dark)
+        SimplifiedYinYangView(
+            size: size, 
+            lightColor: colors.light, 
+            darkColor: colors.dark,
+            borderWidth: borderWidth,
+            borderColor: borderColor
+        )
             .rotationEffect(.degrees(rotation))
             .onChange(of: isLoading) { _, newValue in
                 if newValue {
