@@ -100,23 +100,43 @@ struct OnboardingView: View {
         let showHandleInput = index == 1
         
         return OnboardingPageView(
-            messages: page.messages,
+            index: index,
+            currentPage: $currentPage, messages: page.messages,
             buttonText: page.buttonText,
             hapticStyle: page.hapticStyle,
             isLastPage: isLastPage,
             showSignInButton: showSignInButton,
             showHandleInput: showHandleInput,
             onContinue: {
-                if showHandleInput {
-                    claimHandle()
-                } else {
-                    withAnimation {
-                        if isLastPage {
-                            hasCompletedOnboarding = true
-                            registrationComplete = true
-                            isPresented = false
-                        } else {
-                            currentPage = index + 1
+                Task {
+                    if showHandleInput {
+                        isClaimingHandle = true
+                        claimError = nil
+                        do {
+                            try await claimHandle()
+                            await MainActor.run {
+                                withAnimation {
+                                    currentPage = index + 1
+                                }
+                                isClaimingHandle = false
+                            }
+                        } catch {
+                            await MainActor.run {
+                                claimError = "Failed to claim handle: \(error.localizedDescription)"
+                                isClaimingHandle = false
+                            }
+                        }
+                    } else {
+                        await MainActor.run {
+                            withAnimation {
+                                if isLastPage {
+                                    hasCompletedOnboarding = true
+                                    registrationComplete = true
+                                    isPresented = false
+                                } else {
+                                    currentPage = index + 1
+                                }
+                            }
                         }
                     }
                 }
@@ -128,7 +148,8 @@ struct OnboardingView: View {
                     claimError = nil
                 }
             } : nil,
-            handle: $handle
+            handle: $handle,
+            isClaimingHandle: $isClaimingHandle
         )
         .tag(index)
         .overlay(alignment: .bottom) {
@@ -162,40 +183,27 @@ struct OnboardingView: View {
         }
     }
     
-    private func claimHandle() {
+    private func claimHandle() async throws {
         guard !handle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            claimError = "Handle cannot be empty."
-            return
+            throw NSError(domain: "OnboardingView", code: 1, userInfo: [NSLocalizedDescriptionKey: "Handle cannot be empty."])
         }
-        let allowedCharacters = CharacterSet.alphanumerics
+        let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_."))
         if handle.rangeOfCharacter(from: allowedCharacters.inverted) != nil {
-            claimError = "Handle can only contain letters and numbers."
-            return
+             throw NSError(domain: "OnboardingView", code: 2, userInfo: [NSLocalizedDescriptionKey: "Handle can only contain letters, numbers, underscores, and periods."])
+        }
+        guard handle.count >= 3 else {
+            throw NSError(domain: "OnboardingView", code: 3, userInfo: [NSLocalizedDescriptionKey: "Handle must be at least 3 characters long."])
         }
 
-        isClaimingHandle = true
-        claimError = nil
-
-        Task {
-            do {
-                guard let userId = Auth.auth().currentUser?.uid else {
-                    throw URLError(.userAuthenticationRequired)
-                }
-                try await authManager.updateUserHandle(userId: userId, handle: handle)
-
-                await MainActor.run {
-                    withAnimation {
-                        currentPage = 2
-                        isClaimingHandle = false
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    claimError = "Failed to claim handle. \(error.localizedDescription)"
-                    isClaimingHandle = false
-                }
-            }
+        guard let userId = Auth.auth().currentUser?.uid else {
+            throw URLError(.userAuthenticationRequired)
         }
+        let taken = try await authManager.isHandleTaken(handle)
+        if taken {
+            throw NSError(domain: "OnboardingView", code: 4, userInfo: [NSLocalizedDescriptionKey: "This handle is already taken."])
+        }
+
+        try await authManager.updateUserHandle(userId: userId, handle: handle)
     }
 }
 
