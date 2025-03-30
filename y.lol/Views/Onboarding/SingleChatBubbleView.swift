@@ -12,11 +12,7 @@ struct SingleChatBubbleView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
-            if message.sender == .yin {
-                EmojiView(emoji: emoji)
-            } else {
-                Spacer()
-            }
+            EmojiView(emoji: emoji)
 
             Text(message.text)
                 .font(YTheme.Typography.serif(size: 16, weight: .light))
@@ -31,13 +27,9 @@ struct SingleChatBubbleView: View {
                 )
                 .frame(maxWidth: UIScreen.main.bounds.width * 0.67, alignment: .leading)
 
-            if message.sender == .yang {
-                EmojiView(emoji: emoji)
-            } else {
-                Spacer()
-            }
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     private func EmojiView(emoji: String) -> some View {
@@ -57,21 +49,13 @@ struct TypingBubbleView: View {
 
     var body: some View {
          HStack(alignment: .top, spacing: 4) {
-             if sender == .yin {
-                 EmojiView(emoji: emoji)
-             } else {
-                 Spacer()
-             }
+             EmojiView(emoji: emoji)
 
              TypingIndicatorView()
 
-             if sender == .yang {
-                 EmojiView(emoji: emoji)
-             } else {
-                 Spacer()
-             }
+             Spacer()
          }
-         .frame(maxWidth: .infinity)
+         .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     private func EmojiView(emoji: String) -> some View {
