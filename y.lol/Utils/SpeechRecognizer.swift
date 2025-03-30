@@ -41,22 +41,66 @@ actor SpeechRecognizer: ObservableObject {
      */
     init() {
         recognizer = SFSpeechRecognizer()
+        // Don't request permissions here anymore
+        // Task {
+        //     do {
+        //         guard await SFSpeechRecognizer.hasAuthorizationToRecognize() else {
+        //             throw RecognizerError.notAuthorizedToRecognize
+        //         }
+        //         guard await AVAudioSession.sharedInstance().hasPermissionToRecord() else {
+        //             throw RecognizerError.notPermittedToRecord
+        //         }
+        //     } catch {
+        //         transcribe(error)
+        //     }
+        // }
+        
+        // Basic check if recognizer is available, but don't trigger authorization
         guard recognizer != nil else {
             transcribe(RecognizerError.nilRecognizer)
             return
         }
+        guard recognizer!.isAvailable else {
+            transcribe(RecognizerError.recognizerIsUnavailable)
+            return
+        }
+    }
+    
+    /// Call this function immediately before starting transcription to ensure permissions are granted.
+    /// It will request permissions if they haven't been determined yet.
+    func requestPermissionsIfNeeded() async throws {
+        guard SFSpeechRecognizer.authorizationStatus() != .denied,
+              SFSpeechRecognizer.authorizationStatus() != .restricted else {
+            throw RecognizerError.notAuthorizedToRecognize
+        }
+        guard AVAudioSession.sharedInstance().recordPermission != .denied else {
+            throw RecognizerError.notPermittedToRecord
+        }
         
-        Task {
-            do {
-                guard await SFSpeechRecognizer.hasAuthorizationToRecognize() else {
-                    throw RecognizerError.notAuthorizedToRecognize
-                }
-                guard await AVAudioSession.sharedInstance().hasPermissionToRecord() else {
-                    throw RecognizerError.notPermittedToRecord
-                }
-            } catch {
-                transcribe(error)
+        // Request microphone permission if needed
+        if AVAudioSession.sharedInstance().recordPermission == .undetermined {
+            guard await AVAudioSession.sharedInstance().hasPermissionToRecord() else {
+                throw RecognizerError.notPermittedToRecord
             }
+        }
+        
+        // Request speech recognition permission if needed
+        if SFSpeechRecognizer.authorizationStatus() == .notDetermined {
+            guard await SFSpeechRecognizer.hasAuthorizationToRecognize() else {
+                throw RecognizerError.notAuthorizedToRecognize
+            }
+        }
+        
+        // Re-check after potential requests
+        guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
+             throw RecognizerError.notAuthorizedToRecognize
+        }
+        guard AVAudioSession.sharedInstance().recordPermission == .granted else {
+             throw RecognizerError.notPermittedToRecord
+        }
+        
+        guard let recognizer = self.recognizer, recognizer.isAvailable else {
+             throw RecognizerError.recognizerIsUnavailable
         }
     }
     
@@ -84,8 +128,10 @@ actor SpeechRecognizer: ObservableObject {
      
      Creates a `SFSpeechRecognitionTask` that transcribes speech to text until you call `stopTranscribing()`.
      The resulting transcription is continuously written to the published `transcript` property.
+     
+     - Important: Call `requestPermissionsIfNeeded()` before calling this method.
      */
-    private func transcribe() {
+    func transcribe() {
         guard let recognizer, recognizer.isAvailable else {
             self.transcribe(RecognizerError.recognizerIsUnavailable)
             return
