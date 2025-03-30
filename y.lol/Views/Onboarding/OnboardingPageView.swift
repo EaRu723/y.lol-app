@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct OnboardingPageView: View {
+    let index: Int
+    @Binding var currentPage: Int
+
     let messages: [OnboardingMessage]
     let buttonText: String
     let hapticStyle: UIImpactFeedbackGenerator.FeedbackStyle
@@ -10,6 +13,8 @@ struct OnboardingPageView: View {
     let onContinue: (() -> Void)?
     let onSignIn: (() -> Void)?
     let onBack: (() -> Void)?
+    @Binding var handle: String
+    @Binding var isClaimingHandle: Bool
     
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
@@ -20,8 +25,7 @@ struct OnboardingPageView: View {
     @State private var currentMessageIndex: Int = 0
     @State private var animationTask: Task<Void, Never>? = nil
     @State private var isAnimationComplete = false
-    
-    @State private var handle: String = ""
+    @State private var hasAnimatedIn = false
     
     var body: some View {
         VStack(spacing: 40) {
@@ -59,7 +63,7 @@ struct OnboardingPageView: View {
                      actionButtonsContainer
                          .transition(.opacity.animation(.easeInOut(duration: 0.5)))
                  } else {
-                     Spacer().frame(height: 50)
+                     Color.clear.frame(height: 50)
                  }
             }
             .frame(height: 50)
@@ -67,10 +71,14 @@ struct OnboardingPageView: View {
             Spacer().frame(height: 40)
         }
         .onAppear {
-            startTypingAnimation()
+            if currentPage == index && !hasAnimatedIn {
+                startTypingAnimation()
+            }
         }
-        .onChange(of: messages.map { $0.id }) { _ in
-            startTypingAnimation()
+        .onChange(of: currentPage) { newPageIndex in
+            if newPageIndex == index && !hasAnimatedIn {
+                startTypingAnimation()
+            }
         }
         .onDisappear {
             animationTask?.cancel()
@@ -125,6 +133,7 @@ struct OnboardingPageView: View {
                     .disableAutocorrection(true)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 10)
+                    .disabled(isClaimingHandle)
             }
             .background(
                 RoundedRectangle(cornerRadius: 8)
@@ -132,6 +141,7 @@ struct OnboardingPageView: View {
             )
             .padding(.horizontal, 40)
         }
+        .opacity(isClaimingHandle ? 0.7 : 1.0)
     }
     
     @ViewBuilder
@@ -218,8 +228,8 @@ struct OnboardingPageView: View {
         }
         .fixedSize(horizontal: true, vertical: false)
         .padding(.horizontal, YTheme.Spacing.large)
-        .disabled(showHandleInput && handle.isEmpty)
-        .opacity(showHandleInput && handle.isEmpty ? 0.5 : 1.0)
+        .disabled((showHandleInput && handle.isEmpty) || isClaimingHandle)
+        .opacity((showHandleInput && handle.isEmpty) || isClaimingHandle ? 0.5 : 1.0)
     }
     
     private func startTypingAnimation() {
@@ -233,6 +243,11 @@ struct OnboardingPageView: View {
         
         animationTask = Task {
             await showNextMessageWithTyping()
+            if !Task.isCancelled {
+                 await MainActor.run {
+                    hasAnimatedIn = true
+                 }
+            }
         }
     }
     
@@ -289,7 +304,8 @@ struct OnboardingPageView: View {
 
 #Preview {
     OnboardingPageView(
-        messages: [
+        index: 0,
+        currentPage: .constant(0), messages: [
             OnboardingMessage(sender: .yin, text: "First message from Yin."),
             OnboardingMessage(sender: .yang, text: "Then Yang responds."),
             OnboardingMessage(sender: .yang, text: "Yang adds another thought."),
@@ -302,7 +318,9 @@ struct OnboardingPageView: View {
         showHandleInput: false,
         onContinue: {},
         onSignIn: nil,
-        onBack: nil
+        onBack: nil,
+        handle: .constant("test"),
+        isClaimingHandle: .constant(false)
     )
     .padding()
     .background(Color(.systemGray5))
