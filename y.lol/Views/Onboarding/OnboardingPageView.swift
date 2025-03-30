@@ -10,6 +10,7 @@ struct OnboardingPageView: View {
     let onContinue: (() -> Void)?
     let onSignIn: (() -> Void)?
     let onBack: (() -> Void)?
+    @Binding var handle: String
     
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
@@ -20,8 +21,6 @@ struct OnboardingPageView: View {
     @State private var currentMessageIndex: Int = 0
     @State private var animationTask: Task<Void, Never>? = nil
     @State private var isAnimationComplete = false
-    
-    @State private var handle: String = ""
     
     var body: some View {
         VStack(spacing: 40) {
@@ -302,7 +301,8 @@ struct OnboardingPageView: View {
         showHandleInput: false,
         onContinue: {},
         onSignIn: nil,
-        onBack: nil
+        onBack: nil,
+        handle: .constant("test")
     )
     .padding()
     .background(Color(.systemGray5))
