@@ -32,9 +32,11 @@ struct OnboardingView: View {
             // Page 1: Sign In
             OnboardingPage(
                 messages: [ // Use the 'messages' parameter
-                    .init(sender: .yin, text: "hi, welcome to Y. so glad you're here."), // Create OnboardingMessage instances
-                    .init(sender: .yang, text: "yooooo sup, nice to meet u fr"),
-                    .init(sender: .yin, text: "let's get you signed in.")
+                    .init(sender: .yang, text: "yooooo sup"),
+                    .init(sender: .yang, text: "nice to meet u fr"),
+                    .init(sender: .yin, text: "welcome to Y"),
+                    .init(sender: .yin, text: "so glad you're here"),
+                    .init(sender: .yang, text: "u gonna sign in or what?")
                 ],
                 buttonText: "Sign in with Apple",
                 hapticStyle: .light
@@ -42,10 +44,9 @@ struct OnboardingView: View {
             // Page 2: Handle Claim
             OnboardingPage(
                 messages: [ // Use the 'messages' parameter
-                    .init(sender: .yin, text: "what should we call you?"),
-                    .init(sender: .yang, text: "pick a handle that represents you")
-                    // You can add more messages here if desired, e.g.:
-                    // .init(sender: .yang, text: "make it cool.")
+                    .init(sender: .yang, text: "ok now that boring sh*t out of the way"),
+                    .init(sender: .yang, text: "u got a name?"),
+                    .init(sender: .yin, text: "pick a handle that represents you"),
                 ],
                 buttonText: "Claim Handle",
                 hapticStyle: .medium
@@ -53,8 +54,10 @@ struct OnboardingView: View {
             // Page 3: Get Started
             OnboardingPage(
                 messages: [ // Use the 'messages' parameter
-                    .init(sender: .yin, text: "embrace the duality"),
-                    .init(sender: .yang, text: "let's begin")
+                    .init(sender: .yang, text: "yooo (name)"),
+                    .init(sender: .yang, text: "that's a vibe"),
+                    .init(sender: .yin, text: "namaste (name)"),
+                    .init(sender: .yin, text: "let's begin")
                 ],
                 buttonText: "Get Started",
                 hapticStyle: .heavy
@@ -99,9 +102,22 @@ struct OnboardingView: View {
         let showSignInButton = index == 0
         let showHandleInput = index == 1
         
+        // Dynamically create messages for the last page using the handle
+        let messages: [OnboardingMessage]
+        if index == 2 {
+            messages = [
+                .init(sender: .yang, text: "yooo \(handle)"),
+                .init(sender: .yang, text: "that's a vibe"),
+                .init(sender: .yin, text: "namaste \(handle)"),
+                .init(sender: .yin, text: "let's begin")
+            ]
+        } else {
+            messages = page.messages
+        }
+        
         return OnboardingPageView(
             index: index,
-            currentPage: $currentPage, messages: page.messages,
+            currentPage: $currentPage, messages: messages,
             buttonText: page.buttonText,
             hapticStyle: page.hapticStyle,
             isLastPage: isLastPage,
