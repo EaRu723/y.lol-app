@@ -13,7 +13,10 @@ struct OnboardingPageView: View {
     @Environment(\.themeColors) private var colors
     @State private var displayedYinText = ""
     @State private var displayedYangText = ""
-    @State private var isTyping = false
+    @State private var isYinTyping = false
+    @State private var isYangTyping = false
+    @State private var showYinMessage = false
+    @State private var showYangMessage = false
     
     var body: some View {
         VStack(spacing: 40) {
@@ -28,10 +31,14 @@ struct OnboardingPageView: View {
             
             Spacer()
             
-            // Chat-style messages
+            // Chat-style messages with typing animations
             OnboardingChatBubbleView(
                 yinText: displayedYinText,
-                yangText: displayedYangText
+                yangText: displayedYangText,
+                isYinTyping: isYinTyping,
+                isYangTyping: isYangTyping,
+                showYinMessage: showYinMessage,
+                showYangMessage: showYangMessage
             )
             .frame(height: 120)
             
@@ -99,37 +106,51 @@ struct OnboardingPageView: View {
     }
     
     private func startTypingAnimation() {
+        // Reset all animation states
         displayedYinText = ""
         displayedYangText = ""
-        isTyping = true
+        showYinMessage = false
+        showYangMessage = false
         
-        // Animate yin text first
-        animateText(text: yinText, into: \Self.displayedYinText) { 
-            // Then animate yang text
-            animateText(text: yangText, into: \Self.displayedYangText) {
-                isTyping = false
-                // Provide haptic feedback when both text animations complete
-                let generator = UIImpactFeedbackGenerator(style: hapticStyle)
-                generator.impactOccurred()
+        // Begin with Yin typing animation
+        isYinTyping = true
+        
+        // After a short "typing" period, show the Yin message
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            isYinTyping = false
+            
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                showYinMessage = true
+                displayedYinText = yinText
             }
-        }
-    }
-    
-    private func animateText(text: String, into keyPath: ReferenceWritableKeyPath<OnboardingPageView, String>, completion: @escaping () -> Void) {
-        var charIndex = 0
-        
-        if text.isEmpty {
-            completion()
-            return
-        }
-        
-        Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { timer in
-            if charIndex < text.count {
-                self[keyPath: keyPath] += String(text[text.index(text.startIndex, offsetBy: charIndex)])
-                charIndex += 1
+            
+            // After Yin message appears, start Yang typing
+            if !yangText.isEmpty {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    isYangTyping = true
+                    
+                    // After a short "typing" period, show the Yang message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        isYangTyping = false
+                        
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            showYangMessage = true
+                            displayedYangText = yangText
+                        }
+                        
+                        // Provide haptic feedback when both animations complete
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            let generator = UIImpactFeedbackGenerator(style: hapticStyle)
+                            generator.impactOccurred()
+                        }
+                    }
+                }
             } else {
-                timer.invalidate()
-                completion()
+                // If no Yang message, provide haptic feedback after Yin animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    let generator = UIImpactFeedbackGenerator(style: hapticStyle)
+                    generator.impactOccurred()
+                }
             }
         }
     }
