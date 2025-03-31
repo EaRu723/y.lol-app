@@ -239,7 +239,7 @@ struct ChatView: View {
         VStack {
             MessageInputView(
                 messageText: $messageText,
-                isActionsExpanded: $isActionsExpanded,
+//                isActionsExpanded: $isActionsExpanded,
                 selectedImage: $selectedImage,
                 onSend: sendMessage,
                 onCameraButtonTapped: handleCameraButtonTapped,

@@ -4,9 +4,9 @@ struct MessageInputView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Binding var messageText: String
     @FocusState private var isFocused: Bool
-    @Binding var isActionsExpanded: Bool
     @Binding var selectedImage: UIImage?
     @State private var textEditorHeight: CGFloat = 36
+    @State private var showAttachmentButtons: Bool = false
     @EnvironmentObject var firebaseManager: FirebaseManager
     @StateObject private var viewModel = ChatViewModel()
     @StateObject private var voiceViewModel = VoiceTranscriptionViewModel()
@@ -50,29 +50,41 @@ struct MessageInputView: View {
                 )
             }
             
-            // Action buttons popup
-            if isActionsExpanded {
-                ChatInputButtonsView(
-                    messageText: $messageText,
-                    onCameraButtonTapped: onCameraButtonTapped,
-                    onPhotoLibraryButtonTapped: onPhotoLibraryButtonTapped
-                )
-            }
-            
             // Input bar with rounded corners
             HStack(spacing: 12) {
-                // Plus button on the left
+                // Plus/Toggle button
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        isActionsExpanded.toggle()
+                        showAttachmentButtons.toggle()
+                        // Optionally hide keyboard if buttons are shown
+                        // if showAttachmentButtons { isFocused = false }
                     }
                 }) {
-                    Image(systemName: isActionsExpanded ? "chevron.down.circle.fill" : "plus.circle.fill")
+                    Image(systemName: showAttachmentButtons ? "chevron.left.circle.fill" : "plus.circle.fill")
                         .resizable()
                         .frame(width: 28, height: 28)
                         .foregroundColor(colorScheme == .dark ? .white : .black)
                 }
-                
+
+                // Conditionally show attachment buttons inline
+                if showAttachmentButtons {
+                    // Camera button
+                    Button(action: onCameraButtonTapped) {
+                        Image(systemName: "camera")
+                            .frame(width: 28, height: 28)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                    }
+                    .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
+
+                    // Photo library button
+                    Button(action: onPhotoLibraryButtonTapped) {
+                        Image(systemName: "photo")
+                            .frame(width: 28, height: 28)
+                            .foregroundColor(colorScheme == .dark ? .white : .black)
+                    }
+                    .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
+                }
+
                 // Text field with rounded corners and gray border
                 HStack(alignment: .bottom) {
                     ZStack(alignment: .leading) {
@@ -127,11 +139,17 @@ struct MessageInputView: View {
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedImage != nil)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: voiceViewModel.isRecording)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showAttachmentButtons)
+        // Add onChange modifier for messageText
+        .onChange(of: messageText) { _, newValue in
+            if !newValue.isEmpty && showAttachmentButtons {
+                showAttachmentButtons = false
+            }
+        }
+        // Add onChange modifier for isFocused
         .onChange(of: isFocused) { _, newValue in
-            if newValue {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                    isActionsExpanded = false
-                }
+            if newValue && showAttachmentButtons {
+                showAttachmentButtons = false
             }
         }
     }

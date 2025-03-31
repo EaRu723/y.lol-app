@@ -54,50 +54,49 @@ struct ChatInputButtonsView: View {
                         .clipShape(Circle())
                 }
                 
-                Button(action: { 
-                    messageText += "@huxley "
-                }) {
-                    Image(systemName: "at")
-                        .foregroundColor(colorScheme == .dark ? .white : .black)
-                        .frame(width: 40, height: 40)
-                        .background(colorScheme == .dark ? Color.black : Color.white)
-                        .overlay(
-                            Circle()
-                                .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                        )
-                        .clipShape(Circle())
-                }
+//                Button(action: { 
+//                    messageText += "@huxley "
+//                }) {
+//                    Image(systemName: "at")
+//                        .foregroundColor(colorScheme == .dark ? .white : .black)
+//                        .frame(width: 40, height: 40)
+//                        .background(colorScheme == .dark ? Color.black : Color.white)
+//                        .overlay(
+//                            Circle()
+//                                .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+//                        )
+//                        .clipShape(Circle())
+//                }
                 
-                Button(action: { /* TODO: Handle attachments */ }) {
-                    Image(systemName: "paperclip")
-                        .foregroundColor(colorScheme == .dark ? .white : .black)
-                        .frame(width: 40, height: 40)
-                        .background(colorScheme == .dark ? Color.black : Color.white)
-                        .overlay(
-                            Circle()
-                                .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                        )
-                        .clipShape(Circle())
-                }
+//                Button(action: { /* TODO: Handle attachments */ }) {
+//                    Image(systemName: "paperclip")
+//                        .foregroundColor(colorScheme == .dark ? .white : .black)
+//                        .frame(width: 40, height: 40)
+//                        .background(colorScheme == .dark ? Color.black : Color.white)
+//                        .overlay(
+//                            Circle()
+//                                .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+//                        )
+//                        .clipShape(Circle())
+//                }
                 
-                Button(action: toggleRecording) {
-                    Image(systemName: voiceViewModel.isRecording ? "stop.fill" : "mic")
-                        .foregroundColor(voiceViewModel.isRecording ? .red : (colorScheme == .dark ? .white : .black))
-                        .frame(width: 40, height: 40)
-                        .background(colorScheme == .dark ? Color.black : Color.white)
-                        .overlay(
-                            Circle()
-                                .stroke(
-                                    voiceViewModel.isRecording ? Color.red : (colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3)), 
-                                    lineWidth: voiceViewModel.isRecording ? 1.5 : 0.5
-                                )
-                        )
-                        .clipShape(Circle())
-                }
+//                Button(action: toggleRecording) {
+//                    Image(systemName: voiceViewModel.isRecording ? "stop.fill" : "mic")
+//                        .foregroundColor(voiceViewModel.isRecording ? .red : (colorScheme == .dark ? .white : .black))
+//                        .frame(width: 40, height: 40)
+//                        .background(colorScheme == .dark ? Color.black : Color.white)
+//                        .overlay(
+//                            Circle()
+//                                .stroke(
+//                                    voiceViewModel.isRecording ? Color.red : (colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3)), 
+//                                    lineWidth: voiceViewModel.isRecording ? 1.5 : 0.5
+//                                )
+//                        )
+//                        .clipShape(Circle())
+//                }
             }
             .padding(.horizontal)
             .padding(.vertical, 10)
-            .background(colorScheme == .dark ? Color.black : Color.white)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
