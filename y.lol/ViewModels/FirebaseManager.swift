@@ -29,7 +29,6 @@ class FirebaseManager: ObservableObject {
     // Conversation history cache: [conversationId: [ChatMessage]]
     private var conversationCache: [String: [ChatMessage]] = [:]
     
-    // Add this property
     private let authManager = AuthenticationManager.shared
     
     // MARK: - Public API

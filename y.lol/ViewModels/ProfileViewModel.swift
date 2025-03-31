@@ -249,27 +249,40 @@ class ProfileViewModel: ObservableObject {
             vibeError = ""
             
             do {
-                // This would be your actual implementation calling an LLM API
-                // For now I'll simulate it with a simple array of sample vibes
-                let vibes = [
-                    "Peaceful wanderer seeking balance",
-                    "Energetic optimist with creative flair",
-                    "Calm and collected deep thinker",
-                    "Adventurous spirit with an old soul",
-                    "Thoughtful dreamer with practical goals",
-                    "Determined achiever with a gentle heart",
-                    "Curious explorer of both inner and outer worlds",
-                    "Playful innovator with serious ambitions"
-                ]
+                guard let idToken = AuthenticationManager.shared.idToken else {
+                    throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+                }
                 
-                // Simulate network delay
-                try await Task.sleep(for: .seconds(1))
+                guard let url = URL(string: "https://us-central1-ylol-011235.cloudfunctions.net/myVibe") else {
+                    throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+                }
                 
-                // Select a random vibe
-                let newVibe = vibes.randomElement() ?? "Mysterious and unpredictable"
+                var request = URLRequest(url: url)
+                request.httpMethod = "GET"
+                request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
                 
-                // Update the edited vibe
-                self.editedVibe = newVibe
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+                }
+                
+                if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                    // Token might be expired, try to refresh and retry
+                    try await AuthenticationManager.shared.refreshTokenAndRetry {
+                        // Retry the request with new token
+                        return try await URLSession.shared.data(for: request)
+                    }
+                }
+                
+                struct VibeResponse: Codable {
+                    let vibe: String
+                }
+                
+                let decoder = JSONDecoder()
+                let vibeResponse = try decoder.decode(VibeResponse.self, from: data)
+                
+                self.editedVibe = vibeResponse.vibe
                 
                 // If we're not in edit mode, save it immediately
                 if !isEditMode {
@@ -278,12 +291,12 @@ class ProfileViewModel: ObservableObject {
                     guard let userId = user?.id else { throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "User not found"]) }
                     
                     try await db.collection("users").document(userId).updateData([
-                        "vibe": newVibe
+                        "vibe": vibeResponse.vibe
                     ])
                     
                     // Update local user
                     if var updatedUser = self.user {
-                        updatedUser.vibe = newVibe
+                        updatedUser.vibe = vibeResponse.vibe
                         self.user = updatedUser
                     }
                 }
