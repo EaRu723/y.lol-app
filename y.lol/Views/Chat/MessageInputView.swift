@@ -14,9 +14,24 @@ struct MessageInputView: View {
     let onSend: () -> Void
     var onCameraButtonTapped: () -> Void
     var onPhotoLibraryButtonTapped: () -> Void
-
+    let mode: FirebaseManager.ChatMode
+    
     var body: some View {
         VStack(spacing: 0) {
+            // Suggestion button at the top
+            HStack {
+                SuggestionButton(mode: mode) {
+                    if messageText.isEmpty {
+                        messageText = (mode == .yin) ? "Compliment me 🥹" : "Roast me 🥵"
+                    } else {
+                        messageText += " " + ((mode == .yin) ? "Compliment me 🥹" : "Roast me 🥵")
+                    }
+                }
+                .padding(.leading)
+                Spacer()
+            }
+            .padding(.vertical, 8)
+
             // Image preview area
             if let selectedImage = selectedImage {
                 ZStack(alignment: .topTrailing) {

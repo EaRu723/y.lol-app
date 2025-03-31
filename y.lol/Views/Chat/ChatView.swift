@@ -61,26 +61,7 @@ struct ChatView: View {
                     
                     // Input area
                     inputArea()
-                }
-                VStack {
-                    Spacer()
-
-                    HStack {
-                        SuggestionButton(mode: viewModel.currentMode) {
-                            let suggestion = (viewModel.currentMode == .yin) ? "Compliment me 🥹" : "Roast me 🥵"
-                            if messageText.isEmpty {
-                                messageText = suggestion
-                            } else {
-                                messageText += " " + suggestion
-                            }
-                        }
-                        .padding(.leading)
-                        Spacer()
-                    }
-                    .padding(.bottom, 65)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                
+                }                
                 .navigationDestination(isPresented: $showProfile) {
                     ProfileView()
                         .environmentObject(authManager)
@@ -261,7 +242,8 @@ struct ChatView: View {
                 selectedImage: $selectedImage,
                 onSend: sendMessage,
                 onCameraButtonTapped: handleCameraButtonTapped,
-                onPhotoLibraryButtonTapped: handlePhotoLibraryButtonTapped
+                onPhotoLibraryButtonTapped: handlePhotoLibraryButtonTapped,
+                mode: viewModel.currentMode
             )
             .environmentObject(FirebaseManager.shared)
             .padding(.bottom, 8)
