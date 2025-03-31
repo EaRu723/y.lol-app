@@ -42,6 +42,9 @@ struct ChatView: View {
     @State private var showPermissionAlert = false
     @State private var permissionAlertType = ""
     
+    // Debounce Timer for Image Load Scrolls
+    @State private var imageLoadScrollTimer: Timer?
+    
     private let hapticService = HapticService()
     
     var body: some View {
@@ -197,7 +200,10 @@ struct ChatView: View {
                         totalCount: viewModel.messages.count,
                         previousMessage: previousMessage,
                         nextMessage: index < viewModel.messages.count - 1 ? viewModel.messages[index + 1] : nil,
-                        mode: viewModel.currentMode
+                        mode: viewModel.currentMode,
+                        onImageLoad: {
+                            triggerDebouncedScrollToBottom(proxy: proxy)
+                        }
                     )
                     .id(message.id)
                     // Add top padding for message grouping *only if* a timestamp isn't already adding padding
@@ -375,6 +381,7 @@ struct ChatView: View {
     private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
         DispatchQueue.main.async { // Ensure it runs on the main thread
             let targetID = viewModel.isTyping ? "typingIndicator" : "bottomAnchor"
+            print("Scrolling to \(targetID) (Animated: \(animated))") // Log scrolling action
             if animated {
                 withAnimation(.easeOut(duration: 0.25)) { // Slightly slower for smoother feel
                     proxy.scrollTo(targetID, anchor: .bottom)
@@ -398,6 +405,19 @@ struct ChatView: View {
     private func hideKeyboard() {
         isFocused = false
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+    
+    // Debounced scroll trigger function
+    private func triggerDebouncedScrollToBottom(proxy: ScrollViewProxy) {
+        // Invalidate any existing timer to reset the debounce delay
+        imageLoadScrollTimer?.invalidate()
+
+        // Schedule a new scroll action after a short delay (e.g., 0.3 seconds)
+        // Adjust delay as needed
+        imageLoadScrollTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
+            print("Debounced scroll triggered by image load.")
+            scrollToBottom(proxy: proxy, animated: true) // Ensure animation is true here if desired
+        }
     }
 }
 

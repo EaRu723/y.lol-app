@@ -16,6 +16,7 @@ struct MessageView: View {
     let previousMessage: ChatMessage?
     let nextMessage: ChatMessage?
     let mode: FirebaseManager.ChatMode
+    let onImageLoad: (() -> Void)?
     
     // Update properties to use optional previous/next messages
     private var isFirstInGroup: Bool {
@@ -82,6 +83,10 @@ struct MessageView: View {
                                         .aspectRatio(contentMode: .fit)
                                         .frame(maxWidth: 200, maxHeight: 200)
                                         .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        .onAppear {
+                                            print("Image loaded, triggering onImageLoad callback for message ID: \(message.id)")
+                                            onImageLoad?()
+                                        }
                                 case .failure:
                                     Image(systemName: "photo.fill")
                                         .foregroundColor(.gray)
@@ -140,7 +145,8 @@ struct MessageView_Previews: PreviewProvider {
                     timestamp: Date(),
                     imageUrl: nil
                 ),
-                mode: .yin
+                mode: .yin,
+                onImageLoad: nil
             )
             
             MessageView(
@@ -159,7 +165,8 @@ struct MessageView_Previews: PreviewProvider {
                     imageUrl: "https://example.com/image.jpg"
                 ),
                 nextMessage: nil,
-                mode: .yang
+                mode: .yang,
+                onImageLoad: nil
             )
         }
         .padding()
