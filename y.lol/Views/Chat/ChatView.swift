@@ -51,17 +51,16 @@ struct ChatView: View {
                 colors.backgroundWithNoise
                     .ignoresSafeArea()
                 
-                VStack(spacing: 0) {
-                    // Header
-                    headerView()
-                    
-                    // Messages area
-                    messagesArea()
-                        .padding(.bottom, 60)
-                    
-                    // Input area
+                // Replace the VStack with ZStack
+                ZStack(alignment: .bottom) {
+                    VStack(spacing: 0) {
+                        headerView()
+                        messagesArea() // Remove the .padding(.bottom, 60)
+                    }
+
                     inputArea()
-                }                
+                }
+                
                 .navigationDestination(isPresented: $showProfile) {
                     ProfileView()
                         .environmentObject(authManager)
@@ -205,6 +204,11 @@ struct ChatView: View {
                         .padding(.top, (formatTimestampSeparator(current: Date(), previous: lastMessageTimestamp) == nil) ? 10 : 0) // Add padding if no timestamp shown
                 }
                 
+                // Add the new spacer Rectangle
+                Rectangle()
+                    .frame(height: 80)
+                    .foregroundColor(.clear)
+                
                 // Bottom spacer
                 Rectangle()
                     .frame(height: 1)
@@ -248,11 +252,7 @@ struct ChatView: View {
             .environmentObject(FirebaseManager.shared)
             .padding(.bottom, 8)
             .focused($isFocused)
-            .background(
-                colors.backgroundWithNoise
-                    .blur(radius: 10)
-                    .edgesIgnoringSafeArea(.bottom)
-            )
+            .background(Color.clear)
         }
     }
     

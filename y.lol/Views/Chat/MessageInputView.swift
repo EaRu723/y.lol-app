@@ -140,7 +140,7 @@ struct MessageInputView: View {
                     actionButton
                 }
                 .padding(.vertical, 4)
-                .background(colorScheme == .dark ? Color.black : Color.white)
+                .background(Color.white)
                 .foregroundColor(colorScheme == .dark ? .white : .black)
                 .cornerRadius(20)
                 .overlay(
@@ -150,7 +150,7 @@ struct MessageInputView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 10)
-            .background(colorScheme == .dark ? Color.black : Color.white)
+            .background(Color.white)
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedImage != nil)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: voiceViewModel.isRecording)
@@ -167,6 +167,7 @@ struct MessageInputView: View {
                 showAttachmentButtons = false
             }
         }
+        .background(Color.white)
     }
     
     // Add this computed property to simplify the view
