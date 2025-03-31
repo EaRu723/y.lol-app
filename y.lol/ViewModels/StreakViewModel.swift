@@ -55,10 +55,13 @@ class StreakViewModel: ObservableObject {
             let lastActivityDay = calendar.startOfDay(for: lastActivityDate)
             
             // Update streak based on last activity
-            var newStreak = data["streak"] as? Int ?? 0
+            var newStreak = data["streak"] as? Int ?? 1  // Default to 1 if no streak exists
             let daysSinceLastActivity = calendar.dateComponents([.day], from: lastActivityDay, to: today).day ?? 0
             
-            if daysSinceLastActivity == 0 {
+            if lastActivity == 0 {
+                // First time using the app, keep streak at 1
+                newStreak = 1
+            } else if daysSinceLastActivity == 0 {
                 // Already used the app today, streak remains the same
             } else if daysSinceLastActivity == 1 {
                 // Used the app on consecutive days, increase streak
