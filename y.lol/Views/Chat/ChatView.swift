@@ -224,8 +224,7 @@ struct ChatView: View {
                 
                 // Typing Indicator
                 if viewModel.isTyping {
-                    typingIndicatorView() // Pass proxy no longer needed
-                        .id("typingIndicator") // Keep the ID for targeting
+                    typingIndicatorView()
                 }
 
                 // Invisible spacer at the bottom to ensure scrolling past the last message/indicator
@@ -241,16 +240,18 @@ struct ChatView: View {
     }
     
     @ViewBuilder
-    private func typingIndicatorView() -> some View { // Removed proxy parameter
+    private func typingIndicatorView() -> some View {
+        // Determine the sender based on the ViewModel's current mode
+        let sender: Sender = (viewModel.currentMode == .yin) ? .yin : .yang // Assuming Sender enum has .yin and .yang
+
         HStack {
-            TypingBubbleView(sender: .yin) // Assuming .yin is the AI sender
+            TypingBubbleView(sender: sender) // <--- Use the determined sender
                 .padding(.leading, 5)
             Spacer()
         }
         .padding(.horizontal)
-        .id("typingIndicator") // ID remains useful
+        .id("typingIndicator")
         .transition(.opacity.combined(with: .move(edge: .bottom)))
-        // Removed the onAppear scroll logic here
     }
     
     @ViewBuilder
