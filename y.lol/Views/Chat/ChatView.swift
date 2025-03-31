@@ -159,8 +159,12 @@ struct ChatView: View {
                 Spacer()
             }
         } else {
-            LazyVStack(spacing: 12) {
+            // Use a smaller base spacing for consecutive messages
+            LazyVStack(spacing: 2) { // Reduced base spacing
                 ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
+                    // Determine if this message starts a new group
+                    let isFirstInGroup = index == 0 || viewModel.messages[index - 1].isUser != message.isUser
+
                     MessageView(
                         message: message,
                         index: index,
@@ -170,6 +174,8 @@ struct ChatView: View {
                         mode: viewModel.currentMode
                     )
                     .id(message.id)
+                    // Add extra top padding only for the first message in a group
+                    .padding(.top, isFirstInGroup ? 10 : 0) // Increased spacing for the start of a group
                     .transition(.asymmetric(
                         insertion: .modifier(
                             active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
@@ -190,7 +196,7 @@ struct ChatView: View {
                     .foregroundColor(.clear)
                     .id("bottomSpacer")
             }
-            .padding(.vertical)
+            .padding(.vertical) // Keep overall padding for the VStack
         }
     }
     

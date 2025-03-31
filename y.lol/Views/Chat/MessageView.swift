@@ -28,14 +28,6 @@ struct MessageView: View {
         return next.isUser != message.isUser
     }
     
-    private var bubbleShape: some Shape {
-        BubbleShape(
-            isUser: message.isUser,
-            isFirstInGroup: isFirstInGroup,
-            isLastInGroup: isLastInGroup
-        )
-    }
-    
     // Add computed properties for the missing variables
     private var textColor: Color {
         message.isUser ? colors.userMessageText : colors.aiMessageText
@@ -66,9 +58,9 @@ struct MessageView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(bubbleBackground)
-                    .clipShape(bubbleShape)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .overlay(
-                        bubbleShape
+                        RoundedRectangle(cornerRadius: 16)
                             .stroke(!message.isUser ? getBorderColor() : Color.clear, lineWidth: 1)
                     )
                     .frame(maxWidth: UIScreen.main.bounds.width * 0.67, alignment: message.isUser ? .trailing : .leading)
@@ -110,7 +102,6 @@ struct MessageView: View {
                     }
                 }
             }
-            .padding(.vertical, isFirstInGroup ? 4 : 1)
             
             if !message.isUser {
                 Spacer(minLength: 40)
@@ -126,98 +117,6 @@ struct MessageView: View {
         case .yang:
             return Color.red.opacity(0.1)
         }
-    }
-}
-
-// Add custom bubble shape
-struct BubbleShape: Shape {
-    let isUser: Bool
-    let isFirstInGroup: Bool
-    let isLastInGroup: Bool
-    
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        let radius: CGFloat = 16
-        let tailRadius: CGFloat = 4
-        let tailOffset: CGFloat = 6
-        
-        // Start from top-left
-        path.move(to: CGPoint(x: rect.minX + radius, y: rect.minY))
-        
-        // Top edge
-        path.addLine(to: CGPoint(x: rect.maxX - radius, y: rect.minY))
-        
-        // Top-right corner
-        path.addArc(
-            center: CGPoint(x: rect.maxX - radius, y: rect.minY + radius),
-            radius: radius,
-            startAngle: Angle(degrees: -90),
-            endAngle: Angle(degrees: 0),
-            clockwise: false
-        )
-        
-        // Right edge
-        if isUser && isLastInGroup {
-            // Add tail on right for user messages
-            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - radius - tailOffset))
-            path.addQuadCurve(
-                to: CGPoint(x: rect.maxX + tailRadius, y: rect.maxY - tailOffset),
-                control: CGPoint(x: rect.maxX, y: rect.maxY - tailOffset)
-            )
-            path.addQuadCurve(
-                to: CGPoint(x: rect.maxX, y: rect.maxY - tailOffset + tailRadius),
-                control: CGPoint(x: rect.maxX + tailRadius, y: rect.maxY - tailOffset)
-            )
-        }
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - radius))
-        
-        // Bottom-right corner
-        path.addArc(
-            center: CGPoint(x: rect.maxX - radius, y: rect.maxY - radius),
-            radius: radius,
-            startAngle: Angle(degrees: 0),
-            endAngle: Angle(degrees: 90),
-            clockwise: false
-        )
-        
-        // Bottom edge
-        path.addLine(to: CGPoint(x: rect.minX + radius, y: rect.maxY))
-        
-        // Bottom-left corner
-        path.addArc(
-            center: CGPoint(x: rect.minX + radius, y: rect.maxY - radius),
-            radius: radius,
-            startAngle: Angle(degrees: 90),
-            endAngle: Angle(degrees: 180),
-            clockwise: false
-        )
-        
-        // Left edge
-        if !isUser && isLastInGroup {
-            // Add tail on left for AI messages
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - radius - tailOffset))
-            path.addQuadCurve(
-                to: CGPoint(x: rect.minX - tailRadius, y: rect.maxY - tailOffset),
-                control: CGPoint(x: rect.minX, y: rect.maxY - tailOffset)
-            )
-            path.addQuadCurve(
-                to: CGPoint(x: rect.minX, y: rect.maxY - tailOffset + tailRadius),
-                control: CGPoint(x: rect.minX - tailRadius, y: rect.maxY - tailOffset)
-            )
-        }
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY + radius))
-        
-        // Top-left corner
-        path.addArc(
-            center: CGPoint(x: rect.minX + radius, y: rect.minY + radius),
-            radius: radius,
-            startAngle: Angle(degrees: 180),
-            endAngle: Angle(degrees: 270),
-            clockwise: false
-        )
-        
-        path.closeSubpath()
-        return path
     }
 }
 

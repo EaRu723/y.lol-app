@@ -19,6 +19,7 @@ struct y_lolApp: App {
                 RootView()
                     .preferredColorScheme(.light)
                     .sheet(isPresented: $welcomeShown, content: { OnboardingView(isPresented: $welcomeShown) })
+                     .interactiveDismissDisabled(true)
             }
         }
     }
