@@ -5,14 +5,14 @@
 //  Created by Andrea Russo on 3/10/25.
 //
 
-import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import Foundation
 
 final class AuthenticationManager: ObservableObject {
-    
+
     static let shared = AuthenticationManager()
-    
+
     @Published private(set) var idToken: String?
     @Published var tokenError: Error?
     @Published var hasTokenError: Bool = false
@@ -20,7 +20,7 @@ final class AuthenticationManager: ObservableObject {
     private var isRefreshing: Bool = false
     private var refreshAttempts: Int = 0
     private let maxRefreshAttempts = 2
-    
+
     init() {
         // Start token refresh cycle when initialized
         refreshTokenPeriodically()
@@ -29,17 +29,17 @@ final class AuthenticationManager: ObservableObject {
             try? await refreshIdToken()
         }
     }
-    
+
     func refreshTokenPeriodically() {
         tokenRefreshTask?.cancel()
         tokenRefreshTask = Task { [weak self] in
             while !Task.isCancelled {
                 do {
                     try await self?.refreshIdToken()
-                    try await Task.sleep(nanoseconds: 30 * 60 * 1_000_000_000) // Refresh every 30 minutes
+                    try await Task.sleep(nanoseconds: 30 * 60 * 1_000_000_000)  // Refresh every 30 minutes
                 } catch {
                     print("Periodic token refresh failed: \(error.localizedDescription)")
-                    try? await Task.sleep(nanoseconds: 1 * 60 * 1_000_000_000) // Wait 1 minute before retry
+                    try? await Task.sleep(nanoseconds: 1 * 60 * 1_000_000_000)  // Wait 1 minute before retry
                 }
             }
         }
@@ -51,30 +51,30 @@ final class AuthenticationManager: ObservableObject {
             refreshAttempts = 0
             isRefreshing = true
         }
-        
+
         defer {
             if refreshAttempts >= maxRefreshAttempts {
                 isRefreshing = false
                 refreshAttempts = 0
             }
         }
-        
+
         guard refreshAttempts < maxRefreshAttempts else {
             print("Exceeded max refresh attempts, requiring login")
             await MainActor.run { self.hasTokenError = true }
             return false
         }
-        
+
         do {
             guard let user = Auth.auth().currentUser else {
                 print("No authenticated user")
-                await MainActor.run { 
+                await MainActor.run {
                     self.hasTokenError = true
                     self.idToken = nil
                 }
                 return false
             }
-            
+
             let token = try await user.getIDToken(forcingRefresh: refreshAttempts > 0)
             await MainActor.run {
                 self.idToken = token
@@ -83,24 +83,26 @@ final class AuthenticationManager: ObservableObject {
             }
             isRefreshing = false
             return true
-            
+
         } catch {
-            print("Token validation failed (attempt \(refreshAttempts + 1)): \(error.localizedDescription)")
+            print(
+                "Token validation failed (attempt \(refreshAttempts + 1)): \(error.localizedDescription)"
+            )
             refreshAttempts += 1
-            
+
             if refreshAttempts >= maxRefreshAttempts {
-                await MainActor.run { 
+                await MainActor.run {
                     self.hasTokenError = true
                     self.idToken = nil
                 }
                 return false
             }
-            
+
             // Try again with forced refresh
             return await validateToken()
         }
     }
-    
+
     func refreshIdToken() async throws {
         print("Debug - Starting token refresh")
         guard let currentUser = Auth.auth().currentUser else {
@@ -112,7 +114,7 @@ final class AuthenticationManager: ObservableObject {
             }
             throw URLError(.userAuthenticationRequired)
         }
-        
+
         do {
             let token = try await currentUser.getIDToken(forcingRefresh: true)
             await MainActor.run {
@@ -120,6 +122,7 @@ final class AuthenticationManager: ObservableObject {
                 self.tokenError = nil
                 self.hasTokenError = false
                 print("Debug - Successfully got new token")
+                print(token)
             }
         } catch {
             print("Debug - Token refresh failed: \(error.localizedDescription)")
@@ -165,7 +168,7 @@ final class AuthenticationManager: ObservableObject {
         )
         let authResult = try await Auth.auth().signIn(with: credential)
         let user = User(from: authResult.user)
-        
+
         print("Debug - Successfully signed in with Apple, attempting to refresh token")
         try await refreshIdToken()
         await insertUserRecord(user: user)
@@ -178,7 +181,7 @@ final class AuthenticationManager: ObservableObject {
 
         do {
             let document = try await userRef.getDocument()
-            var userData = user.asDictionary() // Contains the default handle from User(from:)
+            var userData = user.asDictionary()  // Contains the default handle from User(from:)
 
             if document.exists {
                 // Document exists (returning user). Merge updates,
@@ -202,7 +205,9 @@ final class AuthenticationManager: ObservableObject {
             print("User document successfully written or updated!")
         } catch let error {
             // Consider more robust error handling or rethrowing if needed upstream
-            print("Error accessing/updating user document in insertUserRecord: \(error.localizedDescription)")
+            print(
+                "Error accessing/updating user document in insertUserRecord: \(error.localizedDescription)"
+            )
         }
     }
 
@@ -215,8 +220,12 @@ final class AuthenticationManager: ObservableObject {
             return try await retryBlock()
         } catch {
             print("Debug - Token refresh failed in retry: \(error.localizedDescription)")
-            throw NSError(domain: "AuthError", code: 401, 
-                         userInfo: [NSLocalizedDescriptionKey: "Failed to refresh authentication token: \(error.localizedDescription)"])
+            throw NSError(
+                domain: "AuthError", code: 401,
+                userInfo: [
+                    NSLocalizedDescriptionKey:
+                        "Failed to refresh authentication token: \(error.localizedDescription)"
+                ])
         }
     }
 
@@ -230,10 +239,10 @@ final class AuthenticationManager: ObservableObject {
 
         do {
             let snapshot = try await query.getDocuments()
-            return !snapshot.isEmpty // If snapshot is not empty, the handle is taken
+            return !snapshot.isEmpty  // If snapshot is not empty, the handle is taken
         } catch {
             print("Error checking if handle is taken: \(error.localizedDescription)")
-            throw error // Re-throw the error to be handled by the caller
+            throw error  // Re-throw the error to be handled by the caller
         }
     }
 
@@ -243,7 +252,9 @@ final class AuthenticationManager: ObservableObject {
         let taken = try await isHandleTaken(handle)
         guard !taken else {
             // You might want a specific error type for this
-            throw NSError(domain: "AuthError", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Handle '\(handle)' is already taken."])
+            throw NSError(
+                domain: "AuthError", code: 1001,
+                userInfo: [NSLocalizedDescriptionKey: "Handle '\(handle)' is already taken."])
         }
 
         // 2. Proceed with update if handle is not taken
