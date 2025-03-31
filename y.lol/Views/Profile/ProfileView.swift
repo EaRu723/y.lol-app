@@ -114,25 +114,37 @@ struct ProfileView: View {
                                                 .foregroundColor(colors.text)
                                         }
                                         HStack {
-                                            HStack {
-                                            Text("😇")
-                                                .font(.system(size: 24))
-                                                Text("\(user.yinScore) %")
-                                                .font(YTheme.Typography.subtitle)
-                                                .foregroundColor(colors.text)
-                                            }
-                                             HStack {
-                                            Text("😈")
-                                                .font(.system(size: 24))
-                                                 Text("\(user.yangScore) %")
-                                                .font(YTheme.Typography.subtitle)
-                                                .foregroundColor(colors.text)
+                                            if viewModel.isFetchingScores {
+                                                ProgressView()
+                                                    .scaleEffect(0.8)
+                                                    .tint(colors.text)
+                                            } else {
+                                                HStack {
+                                                    Text("😇")
+                                                        .font(.system(size: 24))
+                                                    Text("\(user.yinScore) %")
+                                                        .font(YTheme.Typography.subtitle)
+                                                        .foregroundColor(colors.text)
+                                                }
+                                                HStack {
+                                                    Text("😈")
+                                                        .font(.system(size: 24))
+                                                    Text("\(user.yangScore) %")
+                                                        .font(YTheme.Typography.subtitle)
+                                                        .foregroundColor(colors.text)
+                                                }
                                             }
                                         }
                                         .frame(maxWidth: .infinity)
                                         .padding()
                                         .cornerRadius(12)
                                         
+                                        if !viewModel.scoresError.isEmpty {
+                                            Text(viewModel.scoresError)
+                                                .font(YTheme.Typography.caption)
+                                                .foregroundColor(.red)
+                                                .padding(.top, 4)
+                                        }
                                     }
                                     .padding(.top, 16)
                                     
@@ -255,6 +267,7 @@ struct ProfileView: View {
         }
         .onAppear {
             viewModel.fetchUserData()
+            viewModel.fetchYinYangScores()
         }
     }
     

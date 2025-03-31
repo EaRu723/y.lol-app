@@ -37,6 +37,8 @@ class ProfileViewModel: ObservableObject {
     
     @Published var isGeneratingVibe = false
     @Published var vibeError = ""
+    @Published var isFetchingScores = false
+    @Published var scoresError = ""
     
     private let authManager: AuthenticationManager
     
@@ -305,6 +307,75 @@ class ProfileViewModel: ObservableObject {
             } catch {
                 vibeError = "Failed to generate vibe: \(error.localizedDescription)"
                 isGeneratingVibe = false
+            }
+        }
+    }
+    
+    // Add this function to fetch yin/yang percentages
+    func fetchYinYangScores() {
+        Task { @MainActor in
+            isFetchingScores = true
+            scoresError = ""
+            
+            do {
+                guard let idToken = AuthenticationManager.shared.idToken else {
+                    throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
+                }
+                
+                guard let url = URL(string: "https://us-central1-ylol-011235.cloudfunctions.net/percentage") else {
+                    throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+                }
+                
+                var request = URLRequest(url: url)
+                request.httpMethod = "GET"
+                request.setValue("Bearer \(idToken)", forHTTPHeaderField: "Authorization")
+                
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+                }
+                
+                if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                    // Token might be expired, try to refresh and retry
+                    try await AuthenticationManager.shared.refreshTokenAndRetry {
+                        // Retry the request with new token
+                        return try await URLSession.shared.data(for: request)
+                    }
+                }
+                
+                struct ScoresResponse: Codable {
+                    let yin: Double
+                    let yang: Double
+                }
+                
+                let decoder = JSONDecoder()
+                let scoresResponse = try decoder.decode(ScoresResponse.self, from: data)
+                
+                // Convert to percentages and round to nearest integer
+                let yinPercentage = Int(round(scoresResponse.yin * 100))
+                let yangPercentage = Int(round(scoresResponse.yang * 100))
+                
+                // Update Firestore with new scores
+                if let userId = user?.id {
+                    let db = Firestore.firestore()
+                    try await db.collection("users").document(userId).updateData([
+                        "yinScore": yinPercentage,
+                        "yangScore": yangPercentage
+                    ])
+                    
+                    // Update local user
+                    if var updatedUser = self.user {
+                        updatedUser.yinScore = yinPercentage
+                        updatedUser.yangScore = yangPercentage
+                        self.user = updatedUser
+                    }
+                }
+                
+                isFetchingScores = false
+            } catch {
+                scoresError = "Failed to fetch scores: \(error.localizedDescription)"
+                isFetchingScores = false
             }
         }
     }
