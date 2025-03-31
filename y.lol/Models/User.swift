@@ -67,7 +67,7 @@ extension User {
         self.joined = Date().timeIntervalSince1970
         // Initialize new required properties
         self.handle = "@" + (firebaseUser.displayName?.lowercased().replacingOccurrences(of: " ", with: "") ?? "user")
-        self.streak = 0
+        self.streak = 1  // Start with streak of 1 for new users
         self.yinScore = 50
         self.yangScore = 50
         self.media = []
