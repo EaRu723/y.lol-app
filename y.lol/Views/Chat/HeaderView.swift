@@ -12,7 +12,7 @@ struct HeaderView: View {
     @Environment(\.themeColors) private var colors
     @Binding var isThinking: Bool
     @Binding var showProfile: Bool
-    @State private var showButtons = false
+    @State private var showButtons = true
     @Binding var isSearching: Bool
     var currentMode: FirebaseManager.ChatMode
     var onPillTapped: (FirebaseManager.ChatMode) -> Void
