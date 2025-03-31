@@ -23,20 +23,19 @@ struct SuggestionButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(suggestionText)
-                .font(.system(size: 14, weight: .medium))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .foregroundColor(YTheme.Colors.textLight) // Use static black text color
-                .background(YTheme.Colors.parchmentLight) // Use static white background
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(YTheme.Colors.textLight, lineWidth: 1) // Use static black border color
-                )
+            HStack {
+                Text(suggestionText)
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .foregroundColor(YTheme.Colors.textLight)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(16)
+            }
+            .frame(alignment: .leading)
         }
-        .buttonStyle(.plain) // Use plain style to avoid default button chrome
-        .transition(.opacity.combined(with: .move(edge: .bottom))) // Add transition
+        .buttonStyle(.plain)
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
     }
 }
 
