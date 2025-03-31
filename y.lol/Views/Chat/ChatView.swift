@@ -65,15 +65,17 @@ struct ChatView: View {
                 VStack {
                     Spacer()
 
-                    // Add HStack to align button to the left
                     HStack {
                         SuggestionButton(mode: viewModel.currentMode) {
                             let suggestion = (viewModel.currentMode == .yin) ? "Compliment me 🥹" : "Roast me 🥵"
-                            messageText = suggestion
-                            sendMessage()
+                            if messageText.isEmpty {
+                                messageText = suggestion
+                            } else {
+                                messageText += " " + suggestion
+                            }
                         }
-                        .padding(.leading) // Add left padding
-                        Spacer() // Push button to the left
+                        .padding(.leading)
+                        Spacer()
                     }
                     .padding(.bottom, 65)
                 }
