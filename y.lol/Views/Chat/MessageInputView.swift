@@ -17,160 +17,190 @@ struct MessageInputView: View {
     let mode: FirebaseManager.ChatMode
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Suggestion button at the top
-            HStack {
-                SuggestionButton(mode: mode) {
-                    if messageText.isEmpty {
-                        messageText = (mode == .yin) ? "Compliment me 🥹" : "Roast me 🥵"
-                    } else {
-                        messageText += " " + ((mode == .yin) ? "Compliment me 🥹" : "Roast me 🥵")
-                    }
+        mainContent
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedImage != nil)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: voiceViewModel.isRecording)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showAttachmentButtons)
+            .onChange(of: messageText) { _, newValue in
+                if !newValue.isEmpty && showAttachmentButtons {
+                    showAttachmentButtons = false
                 }
-                .padding(.leading)
-                Spacer()
             }
-            .padding(.vertical, 8)
-
-            // Image preview area
-            if let selectedImage = selectedImage {
-                ZStack(alignment: .topTrailing) {
-                    Image(uiImage: selectedImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(maxWidth: 200, maxHeight: 200)
-                        .cornerRadius(12)
-                        .clipped()
-                        .padding(.top, 4)
-                    
-                    Button(action: {
-                        self.selectedImage = nil
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.white)
-                            .background(Circle().fill(Color.black.opacity(0.5)))
-                            .padding(6)
-                    }
+            .onChange(of: isFocused) { _, newValue in
+                if newValue && showAttachmentButtons {
+                    showAttachmentButtons = false
                 }
-                .padding(.horizontal)
             }
-            
-            // Voice transcription view if recording
-            if voiceViewModel.isRecording {
-                VoiceRecordingView(
-                    voiceViewModel: voiceViewModel,
-                    onTranscriptComplete: { transcript in
-                        appendTranscriptToMessage(transcript)
-                    }
-                )
-            }
-            
-            // Input bar with rounded corners
-            HStack(spacing: 12) {
-                // Plus/Toggle button
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        showAttachmentButtons.toggle()
-                        // Optionally hide keyboard if buttons are shown
-                        // if showAttachmentButtons { isFocused = false }
-                    }
-                }) {
-                    Image(systemName: showAttachmentButtons ? "chevron.left.circle.fill" : "plus.circle.fill")
-                        .resizable()
-                        .frame(width: 28, height: 28)
-                        .foregroundColor(colorScheme == .dark ? .white : .black)
-                }
-
-                // Conditionally show attachment buttons inline
-                if showAttachmentButtons {
-                    // Camera button
-                    Button(action: onCameraButtonTapped) {
-                        Image(systemName: "camera")
-                            .frame(width: 28, height: 28)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                    }
-                    .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
-
-                    // Photo library button
-                    Button(action: onPhotoLibraryButtonTapped) {
-                        Image(systemName: "photo")
-                            .frame(width: 28, height: 28)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                    }
-                    .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
-                }
-
-                // Text field with rounded corners and gray border
-                HStack(alignment: .bottom) {
-                    ZStack(alignment: .leading) {
-                        // Invisible text view used to calculate height
-                        Text(messageText.isEmpty ? "Ask anything..." : messageText)
-                            .foregroundColor(.clear)
-                            .padding(.horizontal, 12)
-                            .lineLimit(5)
-                            .background(GeometryReader { geometry in
-                                Color.clear.preference(
-                                    key: ViewHeightKey.self,
-                                    value: geometry.size.height + 16
-                                )
-                            })
-                        
-                        // Placeholder text
-                        if messageText.isEmpty {
-                            Text("Ask anything...")
-                                .foregroundColor(.gray)
-                                .padding(.leading, 12)
-                                .frame(height: textEditorHeight)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        
-                        TextEditor(text: $messageText)
-                            .padding(.horizontal, 8)
-                            .frame(height: max(36, textEditorHeight))
-                            .background(Color.clear)
-                            .scrollContentBackground(.hidden)
-                            .foregroundColor(colorScheme == .dark ? .white : .black)
-                            .focused($isFocused)
-                    }
-                    .onPreferenceChange(ViewHeightKey.self) { height in
-                        self.textEditorHeight = height
-                    }
-                    
-                    // Replace the complex Group with a function call
-                    actionButton
-                }
-                .padding(.vertical, 4)
-                .background(Color.white)
-                .foregroundColor(colorScheme == .dark ? .white : .black)
-                .cornerRadius(20)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
-                )
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 10)
-            .background(Color.white)
-        }
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedImage != nil)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: voiceViewModel.isRecording)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showAttachmentButtons)
-        // Add onChange modifier for messageText
-        .onChange(of: messageText) { _, newValue in
-            if !newValue.isEmpty && showAttachmentButtons {
-                showAttachmentButtons = false
-            }
-        }
-        // Add onChange modifier for isFocused
-        .onChange(of: isFocused) { _, newValue in
-            if newValue && showAttachmentButtons {
-                showAttachmentButtons = false
-            }
-        }
-        .background(Color.white)
+            .background(colorScheme == .dark ? Color.black.opacity(0.96) : Color.white.opacity(0.96))
+            .ignoresSafeArea(.keyboard, edges: .bottom)
+            .ignoresSafeArea(.container, edges: .bottom)
     }
     
-    // Add this computed property to simplify the view
+    // Break up the body into smaller components
+    private var mainContent: some View {
+        VStack(spacing: 0) {
+            suggestionArea
+            imagePreviewArea
+            voiceTranscriptionArea
+            inputBar
+        }
+    }
+    
+    private var suggestionArea: some View {
+        HStack {
+            SuggestionButton(mode: mode) { suggestion in
+                if messageText.isEmpty {
+                    messageText = suggestion
+                } else {
+                    messageText += " " + suggestion
+                }
+            }
+            .padding(.leading)
+            Spacer()
+        }
+        .padding(.vertical, 8)
+    }
+    
+    @ViewBuilder
+    private var imagePreviewArea: some View {
+        if let selectedImage = selectedImage {
+            ZStack(alignment: .topTrailing) {
+                Image(uiImage: selectedImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(maxWidth: 200, maxHeight: 200)
+                    .cornerRadius(12)
+                    .clipped()
+                    .padding(.top, 4)
+                
+                Button(action: {
+                    self.selectedImage = nil
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.white)
+                        .background(Circle().fill(Color.black.opacity(0.5)))
+                        .padding(6)
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+    
+    @ViewBuilder
+    private var voiceTranscriptionArea: some View {
+        if voiceViewModel.isRecording {
+            VoiceRecordingView(
+                voiceViewModel: voiceViewModel,
+                onTranscriptComplete: { transcript in
+                    appendTranscriptToMessage(transcript)
+                }
+            )
+        }
+    }
+    
+    private var inputBar: some View {
+        HStack(spacing: 12) {
+            toggleButton
+            
+            // Conditionally show attachment buttons
+            if showAttachmentButtons {
+                attachmentButtons
+            }
+            
+            // Text input field area
+            textInputArea
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(colorScheme == .dark ? Color.black.opacity(0.96) : Color.white.opacity(0.96))
+    }
+    
+    private var toggleButton: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                showAttachmentButtons.toggle()
+            }
+        }) {
+            Image(systemName: showAttachmentButtons ? "chevron.left.circle.fill" : "plus.circle.fill")
+                .resizable()
+                .frame(width: 28, height: 28)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+        }
+    }
+    
+    private var attachmentButtons: some View {
+        HStack {
+            // Camera button
+            Button(action: onCameraButtonTapped) {
+                Image(systemName: "camera")
+                    .frame(width: 28, height: 28)
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+            }
+            .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
+            
+            // Photo library button
+            Button(action: onPhotoLibraryButtonTapped) {
+                Image(systemName: "photo")
+                    .frame(width: 28, height: 28)
+                    .foregroundColor(colorScheme == .dark ? .white : .black)
+            }
+            .transition(.asymmetric(insertion: .scale.combined(with: .opacity), removal: .opacity))
+        }
+    }
+    
+    private var textInputArea: some View {
+        HStack(alignment: .bottom) {
+            textEditorStack
+            actionButton
+        }
+        .padding(.vertical, 4)
+        .background(colorScheme == .dark ? Color.black.opacity(0.96) : Color.white.opacity(0.96))
+        .foregroundColor(colorScheme == .dark ? .white : .black)
+        .cornerRadius(20)
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(colorScheme == .dark ? Color.gray.opacity(0.5) : Color.gray.opacity(0.3), lineWidth: 0.5)
+        )
+    }
+    
+    private var textEditorStack: some View {
+        ZStack(alignment: .leading) {
+            // Height calculator
+            Text(messageText.isEmpty ? "Ask anything..." : messageText)
+                .foregroundColor(.clear)
+                .padding(.horizontal, 12)
+                .lineLimit(5)
+                .background(GeometryReader { geometry in
+                    Color.clear.preference(
+                        key: ViewHeightKey.self,
+                        value: geometry.size.height + 16
+                    )
+                })
+            
+            // Placeholder
+            if messageText.isEmpty {
+                Text("Ask anything...")
+                    .foregroundColor(.gray)
+                    .padding(.leading, 12)
+                    .frame(height: textEditorHeight)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            // Actual editor
+            TextEditor(text: $messageText)
+                .padding(.horizontal, 8)
+                .frame(height: max(36, textEditorHeight))
+                .background(Color.clear)
+                .scrollContentBackground(.hidden)
+                .foregroundColor(colorScheme == .dark ? .white : .black)
+                .focused($isFocused)
+        }
+        .onPreferenceChange(ViewHeightKey.self) { height in
+            self.textEditorHeight = height
+        }
+    }
+    
+    // Action button logic remains the same
     @ViewBuilder
     private var actionButton: some View {
         if messageText.isEmpty && selectedImage == nil && !voiceViewModel.isRecording {

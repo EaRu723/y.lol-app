@@ -250,10 +250,12 @@ struct ChatView: View {
                 mode: viewModel.currentMode
             )
             .environmentObject(FirebaseManager.shared)
-            .padding(.bottom, 8)
+            .padding(.bottom, 0)
             .focused($isFocused)
-            .background(Color.clear)
         }
+        .background(Color.clear)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .ignoresSafeArea(.container, edges: .bottom)
     }
     
     @ViewBuilder

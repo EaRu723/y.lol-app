@@ -10,44 +10,46 @@ import SwiftUI
 struct SuggestionButton: View {
 
     let mode: FirebaseManager.ChatMode
-    let action: () -> Void
-
-    private var suggestionText: String {
+    let action: (String) -> Void
+    
+    // Array of suggestions for each mode
+    private var suggestions: [String] {
         switch mode {
         case .yin:
-            return "Compliment me 🥹"
+            return ["Praise me 🥹", "Vibe check 🧘‍♀️", "Calm me 😌"]
         case .yang:
-            return "Roast me 🥵"
+            return ["Roast me 🥵", "Gas me up 🔥", "Rate my fit 👕"]
         }
     }
 
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Text(suggestionText)
-                    .font(.system(size: 14, weight: .medium))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .foregroundColor(YTheme.Colors.textLight)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(16)
+        HStack(spacing: 8) {
+            ForEach(suggestions, id: \.self) { suggestion in
+                Button(action: { action(suggestion) }) {
+                    Text(suggestion)
+                        .font(.system(size: 14, weight: .medium))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .foregroundColor(YTheme.Colors.textLight)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(16)
+                }
+                .buttonStyle(.plain)
             }
-            .frame(alignment: .leading)
         }
-        .buttonStyle(.plain)
+        .frame(alignment: .leading)
         .transition(.opacity.combined(with: .move(edge: .bottom)))
     }
 }
 
-
 struct SuggestionButton_Previews: PreviewProvider {
     static var previews: some View {
         VStack(spacing: 20) {
-            SuggestionButton(mode: .yin) {
-                print("Yin suggestion tapped")
+            SuggestionButton(mode: .yin) { suggestion in
+                print("Yin suggestion tapped: \(suggestion)")
             }
-            SuggestionButton(mode: .yang) {
-                print("Yang suggestion tapped")
+            SuggestionButton(mode: .yang) { suggestion in
+                print("Yang suggestion tapped: \(suggestion)")
             }
         }
         .padding()
