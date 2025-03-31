@@ -29,7 +29,6 @@ struct ChatView: View {
     @State private var messageText: String = ""
     @FocusState private var isFocused: Bool
     @State private var isEditing: Bool = false
-    @State private var isActionsExpanded: Bool = false
     
     // Media Selection State
     @State private var isShowingMediaPicker = false
@@ -58,10 +57,23 @@ struct ChatView: View {
                     
                     // Messages area
                     messagesArea()
+                        .padding(.bottom, 60)
                     
                     // Input area
                     inputArea()
                 }
+                VStack {
+                    Spacer()
+
+                    SuggestionButton(mode: viewModel.currentMode) {
+                        let suggestion = (viewModel.currentMode == .yin) ? "Compliment me 🥹" : "Roast me 🥵"
+                        messageText = suggestion
+                        sendMessage()
+                    }
+                    .padding(.bottom, 65)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                
                 .navigationDestination(isPresented: $showProfile) {
                     ProfileView()
                         .environmentObject(authManager)
@@ -236,10 +248,9 @@ struct ChatView: View {
     
     @ViewBuilder
     private func inputArea() -> some View {
-        VStack {
+        VStack(spacing: 0) {
             MessageInputView(
                 messageText: $messageText,
-//                isActionsExpanded: $isActionsExpanded,
                 selectedImage: $selectedImage,
                 onSend: sendMessage,
                 onCameraButtonTapped: handleCameraButtonTapped,
@@ -248,8 +259,12 @@ struct ChatView: View {
             .environmentObject(FirebaseManager.shared)
             .padding(.bottom, 8)
             .focused($isFocused)
+            .background(
+                colors.backgroundWithNoise
+                    .blur(radius: 10)
+                    .edgesIgnoringSafeArea(.bottom)
+            )
         }
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isActionsExpanded)
     }
     
     @ViewBuilder
@@ -337,7 +352,6 @@ struct ChatView: View {
             permissionAlertType = "Camera"
             showPermissionAlert = true
         }
-        isActionsExpanded = false
     }
     
     private func handlePhotoLibraryButtonTapped() {
@@ -349,7 +363,6 @@ struct ChatView: View {
             permissionAlertType = "Photo Library"
             showPermissionAlert = true
         }
-        isActionsExpanded = false
     }
     
     private func sendMessage() {
