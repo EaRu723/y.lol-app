@@ -116,23 +116,28 @@ struct ChatView: View {
                 messagesContent(proxy: proxy)
             }
             // Scroll when new messages are added
-            .onChange(of: viewModel.messages.count) { _, newCount in
-                // Only scroll if messages were added (not removed/cleared)
-                // And ensure viewModel isn't currently processing (thinking) to avoid premature scrolls
-                if newCount > 0 && !viewModel.isThinking {
-                    scrollToBottom(proxy: proxy)
-                }
-            }
-            // Scroll when AI starts typing
-            .onChange(of: viewModel.isTyping) { _, isTypingNow in
-                if isTypingNow {
-                    // Give a very slight delay for the indicator to appear
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            .onChange(of: viewModel.messages.count) { oldValueCount, newCount in
+                // Only scroll if messages were added (count increased).
+                // This ensures scrolling happens even if `isThinking` is briefly true when the message arrives.
+                if newCount > oldValueCount {
+                    // Add a small delay to allow the new message view to render and layout to settle before scrolling.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { // Increased delay slightly
                        scrollToBottom(proxy: proxy)
                     }
                 }
-                // No explicit scroll needed when typing stops; handled by new message arrival
-                // or if user starts typing again.
+            }
+            // Scroll when AI starts/stops typing
+            .onChange(of: viewModel.isTyping) { _, isTypingNow in
+                if isTypingNow {
+                    // When AI starts typing, scroll to make the indicator visible
+                    // Add a very slight delay to allow the indicator to appear before scrolling
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        // Explicitly pass the proxy and target the indicator
+                        scrollToBottom(proxy: proxy)
+                    }
+                }
+                // No explicit scroll needed when typing stops,
+                // as the arrival of the new message will trigger scrolling via .onChange(of: viewModel.messages.count)
             }
             // Scroll when keyboard appears
             .onChange(of: isFocused) { _, isNowFocused in
