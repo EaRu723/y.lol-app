@@ -12,12 +12,6 @@ import FirebaseStorage
 import FirebaseFirestore
 
 
-struct ChatSession: Identifiable, Codable {
-    var id: String
-    var messages: [ChatMessage]
-    var timestamp: Date
-}
-
 /// FirebaseManager that sends messages to Firebase functions.
 class FirebaseManager: ObservableObject {
     enum ChatMode {
@@ -41,7 +35,18 @@ class FirebaseManager: ObservableObject {
     // MARK: - Public API
     
     /// Generates a response given the conversationId, a new message, and optional images.
-    func generateResponse(conversationId: String, newMessages: [ChatMessage], currentImageData: [Data], mode: ChatMode) async -> String? {
+    func generateResponse(
+        conversationId: String,
+        newMessages: [ChatMessage],
+        currentImageData: [Data],
+        mode: ChatMode
+    ) async -> String? {
+        // Log the received message history
+        print("FirebaseManager received \(newMessages.count) messages")
+        
+        // IMPORTANT: Don't fetch additional history from anywhere else
+        // Use ONLY the provided newMessages
+        
         // Update on main thread
         await MainActor.run {
             self.isProcessingMessage = true
@@ -49,36 +54,26 @@ class FirebaseManager: ObservableObject {
         }
         
         do {
-            // Collect all image data from the conversation history
-            var allImageData: [Data] = []
+            // ONLY use the image data that was passed in
+            // No need to collect additional images from conversation history
+            let allImageData = currentImageData
             
-            // First, add any previous images from the conversation
-            for message in newMessages where message.isUser {
-                if let mediaItems = message.media {
-                    for mediaItem in mediaItems where mediaItem.type == .image {
-                        if let image = await loadImageFromURL(mediaItem.url),
-                           let imageData = image.jpegData(compressionQuality: 0.7) {
-                            allImageData.append(imageData)
-                        }
-                    }
-                }
+            // Extract the last user message as the prompt
+            guard let lastUserMessage = newMessages.last(where: { $0.isUser }) else {
+                throw NSError(domain: "FirebaseManager", code: 0, 
+                              userInfo: [NSLocalizedDescriptionKey: "No user message found"])
             }
             
-            // Add the current message's image data
-            allImageData.append(contentsOf: currentImageData)
+            // Get the content directly since it's non-optional
+            let prompt = lastUserMessage.content
             
-            // Update the conversation cache with the new messages.
-            updateConversationCache(conversationId: conversationId, messages: newMessages)
+            // Use messages excluding the last user message as history
+            let historyMessages = newMessages.filter { $0.id != lastUserMessage.id }
             
-            // Separate out the new user prompt and prior history.
-            guard let (prompt, historyMessages) = getHistoryAndPrompt(conversationId: conversationId) else {
-                throw NSError(domain: "FirebaseManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "No new user message found"])
-            }
-            
-            // Convert conversation history (without the new prompt) to JSON
+            // Convert conversation history to JSON
             let historyJSON = createHistoryJSON(from: historyMessages)
             
-            // Call the Firebase function with ALL image data
+            // Call the Firebase function with ONLY the current image data
             let response = try await callFirebaseFunction(
                 mode: mode,
                 images: allImageData,  // All images from the conversation
@@ -263,17 +258,54 @@ class FirebaseManager: ObservableObject {
         // Try to parse the JSON response.
         if let responseDict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             // Prefer "bubbles" field if present.
-            if let bubbles = responseDict["bubbles"] as? [String], !bubbles.isEmpty {
-                return bubbles.joined(separator: "\n\n")
+            if let bubbles = responseDict["bubbles"] as? [String] {
+                if bubbles.isEmpty {
+                    // Return empty string for empty bubbles array
+                    return ""
+                }
+                
+                // Filter out any empty bubbles or whitespace-only bubbles
+                let filteredBubbles = bubbles.filter { 
+                    let trimmed = $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return !trimmed.isEmpty
+                }
+                
+                // If all bubbles were empty/whitespace, return empty string
+                if filteredBubbles.isEmpty {
+                    return ""
+                }
+                
+                return filteredBubbles.joined(separator: "\n\n")
             } else if let result = responseDict["result"] as? String {
-                return result
+                let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? "" : trimmed
             } else if let text = responseDict["text"] as? String {
-                return text
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? "" : trimmed
             } else {
-                return String(data: data, encoding: .utf8) ?? "No readable response"
+                // Try to parse the raw response
+                let rawResponse = String(data: data, encoding: .utf8) ?? ""
+                let trimmed = rawResponse.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                // Check if the response is just whitespace/control characters
+                let nonWhitespace = trimmed.components(separatedBy: .whitespacesAndNewlines).joined()
+                if nonWhitespace.isEmpty || nonWhitespace == "{\"bubbles\":[]}" {
+                    return ""
+                }
+                
+                return trimmed
             }
         } else {
-            return String(data: data, encoding: .utf8) ?? "No readable response"
+            // Handle the case where the response isn't valid JSON at all
+            let rawResponse = String(data: data, encoding: .utf8) ?? ""
+            let trimmed = rawResponse.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            // Check if it's just whitespace
+            if trimmed.isEmpty {
+                return ""
+            }
+            
+            return trimmed
         }
     }
     
@@ -347,8 +379,8 @@ class FirebaseManager: ObservableObject {
     
     /// Returns the appropriate Firebase function endpoint based on the chat mode.
     private func getFunctionEndpoint(for mode: ChatMode) -> String {
-        let baseUrl = "https://us-central1-ylol-011235.cloudfunctions.net"
-//        let baseUrl = "http://127.0.0.1:5001/ylol-011235/us-central1"
+//        let baseUrl = "https://us-central1-ylol-011235.cloudfunctions.net"
+        let baseUrl = "http://127.0.0.1:5001/ylol-011235/us-central1"
         switch mode {
         case .yin:
             return "\(baseUrl)/yin"
@@ -423,10 +455,111 @@ class FirebaseManager: ObservableObject {
             if let error = error {
                 completion(.failure(error))
             } else if let snapshot = snapshot {
-                let chatSessions = snapshot.documents.compactMap { document -> ChatSession? in
-                    try? document.data(as: ChatSession.self)
+                do {
+                    var chatSessions: [ChatSession] = []
+                    
+                    for document in snapshot.documents {
+                        do {
+                            // Try using Firestore's built-in deserialization
+                            if let chatSession = try? document.data(as: ChatSession.self) {
+                                print("Successfully decoded chat session with ID: \(chatSession.id)")
+                                chatSessions.append(chatSession)
+                            } else {
+                                // Manual fallback if automatic decoding fails
+                                print("Fallback to manual decoding for document: \(document.documentID)")
+                                let data = document.data()
+                                let id = document.documentID
+                                
+                                // Extract timestamp
+                                var timestamp = Date()
+                                if let timestampValue = data["timestamp"] as? TimeInterval {
+                                    timestamp = Date(timeIntervalSince1970: timestampValue)
+                                } else if let firestoreTimestamp = data["timestamp"] as? Timestamp {
+                                    timestamp = firestoreTimestamp.dateValue()
+                                }
+                                
+                                // Extract and convert messages
+                                var messages: [ChatMessage] = []
+                                if let messagesData = data["messages"] as? [[String: Any]] {
+                                    for messageData in messagesData {
+                                        // Extract basic message fields
+                                        let content = messageData["content"] as? String ?? ""
+                                        let isUser = messageData["isUser"] as? Bool ?? false
+                                        
+                                        // Handle timestamp
+                                        var messageTimestamp = Date()
+                                        if let timestampDouble = messageData["timestamp"] as? TimeInterval {
+                                            messageTimestamp = Date(timeIntervalSince1970: timestampDouble)
+                                        } else if let firestoreTimestamp = messageData["timestamp"] as? Timestamp {
+                                            messageTimestamp = firestoreTimestamp.dateValue()
+                                        }
+                                        
+                                        // Handle media if present
+                                        var media: [MediaContent]? = nil
+                                        if let mediaData = messageData["media"] as? [[String: Any]], !mediaData.isEmpty {
+                                            media = mediaData.compactMap { mediaItem -> MediaContent? in
+                                                guard 
+                                                    let id = mediaItem["id"] as? String,
+                                                    let url = mediaItem["url"] as? String,
+                                                    let timestampValue = mediaItem["timestamp"] as? TimeInterval
+                                                else { return nil }
+                                                
+                                                // Assume image type as default
+                                                return MediaContent(
+                                                    id: id,
+                                                    type: .image,
+                                                    url: url,
+                                                    metadata: nil,
+                                                    timestamp: timestampValue
+                                                )
+                                            }
+                                        }
+                                        
+                                        // Create the message with proper ID
+                                        var message = ChatMessage(
+                                            content: content, 
+                                            isUser: isUser, 
+                                            timestamp: messageTimestamp,
+                                            media: media
+                                        )
+                                        
+                                        // Set the ID if present
+                                        if let idString = messageData["id"] as? String, 
+                                           let uuid = UUID(uuidString: idString) {
+                                            message.id = uuid
+                                        }
+                                        
+                                        messages.append(message)
+                                    }
+                                }
+                                
+                                // Extract the chat mode if available, default to .yin if not present
+                                let modeString = data["chatMode"] as? String ?? "yin"
+                                let chatMode: FirebaseManager.ChatMode = modeString == "yang" ? .yang : .yin
+                                
+                                print("Manually decoded \(messages.count) messages for session \(id)")
+                                let chatSession = ChatSession(
+                                    id: id, 
+                                    messages: messages, 
+                                    timestamp: timestamp,
+                                    chatMode: chatMode
+                                )
+                                chatSessions.append(chatSession)
+                            }
+                        } catch {
+                            print("Error decoding chat session from document \(document.documentID): \(error)")
+                        }
+                    }
+                    
+                    // Sort sessions by timestamp, newest first
+                    chatSessions.sort { $0.timestamp > $1.timestamp }
+                    
+                    print("Successfully retrieved \(chatSessions.count) chat sessions")
+                    completion(.success(chatSessions))
+                } catch {
+                    print("Error parsing chat sessions: \(error.localizedDescription)")
+                    completion(.failure(error))
                 }
-                completion(.success(chatSessions))
             }
         }
     }
