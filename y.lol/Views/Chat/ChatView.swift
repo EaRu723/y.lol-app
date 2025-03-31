@@ -112,28 +112,42 @@ struct ChatView: View {
             ScrollView {
                 messagesContent(proxy: proxy)
             }
-            .onChange(of: viewModel.messages.count) { oldCount, newCount in
-                if newCount > oldCount {
-                    scrollToLatest(proxy: proxy)
+            // Scroll when new messages are added
+            .onChange(of: viewModel.messages.count) { _, newCount in
+                // Only scroll if messages were added (not removed/cleared)
+                // And ensure viewModel isn't currently processing (thinking) to avoid premature scrolls
+                if newCount > 0 && !viewModel.isThinking {
+                    scrollToBottom(proxy: proxy)
                 }
             }
-            .onChange(of: viewModel.isTyping) { oldValue, newValue in
-                handleTypingStateChange(oldValue: oldValue, newValue: newValue, proxy: proxy)
-            }
-            .onReceive(Timer.publish(every: 0.3, on: .main, in: .common).autoconnect()) { _ in
-                if viewModel.isTyping {
-                    scrollToLatest(proxy: proxy)
-                }
-            }
-            .onChange(of: isFocused) { oldValue, newValue in
-                if newValue == true {
-                    // When the text field becomes focused, scroll to the latest message
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            scrollToLatest(proxy: proxy)
-                        }
+            // Scroll when AI starts typing
+            .onChange(of: viewModel.isTyping) { _, isTypingNow in
+                if isTypingNow {
+                    // Give a very slight delay for the indicator to appear
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                       scrollToBottom(proxy: proxy)
                     }
                 }
+                // No explicit scroll needed when typing stops; handled by new message arrival
+                // or if user starts typing again.
+            }
+            // Scroll when keyboard appears
+            .onChange(of: isFocused) { _, isNowFocused in
+                if isNowFocused {
+                    // When the text field becomes focused, scroll to the bottom
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { // Allow keyboard animation
+                        scrollToBottom(proxy: proxy)
+                    }
+                }
+            }
+            // Scroll when the view initially appears, if needed
+            .onAppear {
+                 // Scroll to bottom initially if there are messages
+                 if !viewModel.messages.isEmpty {
+                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { // Allow layout
+                         scrollToBottom(proxy: proxy, animated: false) // Don't animate initial scroll
+                     }
+                 }
             }
         }
         .simultaneousGesture(
@@ -142,6 +156,10 @@ struct ChatView: View {
                     hideKeyboard()
                 })
         )
+        // Add padding below scroll view to prevent overlap with input area BEFORE keyboard appears
+        // Adjust this value based on your MessageInputView's resting height
+        // Increased padding value from 50
+        .padding(.bottom, 120)
     }
     
     @ViewBuilder
@@ -157,6 +175,7 @@ struct ChatView: View {
                     .foregroundColor(.secondary)
                 Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             LazyVStack(spacing: 2) { // Keep the reduced spacing for grouped messages
                 ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
@@ -190,52 +209,42 @@ struct ChatView: View {
                         ),
                         removal: .opacity.combined(with: .scale(scale: 0.9))
                     ))
+                    .onAppear {
+                         // Potential optimization: Track if user has scrolled up manually
+                         // If so, maybe don't auto-scroll on new messages unless they are near the bottom.
+                         // For now, we always scroll.
+                     }
                 }
                 
-                // Typing indicator
+                // Typing Indicator
                 if viewModel.isTyping {
-                    // Determine timestamp for typing indicator based on last message
-                    let lastMessageTimestamp = viewModel.messages.last?.timestamp
-                    if let timestampString = formatTimestampSeparator(current: Date(), previous: lastMessageTimestamp) {
-                         TimestampSeparatorView(text: timestampString)
-                             .padding(.top, 10)
-                    }
-                    typingIndicator(proxy: proxy)
-                        .padding(.top, (formatTimestampSeparator(current: Date(), previous: lastMessageTimestamp) == nil) ? 10 : 0) // Add padding if no timestamp shown
+                    typingIndicatorView() // Pass proxy no longer needed
+                        .id("typingIndicator") // Keep the ID for targeting
                 }
-                
-                // Add the new spacer Rectangle
-                Rectangle()
-                    .frame(height: 80)
-                    .foregroundColor(.clear)
-                
-                // Bottom spacer
-                Rectangle()
+
+                // Invisible spacer at the bottom to ensure scrolling past the last message/indicator
+                Spacer()
                     .frame(height: 1)
-                    .foregroundColor(.clear)
-                    .id("bottomSpacer")
+                    .id("bottomAnchor")
+
             }
+            // Add padding within the ScrollView content to keep messages from hitting the very top/bottom edges
             .padding(.vertical)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
     
     @ViewBuilder
-    private func typingIndicator(proxy: ScrollViewProxy) -> some View {
+    private func typingIndicatorView() -> some View { // Removed proxy parameter
         HStack {
-            TypingIndicatorView()
+            TypingBubbleView(sender: .yin) // Assuming .yin is the AI sender
+                .padding(.leading, 5)
             Spacer()
         }
         .padding(.horizontal)
-        .id("typingIndicator")
+        .id("typingIndicator") // ID remains useful
         .transition(.opacity.combined(with: .move(edge: .bottom)))
-        .onAppear {
-            // Force scroll when the indicator appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.easeOut(duration: 0.15)) {
-                    proxy.scrollTo("typingIndicator", anchor: .bottom)
-                }
-            }
-        }
+        // Removed the onAppear scroll logic here
     }
     
     @ViewBuilder
@@ -311,29 +320,6 @@ struct ChatView: View {
         }
     }
     
-    private func handleTypingStateChange(oldValue: Bool, newValue: Bool, proxy: ScrollViewProxy) {
-        if newValue {
-            // When typing starts, scroll to typing indicator
-            withAnimation(.easeOut(duration: 0.15)) {
-                scrollToLatest(proxy: proxy)
-            }
-        } else if !newValue && oldValue {
-            // When typing ends, maintain position momentarily
-            withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo("bottomSpacer", anchor: .bottom)
-            }
-            
-            // Then after a short delay, scroll to the latest message
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    if let lastMessage = viewModel.messages.last {
-                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                    }
-                }
-            }
-        }
-    }
-    
     private func handleCameraButtonTapped() {
         permissionManager.checkCameraPermission()
         if permissionManager.cameraPermissionGranted {
@@ -386,23 +372,19 @@ struct ChatView: View {
         }
     }
     
-    private func scrollToLatest(proxy: ScrollViewProxy) {
-        // Use a very short delay to allow layout updates to complete
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
-            // Use a short animation for smoother transition
-            withAnimation(.easeOut(duration: 0.15)) {
-                if viewModel.isTyping {
-                    // Always scroll to typing indicator when AI is typing
-                    proxy.scrollTo("typingIndicator", anchor: .bottom)
-                } else if let lastMessage = viewModel.messages.last {
-                    // Scroll to last message when new message arrives
-                    proxy.scrollTo(lastMessage.id, anchor: .bottom)
+    private func scrollToBottom(proxy: ScrollViewProxy, animated: Bool = true) {
+        DispatchQueue.main.async { // Ensure it runs on the main thread
+            let targetID = viewModel.isTyping ? "typingIndicator" : "bottomAnchor"
+            if animated {
+                withAnimation(.easeOut(duration: 0.25)) { // Slightly slower for smoother feel
+                    proxy.scrollTo(targetID, anchor: .bottom)
                 }
+            } else {
+                proxy.scrollTo(targetID, anchor: .bottom)
             }
         }
     }
     
-    // Modify this function to just set the selectedImage without sending it
     private func handleSelectedImage(_ image: UIImage) {
         // Add a guard to prevent setting image if it's being cleared
         if viewModel.isThinking {
