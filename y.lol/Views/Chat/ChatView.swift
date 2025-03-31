@@ -159,23 +159,31 @@ struct ChatView: View {
                 Spacer()
             }
         } else {
-            // Use a smaller base spacing for consecutive messages
-            LazyVStack(spacing: 2) { // Reduced base spacing
+            LazyVStack(spacing: 2) { // Keep the reduced spacing for grouped messages
                 ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
-                    // Determine if this message starts a new group
-                    let isFirstInGroup = index == 0 || viewModel.messages[index - 1].isUser != message.isUser
+                    let previousMessage = index > 0 ? viewModel.messages[index - 1] : nil
+                    let isFirstInGroup = previousMessage?.isUser != message.isUser
+
+                    // --- Timestamp Separator Logic ---
+                    // Check if a timestamp separator should be shown before this message
+                    if let timestampString = formatTimestampSeparator(current: message.timestamp, previous: previousMessage?.timestamp) {
+                        TimestampSeparatorView(text: timestampString)
+                            // Add extra top padding if the timestamp is shown, otherwise use standard group padding
+                            .padding(.top, 10)
+                    }
+                    // --- End Timestamp Separator Logic ---
 
                     MessageView(
                         message: message,
                         index: index,
                         totalCount: viewModel.messages.count,
-                        previousMessage: index > 0 ? viewModel.messages[index - 1] : nil,
+                        previousMessage: previousMessage,
                         nextMessage: index < viewModel.messages.count - 1 ? viewModel.messages[index + 1] : nil,
                         mode: viewModel.currentMode
                     )
                     .id(message.id)
-                    // Add extra top padding only for the first message in a group
-                    .padding(.top, isFirstInGroup ? 10 : 0) // Increased spacing for the start of a group
+                    // Add top padding for message grouping *only if* a timestamp isn't already adding padding
+                    .padding(.top, (isFirstInGroup && formatTimestampSeparator(current: message.timestamp, previous: previousMessage?.timestamp) == nil) ? 10 : 0)
                     .transition(.asymmetric(
                         insertion: .modifier(
                             active: CustomTransitionModifier(offset: 20, opacity: 0, scale: 0.8),
@@ -187,7 +195,14 @@ struct ChatView: View {
                 
                 // Typing indicator
                 if viewModel.isTyping {
+                    // Determine timestamp for typing indicator based on last message
+                    let lastMessageTimestamp = viewModel.messages.last?.timestamp
+                    if let timestampString = formatTimestampSeparator(current: Date(), previous: lastMessageTimestamp) {
+                         TimestampSeparatorView(text: timestampString)
+                             .padding(.top, 10)
+                    }
                     typingIndicator(proxy: proxy)
+                        .padding(.top, (formatTimestampSeparator(current: Date(), previous: lastMessageTimestamp) == nil) ? 10 : 0) // Add padding if no timestamp shown
                 }
                 
                 // Bottom spacer
@@ -196,7 +211,7 @@ struct ChatView: View {
                     .foregroundColor(.clear)
                     .id("bottomSpacer")
             }
-            .padding(.vertical) // Keep overall padding for the VStack
+            .padding(.vertical)
         }
     }
     
@@ -418,4 +433,54 @@ struct ChatView_Previews: PreviewProvider {
     static var previews: some View {
         ChatView()
     }
+}
+
+// Helper View for Timestamp Separator
+struct TimestampSeparatorView: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.caption) // Smaller font size
+            .foregroundColor(.secondary) // Less prominent color
+            .padding(.vertical, 10) // Space above and below
+            .frame(maxWidth: .infinity) // Center align
+    }
+}
+
+// Helper function to decide if a separator is needed and format it
+func formatTimestampSeparator(current: Date, previous: Date?) -> String? {
+    guard let previousDate = previous else {
+        // Always show timestamp for the very first message in the list
+        return formatDetailedTimestamp(date: current)
+    }
+
+    let timeInterval = current.timeIntervalSince(previousDate)
+
+    // Show timestamp separator if more than 1 hour (3600 seconds) has passed
+    if timeInterval > 3600 {
+        return formatDetailedTimestamp(date: current)
+    }
+
+    // Otherwise, don't show a separator
+    return nil
+}
+
+// Formats the date for the separator view (similar to iMessage)
+func formatDetailedTimestamp(date: Date) -> String {
+    let formatter = DateFormatter()
+    let calendar = Calendar.current
+
+    if calendar.isDateInToday(date) {
+        formatter.dateFormat = "h:mm a" // e.g., "10:30 AM"
+    } else if calendar.isDateInYesterday(date) {
+        formatter.dateFormat = "'Yesterday' h:mm a" // e.g., "Yesterday 2:15 PM"
+    } else if let weekAgo = calendar.date(byAdding: .day, value: -7, to: Date()), date >= weekAgo {
+        // Within the last week
+        formatter.dateFormat = "EEEE h:mm a" // e.g., "Monday 9:00 AM"
+    } else {
+        // Older than a week
+        formatter.dateFormat = "MM/dd/yy, h:mm a" // e.g., "11/04/23, 9:30 AM"
+    }
+    return formatter.string(from: date)
 }
