@@ -53,7 +53,7 @@ struct MessageView: View {
     }
     
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 4) {
             if message.isUser {
                 Spacer(minLength: 40)
             } else if let emoji = emoji {
