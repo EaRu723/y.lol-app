@@ -209,7 +209,8 @@ struct ChatView: View {
                         mode: viewModel.currentMode,
                         onImageLoad: {
                             triggerDebouncedScrollToBottom(proxy: proxy)
-                        }
+                        },
+                        showEmoji: false
                     )
                     .id(message.id)
                     // Add top padding for message grouping *only if* a timestamp isn't already adding padding

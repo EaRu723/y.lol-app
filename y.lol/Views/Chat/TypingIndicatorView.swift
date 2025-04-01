@@ -18,12 +18,8 @@ struct TypingIndicatorView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        .background(colors.aiMessageBubble)
+        .background(Color.gray.opacity(0.1))
         .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(colors.text(opacity: 0.1), lineWidth: 0.5)
-        )
     }
 }
 

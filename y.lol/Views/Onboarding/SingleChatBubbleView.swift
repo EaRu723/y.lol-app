@@ -3,39 +3,23 @@ import SwiftUI
 struct SingleChatBubbleView: View {
     let message: OnboardingMessage
     
-    @Environment(\.themeColors) private var colors
-    
-    private var emoji: String { message.sender == .yin ? "😇" : "😈" }
-    private var alignment: Alignment { message.sender == .yin ? .leading : .trailing }
-    private var bubbleColor: Color { colors.aiMessageBubble }
-    private var strokeColor: Color { message.sender == .yin ? Color.blue.opacity(0.1) : Color.red.opacity(0.1) }
-
     var body: some View {
-        HStack(alignment: .top, spacing: 4) {
-            EmojiView(emoji: emoji)
-
-            Text(message.text)
-                .font(YTheme.Typography.serif(size: 16, weight: .light))
-                .foregroundColor(colors.aiMessageText)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(bubbleColor)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(strokeColor, lineWidth: 1)
-                )
-                .frame(maxWidth: UIScreen.main.bounds.width * 0.67, alignment: .leading)
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    
-    private func EmojiView(emoji: String) -> some View {
-        Text(emoji)
-            .font(.system(size: 24))
-            .padding(.top, 6)
+        // Convert OnboardingMessage to ChatMessage
+        MessageView(
+            message: ChatMessage(
+                content: message.text,
+                isUser: false, // AI messages in onboarding
+                timestamp: Date(),
+                imageUrl: nil
+            ),
+            index: 0,
+            totalCount: 1,
+            previousMessage: nil,
+            nextMessage: nil,
+            mode: message.sender == .yin ? .yin : .yang,
+            onImageLoad: nil,
+            showEmoji: true // Enable emoji display for onboarding
+        )
     }
 }
 
@@ -45,23 +29,19 @@ struct TypingBubbleView: View {
     @Environment(\.themeColors) private var colors
     
     private var emoji: String { sender == .yin ? "😇" : "😈" }
-    private var alignment: Alignment { sender == .yin ? .leading : .trailing }
 
     var body: some View {
-         HStack(alignment: .top, spacing: 4) {
-             EmojiView(emoji: emoji)
+        HStack(alignment: .top, spacing: 4) {
+            Text(emoji)
+                .font(.system(size: 24))
+                .padding(.top, 6)
+                .padding(.leading, 8)
 
-             TypingIndicatorView()
+            TypingIndicatorView()
 
-             Spacer()
-         }
-         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-    
-    private func EmojiView(emoji: String) -> some View {
-        Text(emoji)
-            .font(.system(size: 24))
-            .padding(.top, 6)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

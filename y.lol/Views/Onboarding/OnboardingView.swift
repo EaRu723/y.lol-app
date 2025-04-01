@@ -106,8 +106,8 @@ struct OnboardingView: View {
         if index == 2 {
             messages = [
                 .init(sender: .yang, text: "yooo \(handle)"),
-                .init(sender: .yang, text: "that's a vibe"),
                 .init(sender: .yin, text: "namaste \(handle)"),
+                .init(sender: .yang, text: "that's a vibe"),
                 .init(sender: .yin, text: "let's begin")
             ]
         } else {

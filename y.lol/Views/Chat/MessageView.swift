@@ -17,6 +17,7 @@ struct MessageView: View {
     let nextMessage: ChatMessage?
     let mode: FirebaseManager.ChatMode
     let onImageLoad: (() -> Void)?
+    let showEmoji: Bool
     
     // Update properties to use optional previous/next messages
     private var isFirstInGroup: Bool {
@@ -35,7 +36,7 @@ struct MessageView: View {
     }
     
     private var bubbleBackground: Color {
-        message.isUser ? colors.userMessageBubble : colors.aiMessageBubble
+        message.isUser ? colors.userMessageBubble : Color.gray.opacity(0.1)
     }
     
     private var formattedTimestamp: String {
@@ -45,10 +46,22 @@ struct MessageView: View {
         return formatter.string(from: message.timestamp)
     }
     
+    // Add computed property for emoji
+    private var emoji: String? {
+        guard showEmoji else { return nil }
+        return message.isUser ? nil : (mode == .yin ? "😇" : "😈")
+    }
+    
     var body: some View {
         HStack(spacing: 0) {
             if message.isUser {
                 Spacer(minLength: 40)
+            } else if let emoji = emoji {
+                // Show emoji for AI messages when enabled
+                Text(emoji)
+                    .font(.system(size: 24))
+                    .padding(.top, 6)
+                    .padding(.leading, 8)
             }
             
             // Message bubble
@@ -62,7 +75,7 @@ struct MessageView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(!message.isUser ? getBorderColor() : Color.clear, lineWidth: 1)
+                            .stroke(Color.clear, lineWidth: 1)
                     )
                     .frame(maxWidth: UIScreen.main.bounds.width * 0.67, alignment: message.isUser ? .trailing : .leading)
                     .fixedSize(horizontal: false, vertical: true)
@@ -109,7 +122,7 @@ struct MessageView: View {
             }
             
             if !message.isUser {
-                Spacer(minLength: 40)
+                Spacer(minLength: emoji != nil ? 32 : 40)
             }
         }
         .padding(.horizontal, 8)
@@ -146,7 +159,8 @@ struct MessageView_Previews: PreviewProvider {
                     imageUrl: nil
                 ),
                 mode: .yin,
-                onImageLoad: nil
+                onImageLoad: nil,
+                showEmoji: false
             )
             
             MessageView(
@@ -166,7 +180,8 @@ struct MessageView_Previews: PreviewProvider {
                 ),
                 nextMessage: nil,
                 mode: .yang,
-                onImageLoad: nil
+                onImageLoad: nil,
+                showEmoji: false
             )
         }
         .padding()
