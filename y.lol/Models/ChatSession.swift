@@ -9,17 +9,19 @@ import Foundation
 
 struct ChatSession: Identifiable, Codable {
     var id: String
+    var sessionId: String
     var messages: [ChatMessage]
     var timestamp: Date
     var chatMode: FirebaseManager.ChatMode
     
     enum CodingKeys: String, CodingKey {
-        case id, messages, timestamp, chatMode
+        case id, sessionId, messages, timestamp, chatMode
     }
     
     // Add coding methods to handle the enum
-    init(id: String, messages: [ChatMessage], timestamp: Date, chatMode: FirebaseManager.ChatMode) {
+    init(id: String, sessionId: String, messages: [ChatMessage], timestamp: Date, chatMode: FirebaseManager.ChatMode) {
         self.id = id
+        self.sessionId = sessionId
         self.messages = messages
         self.timestamp = timestamp
         self.chatMode = chatMode
@@ -29,6 +31,7 @@ struct ChatSession: Identifiable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
+        sessionId = try container.decode(String.self, forKey: .sessionId)
         messages = try container.decode([ChatMessage].self, forKey: .messages)
         timestamp = try container.decode(Date.self, forKey: .timestamp)
         
@@ -40,6 +43,7 @@ struct ChatSession: Identifiable, Codable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
+        try container.encode(sessionId, forKey: .sessionId)
         try container.encode(messages, forKey: .messages)
         try container.encode(timestamp, forKey: .timestamp)
         

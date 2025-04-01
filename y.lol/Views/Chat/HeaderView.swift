@@ -10,6 +10,7 @@ import SwiftUI
 struct HeaderView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.themeColors) private var colors
+    @ObservedObject var viewModel: ChatViewModel
     @Binding var isThinking: Bool
     @Binding var showProfile: Bool
     @State private var showButtons = true
@@ -22,12 +23,23 @@ struct HeaderView: View {
             // Main header content
             HStack {
                 // Search button
+//                Button(action: {
+//                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+//                        isSearching.toggle()
+//                    }
+//                }) {
+//                    Image(systemName: "magnifyingglass")
+//                        .font(.system(size: 20))
+//                        .foregroundColor(.primary)
+//                }
+//                .opacity(showButtons && !isSearching ? 1 : 0)
+//                .animation(.easeInOut(duration: 0.2), value: showButtons)
+//                .zIndex(2)
+
                 Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        isSearching.toggle()
-                    }
+                    viewModel.startNewConversation()
                 }) {
-                    Image(systemName: "magnifyingglass")
+                    Image(systemName: "square.and.pencil")
                         .font(.system(size: 20))
                         .foregroundColor(.primary)
                 }
@@ -173,6 +185,7 @@ struct HeaderView_Previews: PreviewProvider {
         Group {
             // Light mode preview
             HeaderView(
+                viewModel: ChatViewModel(),
                 isThinking: .constant(false),
                 showProfile: .constant(false),
                 isSearching: .constant(false),
@@ -186,6 +199,7 @@ struct HeaderView_Previews: PreviewProvider {
 
             // Dark mode preview
             HeaderView(
+                viewModel: ChatViewModel(),
                 isThinking: .constant(true),
                 showProfile: .constant(false),
                 isSearching: .constant(false),

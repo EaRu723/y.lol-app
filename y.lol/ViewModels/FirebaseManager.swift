@@ -456,13 +456,21 @@ class FirebaseManager: ObservableObject {
             } else if let snapshot = snapshot {
                 do {
                     var chatSessions: [ChatSession] = []
+                    var latestSessionByMode: [FirebaseManager.ChatMode: ChatSession] = [:]
                     
                     for document in snapshot.documents {
                         do {
                             // Try using Firestore's built-in deserialization
                             if let chatSession = try? document.data(as: ChatSession.self) {
                                 print("Successfully decoded chat session with ID: \(chatSession.id)")
-                                chatSessions.append(chatSession)
+                                // Only keep the most recent session for each mode
+                                if let existingSession = latestSessionByMode[chatSession.chatMode] {
+                                    if chatSession.timestamp > existingSession.timestamp {
+                                        latestSessionByMode[chatSession.chatMode] = chatSession
+                                    }
+                                } else {
+                                    latestSessionByMode[chatSession.chatMode] = chatSession
+                                }
                             } else {
                                 // Manual fallback if automatic decoding fails
                                 print("Fallback to manual decoding for document: \(document.documentID)")
@@ -536,24 +544,39 @@ class FirebaseManager: ObservableObject {
                                 let modeString = data["chatMode"] as? String ?? "yin"
                                 let chatMode: FirebaseManager.ChatMode = modeString == "yang" ? .yang : .yin
                                 
+                                // Extract sessionId if available, or generate a new one based on mode
+                                let sessionId = data["sessionId"] as? String ?? UUID().uuidString
+                                
                                 print("Manually decoded \(messages.count) messages for session \(id)")
                                 let chatSession = ChatSession(
-                                    id: id, 
-                                    messages: messages, 
+                                    id: id,
+                                    sessionId: sessionId,
+                                    messages: messages,
                                     timestamp: timestamp,
                                     chatMode: chatMode
                                 )
-                                chatSessions.append(chatSession)
+                                
+                                // Only keep the most recent session for each mode
+                                if let existingSession = latestSessionByMode[chatMode] {
+                                    if timestamp > existingSession.timestamp {
+                                        latestSessionByMode[chatMode] = chatSession
+                                    }
+                                } else {
+                                    latestSessionByMode[chatMode] = chatSession
+                                }
                             }
                         } catch {
                             print("Error decoding chat session from document \(document.documentID): \(error)")
                         }
                     }
                     
+                    // Convert the dictionary of latest sessions to an array
+                    chatSessions = Array(latestSessionByMode.values)
+                    
                     // Sort sessions by timestamp, newest first
                     chatSessions.sort { $0.timestamp > $1.timestamp }
                     
-                    print("Successfully retrieved \(chatSessions.count) chat sessions")
+                    print("Successfully retrieved \(chatSessions.count) latest chat sessions")
                     completion(.success(chatSessions))
                 } catch {
                     print("Error parsing chat sessions: \(error.localizedDescription)")

@@ -98,6 +98,7 @@ struct ChatView: View {
     @ViewBuilder
     private func headerView() -> some View {
         HeaderView(
+            viewModel: viewModel,
             isThinking: $isThinking,
             showProfile: $showProfile,
             isSearching: $isSearching,

@@ -23,6 +23,7 @@ class ChatViewModel: ObservableObject {
                     let tempCurrentMode = oldValue
                     let chatSession = ChatSession(
                         id: conversationId,
+                        sessionId: currentMode == .yin ? yinSessionId : yangSessionId,
                         messages: newSessionMessages,
                         timestamp: Date(),
                         chatMode: tempCurrentMode
@@ -67,6 +68,8 @@ class ChatViewModel: ObservableObject {
     private let hapticService = HapticService()
     private var cancellables = Set<AnyCancellable>()
     private var conversationId = UUID().uuidString
+    private var yinSessionId = UUID().uuidString
+    private var yangSessionId = UUID().uuidString
     private let huxleyViewModel = HuxleyViewModel()
 
     // Track messages added in the current session
@@ -106,8 +109,18 @@ class ChatViewModel: ObservableObject {
     }
 
     // Helper to start a fresh conversation
-    private func startNewConversation() {
+    func startNewConversation() {
+        saveCurrentChatSession()
+        
         conversationId = UUID().uuidString
+        // Only update sessionId for current mode
+        switch currentMode {
+        case .yin:
+            yinSessionId = UUID().uuidString
+        case .yang:
+            yangSessionId = UUID().uuidString
+        }
+        
         let initialMessage = ChatMessage(
             content: getInitialMessage(for: currentMode),
             isUser: false,
@@ -138,7 +151,7 @@ class ChatViewModel: ObservableObject {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let sessions):
-                    print("Successfully fetched previous conversations: \(sessions.count) sessions")
+                    print("Successfully fetched latest conversations: \(sessions.count) sessions")
                     self.previousConversations = sessions
 
                     // Separate conversations by mode
@@ -150,12 +163,14 @@ class ChatViewModel: ObservableObject {
                         // Sort conversations by timestamp (newest first)
                         let sortedSessions = sessions.sorted(by: { $0.timestamp > $1.timestamp })
 
-                        // Populate Yin and Yang messages
+                        // Populate Yin and Yang messages from their latest sessions
                         for session in sortedSessions {
                             if session.chatMode == .yin {
-                                self.yinMessages.append(contentsOf: session.messages)
+                                self.yinMessages = session.messages
+                                self.yinSessionId = session.sessionId
                             } else {
-                                self.yangMessages.append(contentsOf: session.messages)
+                                self.yangMessages = session.messages
+                                self.yangSessionId = session.sessionId
                             }
                         }
 
@@ -172,6 +187,7 @@ class ChatViewModel: ObservableObject {
                                 image: nil
                             )
                             self.yinMessages = [initialYinMessage]
+                            self.yinSessionId = UUID().uuidString
                         }
 
                         if self.yangMessages.isEmpty {
@@ -182,6 +198,7 @@ class ChatViewModel: ObservableObject {
                                 image: nil
                             )
                             self.yangMessages = [initialYangMessage]
+                            self.yangSessionId = UUID().uuidString
                         }
 
                         // Initialize with the current mode's messages
@@ -518,6 +535,7 @@ class ChatViewModel: ObservableObject {
         // Create a chat session with ONLY the messages from this session and include the current mode
         let chatSession = ChatSession(
             id: conversationId,
+            sessionId: currentMode == .yin ? yinSessionId : yangSessionId,
             messages: newSessionMessages,
             timestamp: Date(),
             chatMode: currentMode
