@@ -91,17 +91,11 @@ struct ProfileView: View {
                                 if viewModel.isEditMode {
                                     EditProfileView(viewModel: viewModel)
                                 } else {
-                                    // Read-only name
-                                    VStack(spacing: 4) {
-                                        Text(user.name)
-                                            .font(YTheme.Typography.title)
-                                            .foregroundColor(colors.text)
-                                        
-                                        Text(user.handle)
-                                            .font(YTheme.Typography.caption)
-                                            .foregroundColor(colors.text.opacity(0.7))
-                                    }
-                                    .padding(.bottom, 8)
+                                    // Read-only handle (name removed)
+                                    Text(user.handle) // Display handle instead of name
+                                        .font(YTheme.Typography.title) // Use title font for handle
+                                        .foregroundColor(colors.text)
+                                        .padding(.bottom, 8) // Keep padding consistent
                                     
                                     // Streak and Score boxes
                                     VStack(spacing: 12) {
@@ -340,9 +334,9 @@ struct ProfileView: View {
                     .frame(maxWidth: 300) // Limit width to force text wrapping
             }
         }
-        .frame(width: 390, height: 844) // iPhone 14 dimensions
+        .frame(width: 390) // Keep width fixed, remove height
         .padding(.horizontal, 20)
-        .padding(.vertical, 40)
+        .padding(.vertical, 20) // Reduce vertical padding
         .background(colors.backgroundWithNoise)
         
         // Convert view to UIImage
