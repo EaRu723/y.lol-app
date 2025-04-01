@@ -92,7 +92,7 @@ struct ProfileView: View {
                                     EditProfileView(viewModel: viewModel)
                                 } else {
                                     // Read-only handle (name removed)
-                                    Text(user.handle) // Display handle instead of name
+                                    Text("@y.\(user.handle)") // Display handle with prefix
                                         .font(YTheme.Typography.title) // Use title font for handle
                                         .foregroundColor(colors.text)
                                         .padding(.bottom, 8) // Keep padding consistent
@@ -291,16 +291,12 @@ struct ProfileView: View {
                     .font(.system(size: 80))
             }
             
-            // Name and handle
-            VStack(spacing: 4) {
-                Text(user.name)
-                    .font(YTheme.Typography.title)
-                    .foregroundColor(colors.text)
-                Text(user.handle)
-                    .font(YTheme.Typography.caption)
-                    .foregroundColor(colors.text.opacity(0.7))
-            }
-            
+            // Display Handle (Name removed) with prefix
+            Text("@y.\(user.handle)") // Display handle with prefix
+                .font(YTheme.Typography.title) // Use title font
+                .foregroundColor(colors.text)
+                .padding(.bottom, 4) // Add some padding below handle
+
             // Streak
             HStack {
                 Text("🔥")
