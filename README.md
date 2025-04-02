@@ -59,7 +59,9 @@ Y.lol is an iOS application built with SwiftUI that provides a unique chat inter
         *   Click "Add app" and select iOS.
         *   Enter your app's Bundle ID (found in Xcode: Target > Signing & Capabilities).
         *   Download the `GoogleService-Info.plist` file.
-    *   **Add Config File:** Place the downloaded `GoogleService-Info.plist` file into the root of the `y.lol` Xcode project folder (ensure it's added to the main `y.lol` target in Xcode). **Do not commit this file directly if the repository is public.** Use the provided `.gitignore` to keep it private.
+    *   **Add Your Config File:** Place the `GoogleService-Info.plist` file you downloaded from *your* Firebase project into the root of the `y.lol` Xcode project folder (the same directory as `y.lol.xcodeproj`).
+    *   **Crucially, ensure this file is added to the main `y.lol` target in Xcode.** This file is required for the app to connect to Firebase services and will cause a crash at launch if missing.
+    *   **Do not commit `GoogleService-Info.plist` to Git.** The provided `.gitignore` file should prevent this automatically, as this file contains sensitive project keys specific to your Firebase instance. Each developer needs to use their own configuration file.
 
 3.  **Configuration (Secrets):**
     *   *(Add steps here if you abstracted API keys or other secrets into environment variables or a separate configuration file. Explain how to create this file, perhaps from an example template like `.env.example`)*

@@ -6,3 +6,5 @@
 # User-specific Xcode files
 *.xcuserdatad
 *.xcuserstate
+
+GoogleService-Info.plist
