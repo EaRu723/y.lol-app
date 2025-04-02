@@ -255,7 +255,7 @@ class ProfileViewModel: ObservableObject {
                     throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
                 }
                 
-                guard let url = URL(string: "https://us-central1-ylol-011235.cloudfunctions.net/myVibe") else {
+                guard let url = URL(string: "your_url_here") else {
                     throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
                 }
                 
@@ -322,7 +322,7 @@ class ProfileViewModel: ObservableObject {
                     throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Not authenticated"])
                 }
                 
-                guard let url = URL(string: "https://us-central1-ylol-011235.cloudfunctions.net/percentage") else {
+                guard let url = URL(string: "lol-011235.cloudfunctions.net/percentage") else {
                     throw NSError(domain: "ProfileViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
                 }
                 
