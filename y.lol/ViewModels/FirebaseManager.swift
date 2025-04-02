@@ -378,8 +378,7 @@ class FirebaseManager: ObservableObject {
     
     /// Returns the appropriate Firebase function endpoint based on the chat mode.
     private func getFunctionEndpoint(for mode: ChatMode) -> String {
-        let baseUrl = "https://us-central1-ylol-011235.cloudfunctions.net"
-//        let baseUrl = "http://127.0.0.1:5001/ylol-011235/us-central1"
+        let baseUrl = "you_url_here"
         switch mode {
         case .yin:
             return "\(baseUrl)/yin"
