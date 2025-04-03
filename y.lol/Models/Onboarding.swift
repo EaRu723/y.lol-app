@@ -12,9 +12,7 @@ struct OnboardingMessage: Identifiable {
 }
 
 struct OnboardingPage {
-    // Remove old text properties
-    // let yinText: String
-    // let yangText: String
+
     
     // Add messages array
     let messages: [OnboardingMessage]
