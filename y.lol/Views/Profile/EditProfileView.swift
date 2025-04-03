@@ -128,29 +128,6 @@ struct EditProfileView: View {
                         // Add a section divider for API settings
                         Divider()
                             .padding(.vertical, 8)
-                        
-                        Text("Huxley API Settings")
-                            .font(YTheme.Typography.subtitle)
-                            .foregroundColor(colors.text)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        FormField(
-                            title: "Huxley Email",
-                            placeholder: "Email for Huxley API",
-                            text: $viewModel.editedHuxleyEmail,
-                            keyboardType: .emailAddress,
-                            autocapitalization: .none,
-                            disableAutocorrection: true
-                        )
-                        
-                        FormField(
-                            title: "Huxley API Key",
-                            placeholder: "API Key for Huxley",
-                            text: $viewModel.editedHuxleyApiKey,
-                            keyboardType: .default,
-                            autocapitalization: .none,
-                            disableAutocorrection: true
-                        )
                     }
                     .padding()
                 }

@@ -31,9 +31,6 @@ class ProfileViewModel: ObservableObject {
     @Published var selectedProfileImage: UIImage?
     @Published var profilePictureUrl: String?
     
-    // Add these properties
-    @Published var editedHuxleyEmail = ""
-    @Published var editedHuxleyApiKey = ""
     
     @Published var isGeneratingVibe = false
     @Published var vibeError = ""
@@ -101,10 +98,6 @@ class ProfileViewModel: ObservableObject {
                         profilePictureUrl: profilePictureUrl
                     )
                     
-                    // Load Huxley credentials from local storage
-                    let credentials = LocalCredentialStore.getHuxleyCredentials()
-                    user.huxleyEmail = credentials.email
-                    user.huxleyApiKey = credentials.apiKey
                     
                     // All this code now runs on the main actor
                     self.user = user
@@ -113,11 +106,6 @@ class ProfileViewModel: ObservableObject {
                 } else {
                     // If document doesn't exist yet, use the basic user info
                     var currentUserCopy = currentUser
-                    
-                    // Load Huxley credentials for the empty user case
-                    let credentials = LocalCredentialStore.getHuxleyCredentials()
-                    currentUserCopy.huxleyEmail = credentials.email
-                    currentUserCopy.huxleyApiKey = credentials.apiKey
                     
                     self.user = currentUserCopy
                     self.setupEditableFields(from: currentUserCopy)
@@ -141,9 +129,6 @@ class ProfileViewModel: ObservableObject {
         }
         profilePictureUrl = user.profilePictureUrl
         
-        // Set up Huxley credential fields
-        editedHuxleyEmail = user.huxleyEmail ?? ""
-        editedHuxleyApiKey = user.huxleyApiKey ?? ""
     }
     
     func enterEditMode() {
@@ -199,11 +184,6 @@ class ProfileViewModel: ObservableObject {
             
             try await userRef.updateData(updateData)
             
-            // Save Huxley credentials locally (not to Firebase)
-            LocalCredentialStore.saveHuxleyCredentials(
-                email: editedHuxleyEmail,
-                apiKey: editedHuxleyApiKey
-            )
             
             // Refresh user data after update
             await fetchUserData()

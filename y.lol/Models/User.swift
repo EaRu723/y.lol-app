@@ -26,9 +26,6 @@ struct User: Codable {
     var media: [MediaContent] = []
     var profilePictureUrl: String?
     
-    // Huxley credentials (not stored in Firebase)
-    var huxleyEmail: String?
-    var huxleyApiKey: String?
     
     // Computed property for backward compatibility
     var score: Int {

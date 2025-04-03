@@ -70,7 +70,6 @@ class ChatViewModel: ObservableObject {
     private var conversationId = UUID().uuidString
     private var yinSessionId = UUID().uuidString
     private var yangSessionId = UUID().uuidString
-    private let huxleyViewModel = HuxleyViewModel()
 
     // Track messages added in the current session
     private var newSessionMessages: [ChatMessage] = []
@@ -294,54 +293,6 @@ class ChatViewModel: ObservableObject {
         let trimmedMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedMessage.isEmpty || image != nil else { return }
 
-        // Check if message starts with @huxley
-        if trimmedMessage.lowercased().hasPrefix("@huxley") {
-            // Remove @huxley from the message
-            let huxleyPrompt = trimmedMessage.replacingOccurrences(
-                of: "@huxley", with: "", options: [.caseInsensitive]
-            )
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            await MainActor.run {
-                // Add user message immediately
-                messages.append(
-                    ChatMessage(
-                        content: trimmedMessage,
-                        isUser: true,
-                        timestamp: Date(),
-                        image: nil
-                    ))
-                isThinking = true
-            }
-
-            // Use Huxley's ViewModel to generate response
-            if let response = await huxleyViewModel.generateResponse(prompt: huxleyPrompt) {
-                await MainActor.run {
-                    // Add the response
-                    messages.append(
-                        ChatMessage(
-                            content: response,
-                            isUser: false,
-                            timestamp: Date(),
-                            image: nil
-                        ))
-                    isThinking = false
-                }
-            } else {
-                await MainActor.run {
-                    // Handle error case
-                    messages.append(
-                        ChatMessage(
-                            content: "Sorry, I encountered an error processing your request.",
-                            isUser: false,
-                            timestamp: Date(),
-                            image: nil
-                        ))
-                    isThinking = false
-                }
-            }
-            return
-        }
 
         hapticService.playSendFeedback()
 
